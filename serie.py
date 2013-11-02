@@ -6,6 +6,7 @@ import os
 import tvdb_api
 import time
 import string
+import logging
 import argparse
 import xml.etree.ElementTree as ET
 from myDate import *
@@ -53,12 +54,12 @@ def last_aired(t,series):
 			next_episode['firstaired']])
 	return result
 
-def do_run(conffile,t):
+def action_run(conffile,t):
 	series = last_aired(t,conffile.listSeries())
 	for serie in series:
 		print(serie[0] + " - Season " + serie[1] + " Episode " + serie[2] + " broadcasted on " + print_date(serie[3]))
 
-def do_list(conffile,t):
+def action_list(conffile,t):
 	series = conffile.listSeries()
 	if len(series)>0:	
 		for serie in series:
@@ -67,7 +68,7 @@ def do_list(conffile,t):
 		print "No TV Show scheduled"
 		sys.exit()
 
-def do_add(conffile,t):
+def action_add(conffile,t):
 	result = []
 	while len(result) < 1:
 		serie = promptSimple("Please type your TV Show ")
@@ -116,24 +117,53 @@ def do_add(conffile,t):
 
 	print(result.data['seriesname'] + u" added")
 
+def action_reset(conffile, t):
+    '''Reset the series list'''
+    logging.debug('Call function action_reset()')
+    conffile.reset()
+
 def main():
-	conffile = ConfFile(CONFIG_FILE)
-	t = tvdb_api.Tvdb()
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--action",default='run')
-	args = parser.parse_args()
-	if args.action == 'run':
-		do_run(conffile,t)
+    # Get input parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+            "-a",
+            "--action",
+            default='run',
+            choices=['run', 'list', 'reset', 'add'],
+            help='action triggered by the script'
+        )
+    parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="store_true",
+            help='maximum output verbosity'
+        )
+    args = parser.parse_args()
 
-	elif args.action == 'list':
-		do_list(conffile,t)
+    # Manage verbosity level
+    if args.verbosity:
+        logging.basicConfig(level=logging.DEBUG)
+    logging.info('SERIE started in verbosity mode')
 
-	elif args.action == 'reset':
-		conffile.reset()
+    # Initialize more data
+    conffile = ConfFile(CONFIG_FILE)
+    logging.debug('Conffile: %s', conffile)
+    t = tvdb_api.Tvdb()
+    logging.debug('API initiator: %s', t)
+    action_fct = {
+            'list':action_list,
+            'run':action_run,
+            'add':action_add,
+            'reset':action_reset
+        }
 
-	elif args.action == 'add':
-		do_add(conffile,t)
+    # Call for action
+    logging.debug('Action from the parameter: %s', args.action)
+    fct = action_fct[args.action]
+    logging.debug('Action function: %s', fct)
+
+    fct(conffile, t)
 
 if __name__ == '__main__':
     main()
