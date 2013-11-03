@@ -5,6 +5,7 @@ import sys
 import os
 import tvdb_api
 import time
+from datetime import date
 import string
 import logging
 import argparse
@@ -13,6 +14,7 @@ from myDate import *
 from types import *
 from Prompt import *
 from ConfFile import ConfFile
+from tracker import Tracker
 
 CONFIG_FILE = 'series.xml'
 
@@ -55,9 +57,15 @@ def last_aired(t,series):
 	return result
 
 def action_run(conffile,t):
+	result = conffile.getTracker()
+	tracker = Tracker(result[0],result[1],result[2])
 	series = last_aired(t,conffile.listSeries())
 	for serie in series:
-		print(serie[0] + " - Season " + serie[1] + " Episode " + serie[2] + " broadcasted on " + print_date(serie[3]))
+		if serie[3] < date.today():
+			str_search = '{0} S{1:02}E{2:02} {3}'
+			print(str_search.format(serie[0],int(serie[1]),int(serie[2]),result[3]) +' broadcasted on ' + print_date(serie[3]))
+			nb_result = str(tracker.search(str_search.format(serie[0],int(serie[1]),int(serie[2]),result[3])).json()['total'])
+			print(nb_result + ' result(s)')
 
 def action_list(conffile,t):
 	series = conffile.listSeries()
@@ -122,6 +130,18 @@ def action_reset(conffile, t):
     logging.debug('Call function action_reset()')
     conffile.reset()
 
+def action_config(conffile, t):
+    '''Change configuration'''
+    logging.debug('Call function action_config()')
+    trackerConf = conffile.getTracker()
+    configData = promptChoice("Selection value you want modify:",[
+						['tracker','Tracker : '+trackerConf[0]],
+						['user','Tracker Username : '+trackerConf[1]],
+						['password','Tracker Password : ******'],
+						['keywords','Tracker default keywords : '+str(trackerConf[3])]
+								])
+    conffile.change(configData)
+
 def main():
 
     # Get input parameters
@@ -130,7 +150,7 @@ def main():
             "-a",
             "--action",
             default='run',
-            choices=['run', 'list', 'reset', 'add'],
+            choices=['run', 'list', 'reset', 'add','config'],
             help='action triggered by the script'
         )
     parser.add_argument(
@@ -155,7 +175,8 @@ def main():
             'list':action_list,
             'run':action_run,
             'add':action_add,
-            'reset':action_reset
+            'reset':action_reset,
+            'config':action_config
         }
 
     # Call for action

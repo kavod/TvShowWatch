@@ -6,13 +6,15 @@ import sys
 import xml.etree.ElementTree as ET
 from Prompt import *
 from myDate import *
+from tracker import *
 
 CONFIG_FILE = 'series.xml'
+CONFIG_VERSION = '1.1'
 
 class ConfFile:
 	"""
 		The ``ConfFile`` constructor
-		=========================
+		============================
 		
 		Create the ConfFile object
 		
@@ -27,11 +29,15 @@ class ConfFile:
 	def __init__(self, filename = CONFIG_FILE):
 		self.filename = filename
 		if not self.testFileExists():
-			conf = ET.Element('conf')
-			self.tree = ET.ElementTree(conf)
+			print("Initial configuration")
 			self._create()
 		else:
 			self.tree = ET.parse(self.filename)
+			if self.getVersion() != CONFIG_VERSION:
+				if promptYN("Your configuration file version ({0}) is obsolet (<{1}). Do you want reset it?".format(self.getVersion(),CONFIG_VERSION),'N'):
+					self._create()
+				else:
+					sys.exit()
 
 	"""
 		The ``_create`` method
@@ -52,8 +58,20 @@ class ConfFile:
 		
 	"""
 	def _create(self):
+		tracker_conf = self.confTracker()
+
 		conf = ET.Element("conf")
 		self.tree = ET.ElementTree(conf)
+		version = ET.SubElement(conf,'version')
+		version.text = CONFIG_VERSION
+		tracker = ET.SubElement(conf, "tracker")
+		tracker.text = str(tracker_conf[0])
+		s_username = ET.SubElement(conf, "user")
+		s_username.text = str(tracker_conf[1])
+		s_password = ET.SubElement(conf, "password")
+		s_password.text = str(tracker_conf[2])
+		s_keywords = ET.SubElement(conf, "keywords")
+		s_keywords.text = ''
 		self._save()
 		return True
 
@@ -126,7 +144,7 @@ class ConfFile:
 			self._create()
 
 		if self.testSerieExists(s_id):
-			print(u'TV Show already scheduled')
+			print('TV Show already scheduled')
 			return False
  
 		conf = self.tree.getroot()		
@@ -191,13 +209,13 @@ class ConfFile:
 	def reset(self):
 		if promptYN("Are you sure you want to delete configuration?",'N'):
 			self._create()
-			print "Configuration file reseted"
+			print("Configuration file reseted")
 			return True
 		return False
 
 	"""
 		The ``listSeries`` method
-		====================
+		=========================
 		
 		Return the list of TV Shows in configuration file
 
@@ -216,3 +234,56 @@ class ConfFile:
 			result.append(int(serie.find('id').text))
 		return result
 
+	def getVersion(self):
+		conf = self.tree.getroot()
+		return conf.find('version').text
+
+	"""
+		The ``confTracker`` method
+		=========================
+		
+		Create Tracker configuration
+
+		:return: list [tracker ID, username, password]
+		:rtype: list of strings
+
+		:Example:
+		f.confTracker()
+		['t411', 'obiWan', '1324']
+		
+	"""
+	def confTracker(self):
+		while True:	
+			tracker_id = self.select_tracker()
+			username = self.select_user()
+			password = self.select_password()
+			
+			tracker = Tracker(tracker_id,username,password)
+			if tracker.test():
+				break
+			print('Invalid authentification')
+
+		return [tracker_id, username, password]
+
+	def getTracker(self):
+		conf = self.tree.getroot()
+		return [conf.find('tracker').text,conf.find('user').text,conf.find('password').text,conf.find('keywords').text]
+
+	def select_tracker(self):
+		return promptChoice("Please select your tracker:",TRACKER_CONF)
+
+	def select_user(self):
+		return promptSimple('Enter your username:')
+
+	def select_password(self):
+		return promptPass('Enter your password:')
+
+	def select_keywords(self):
+		return promptSimple('Enter your default keywords:')
+
+	def change(self,configData):
+		value = getattr(self, "select_" + configData)()
+		conf = self.tree.getroot()
+		conf.find(configData).text = str(value)
+		self._save()
+		

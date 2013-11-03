@@ -3,6 +3,7 @@
 
 import os
 import sys
+import getpass
 
 C_YN = ['y','Y','n','N']
 
@@ -30,6 +31,35 @@ def promptSimple(question):
 		
 	"""
 	reponse = raw_input(question + "\n0 : Exit\n")
+	if reponse == "0":
+		sys.exit()
+	return reponse
+
+def promptPass(question):
+	"""
+		The ``promptPass`` function
+		=============================
+		
+		Use it for a password required input from stdin
+		User input will not been shown during typing
+		
+		:param question: Text displayed before password input
+		:type question: string
+
+		:return: user typed text
+		:rtype: string
+
+		:Example:
+
+		>>> from Prompt import *
+		>>> promptPass('Okay. Whats the password?')
+		Okay. Whats the password?
+		0 = Exit
+
+		'You got it'
+		
+	"""
+	reponse = getpass.getpass(question + "\n0 : Exit\n")
 	if reponse == "0":
 		sys.exit()
 	return reponse
@@ -68,10 +98,10 @@ def promptChoice(question,choix,default = 0):
 	"""
 	while True:	
 		possible = []
-		print question + " [" + str(default+1) + " by default]"
+		print(question + " [" + str(default+1) + " by default]")
 		for i,val in enumerate(choix):
 			possible.append(str(val[0]))
-			print str(i+1) + " : " + val[1]
+			print(str(i+1) + " : " + val[1])
 		reponse = raw_input("0 : Exit\n")
 
 		if reponse == "0":
@@ -82,7 +112,7 @@ def promptChoice(question,choix,default = 0):
 		if int(reponse) < len(choix)+1 and int(reponse) > 0:
 			return choix[int(reponse)-1][0]
 		else:
-			print 'incorrect choice'
+			print('incorrect choice')
 	
 def promptYN(question,default = C_YN[0]):
 	"""
@@ -122,5 +152,5 @@ def promptYN(question,default = C_YN[0]):
 		elif reponse in C_YN[2:4]:
 			return False
 		else:
-			print 'incorrect choice'
+			print('incorrect choice')
 
