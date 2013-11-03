@@ -4,7 +4,7 @@
 import sys
 import json
 import requests
-#from t411 import *
+import logging
 
 TRACKER_CONF = [
 	['t411','T411']
@@ -68,7 +68,7 @@ class Tracker:
 		return getattr(self, "search_" + self.trackerID )(search)
 
 	def download_t411(self,torrent_id):
-		print("/torrents/download/"+str(torrent_id))
+		logging.debug("/torrents/download/"+str(torrent_id))
 		stream = requests.post("https://api.t411.me/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True)
 		with open('file.torrent', 'wb') as f:
 			for chunk in stream.iter_content(chunk_size=1024): 
@@ -78,6 +78,26 @@ class Tracker:
 
 	def download(self,torrent_id):
 		return getattr(self, "download_" + self.trackerID )(torrent_id)
+
+	# Deletion of useless torrent (no seeder, not verified and dl never completed
+	def filter_torrent(self,tor): 
+		return getattr(self, "filter_" + self.trackerID )(tor)
+
+	def filter_t411(self,tor):
+		return int(tor['seeders']) > 0 and tor['isVerified'] == '1' and int(tor['times_completed']) > 0
+
+	# Selection of the most downloaded completed time torrent
+	def select_torrent(self,result):
+		return getattr(self, "select_" + self.trackerID )(result)
+
+	def select_t411(self,result):
+		logging.debug(result)
+		filter(self.filter_torrent,result)
+		return sorted(result, key=lambda tor: int(tor[u'times_completed']), reverse=True)[0]
+
+
+
+
 
 
 

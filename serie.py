@@ -10,11 +10,14 @@ import string
 import logging
 import argparse
 import xml.etree.ElementTree as ET
+import transmissionrpc
 from myDate import *
 from types import *
 from Prompt import *
 from ConfFile import ConfFile
-from tracker import Tracker
+from tracker import *
+
+
 
 CONFIG_FILE = 'series.xml'
 
@@ -38,7 +41,7 @@ def last_aired(t,series):
 		 
 		 if episode['firstaired'] is not None:
 		  date_firstaired = convert_date(episode['firstaired'])
-		  if date_firstaired > datetime.date.today():
+		  if date_firstaired >= datetime.date.today():
 			next_episode = episode
 		  	next_episode['firstaired'] = date_firstaired
 		  	break
@@ -56,32 +59,113 @@ def last_aired(t,series):
 			next_episode['firstaired']])
 	return result
 
+
+def keep_in_progress(tor):
+	return tor.status == 'seeding'
+
 def action_run(conffile,t):
 	confTracker = conffile.getTracker()
 	tracker = Tracker(confTracker[0],confTracker[1],confTracker[2])
-	series = last_aired(t,conffile.listSeries())
-	for serie in series:
-		if serie[3] < date.today():
-			str_search = '{0} S{1:02}E{2:02} {3}'
-			print(str_search.format(serie[0],int(serie[1]),int(serie[2]),confTracker[3]) + ' broadcasted on ' + print_date(serie[3]))
-			result = tracker.search(str_search.format(serie[0],int(serie[1]),int(serie[2]),confTracker[3]))
-			nb_result = int(result.json()['total'])
-			print(str(nb_result) + ' result(s)')
+	#series = last_aired(t,conffile.listSeries())
+	series = conffile.listSeries()	
 
-			if nb_result > 1:
-				""" selection du meilleurs """
-			elif nb_result == 1:
-				tracker.download(result.json()['torrents'][0]['id'])
-				"""
-				print("/torrents/download/"+result.json()['torrents'][0]['id'])
-				with open('file.torrent', 'wb') as f:
-					f.write(request("/torrents/download/"+result.json()['torrents'][0]['id'], True))"""
+	for serie in series:
+		if serie['episode'] == 0:
+			print(t[serie['id']].data['seriesname'])
+			print(' => broadcast achieved - No more episode')
+			continue
+
+		episode = t[serie['id']][serie['season']][serie['episode']]
+		str_search = '{0} S{1:02}E{2:02} {3}'
+		print(
+			str_search.format(
+				t[serie['id']].data['seriesname'],
+				int(serie['season']),
+				int(serie['episode']),
+				confTracker[3])
+				 + ' broadcasted on ' + print_date(convert_date(episode['firstaired'])))
+
+		if serie['status'] == 30: # Torrent already active
+			confTransmission = conffile.getTransmission()
+			tc = transmissionrpc.Client(
+					confTransmission['server'],
+					confTransmission['port'],
+					confTransmission['user'],
+					confTransmission['password']
+			
+			)
+
+			tor_found = False
+			for tor in tc.get_torrents(): # Check if torrent still there!
+				if tor.id == serie['slot_id']:
+					tor_found = True
+					break
+			if not tor_found:
+				print(' => Torrent unfoundable. Relaunch required')
+				conffile.updateSerie(serie['id'],{'status':10,'slot_id':0})
+			else:
+				torrent = tc.get_torrent(serie['slot_id'])
+				if torrent.status == 'seeding':
+					print(' => Torrent download in completed!')
+				else:
+					print(' => Torrent download in progress')
+				continue
+
+		if convert_date(episode['firstaired']) < date.today():
+			conffile.updateSerie(serie['id'],{'status':20})
+			
+			result = tracker.search(str_search.format(t[serie['id']].data['seriesname'],int(serie['season']),int(serie['episode']),confTracker[3]))
+			nb_result = int(result.json()['total'])
+			logging.debug(str(nb_result) + ' result(s)')
+
+			if nb_result > 0:
+				result = tracker.select_torrent(result.json()['torrents'])
+				logging.debug("selected torrent:")
+				logging.debug(result)
+				print(" => Download torrent!")
+				tracker.download(result['id'])
+				confTransmission = conffile.getTransmission()
+				tc = transmissionrpc.Client(
+						confTransmission['server'],
+						confTransmission['port'],
+						confTransmission['user'],
+						confTransmission['password']
+				
+				)
+
+				torrents = tc.get_torrents()
+				#print(str(len(torrents)) + " >= " + str(confTransmission['slotNumber']) + " ?")
+				while len(torrents) >= int(confTransmission['slotNumber']):
+					# If there is not slot available, close the older one
+					torrents = filter(keep_in_progress,torrents)
+					torrent = sorted(torrents, key=lambda tor: tor.id, reverse=True)[0]
+					tc.remove_torrent(torrent.id, delete_data=True)
+					print("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
+					torrents = tc.stop_torrent(torrent.id)
+					torrents = tc.get_torrents()
+					print(torrents)
+				
+				new_torrent = tc.add_torrent('file://file.torrent')
+				tc.start_torrent(new_torrent.id)
+				conffile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
+			else:
+				print(" => No available torrent")
+		else:
+			str_search = '{0} S{1:02}E{2:02} {3}'
+			print(
+				str_search.format(
+					t[serie['id']].data['seriesname'],
+					int(serie['season']),
+					int(serie['episode']),
+					confTracker[3])
+					 + '\n => Next broadcast: ' + print_date(convert_date(episode['firstaired'])))
+
 
 def action_list(conffile,t):
 	series = conffile.listSeries()
 	if len(series)>0:	
 		for serie in series:
-			print t[serie].data['seriesname']
+			print t[serie['id']].data['seriesname']
 	else:
 		print "No TV Show scheduled"
 		sys.exit()
@@ -97,6 +181,8 @@ def action_add(conffile,t):
 		elif len(result) > 1:
 			choices = []
 			for val in result:
+				if not 'firstaired' in val.keys():
+					val['firstaired'] = '????'
 				choices.append([val['id'],val['seriesname']+' (' + val['firstaired'][0:4] + ')'])
 			result = promptChoice("Did you mean...",choices)
 			result = t[result]
@@ -140,6 +226,20 @@ def action_reset(conffile, t):
     logging.debug('Call function action_reset()')
     conffile.reset()
 
+def action_del(conffile, t):
+	'''Delete TV show from configuration file'''
+	logging.debug('Call function action_del()')
+	choix = []
+	series = conffile.listSeries()
+	if len(series)>0:	
+		for serie in series:
+			choix.append([serie['id'],t[serie['id']].data['seriesname']])
+	else:
+		print "No TV Show scheduled"
+		sys.exit()
+	s_id = promptChoice("Which TV Show do you want to unschedule?",choix)
+	conffile.delSerie(s_id)
+
 def action_config(conffile, t):
     '''Change configuration'''
     logging.debug('Call function action_config()')
@@ -162,7 +262,7 @@ def main():
             "-a",
             "--action",
             default='run',
-            choices=['run', 'list', 'reset', 'add','config'],
+            choices=['run', 'list', 'reset', 'add','config','del'],
             help='action triggered by the script'
         )
     parser.add_argument(
@@ -188,7 +288,8 @@ def main():
             'run':action_run,
             'add':action_add,
             'reset':action_reset,
-            'config':action_config
+            'config':action_config,
+            'del':action_del
         }
 
     # Call for action

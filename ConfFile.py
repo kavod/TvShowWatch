@@ -10,7 +10,13 @@ from myDate import *
 from tracker import *
 
 CONFIG_FILE = 'series.xml'
-CONFIG_VERSION = '1.2'
+CONFIG_VERSION = '1.5'
+
+TORRENT_STATUS = {
+			10: 'Waiting Broadcast',
+			20: 'Waiting Torrent',
+			30: 'Leeching'
+		}
 
 class ConfFile:
 	"""
@@ -87,6 +93,8 @@ class ConfFile:
 		tc_user.text = str(tc_conf['user'])
 		tc_password = ET.SubElement(transmission, "password")
 		tc_password.text = str(tc_conf['password'])
+		tc_slotNumber = ET.SubElement(transmission, "slotNumber")
+		tc_slotNumber.text = str(tc_conf['slotNumber'])
 		
 
 		self._save()
@@ -172,9 +180,23 @@ class ConfFile:
 		serie_s.text = str(s_season)
 		serie_e = ET.SubElement(serie, "episode")
 		serie_e.text = str(s_episode)
+		status = ET.SubElement(serie, "status")
+		status.text = str(10)
+		slot_id = ET.SubElement(serie, "slot_id")
+		slot_id.text = str(0)
 		#ET.dump(conf)
 		self._save()
 		return True
+
+	def delSerie(self, s_id):
+		result = False
+		conf = self.tree.getroot()
+		for serie in conf.findall('serie'):
+			if serie.find('id').text == str(s_id):
+				conf.remove(serie)
+				result = True
+		self._save()
+		return result
 
 	"""
 		The ``testSerieExists`` method
@@ -248,7 +270,13 @@ class ConfFile:
 		result = []
 		conf = self.tree.getroot()
 		for serie in conf.findall('serie'):
-			result.append(int(serie.find('id').text))
+			result.append({
+				'id': int(serie.find('id').text),
+				'season': int(serie.find('season').text),
+				'episode': int(serie.find('episode').text),
+				'status': int(serie.find('status').text),
+				'slot_id': int(serie.find('slot_id').text)
+					})
 		return result
 
 	def getVersion(self):
@@ -288,7 +316,7 @@ class ConfFile:
 		
 		Create Transmission configuration
 
-		:return: {'server', 'port', 'username', 'password'}
+		:return: {'server', 'port', 'username', 'password', 'slotNumber'}
 		:rtype: dict
 
 		:Example:
@@ -297,7 +325,8 @@ class ConfFile:
 			'server':	'localhost',
 			'port':		'9091',
 			'username':	'ObiWan',
-			'password':	'1234'
+			'password':	'1234',
+			'slotNumber':	6
 		}
 		
 	"""
@@ -307,6 +336,7 @@ class ConfFile:
 			port = int(self.select_transmissionPort())
 			user = self.select_transmissionUser()
 			password = self.select_transmissionPassword()
+			slot_number = self.select_transmissionSlotNumber()
 			
 			try:
 				self.tc = transmissionrpc.Client(server, port, user, password)
@@ -319,20 +349,23 @@ class ConfFile:
 			'server':	server,
 			'port':		port,
 			'user':		user,
-			'password':	password
+			'password':	password,
+			'slotNumber':	slot_number
 			}
 
 	def getTracker(self):
 		conf = self.tree.getroot()
-		return [conf.find('tracker').text,conf.find('user').text,conf.find('password').text,conf.find('keywords').text]
+		keywords = conf.find('keywords').text if conf.find('keywords').text is not None else '' 
+		return [conf.find('tracker').text,conf.find('user').text,conf.find('password').text,keywords]
 
-	def getTracker(self):
+	def getTransmission(self):
 		transmission = self.tree.getroot().find('transmission')
 		return {
 			'server':	transmission.find('server').text,
 			'port':		transmission.find('port').text,
 			'user':		transmission.find('user').text,
-			'password':	transmission.find('password').text
+			'password':	transmission.find('password').text,
+			'slotNumber':	transmission.find('slotNumber').text
 			}
 
 	def select_tracker(self):
@@ -350,6 +383,9 @@ class ConfFile:
 	def select_transmissionPassword(self):
 		return promptPass('Enter your Transmission password:')
 
+	def select_transmissionSlotNumber(self):
+		return promptSimple('Enter your maximum slot number:','6')
+
 	def select_user(self):
 		return promptSimple('Enter your username:')
 
@@ -364,4 +400,16 @@ class ConfFile:
 		conf = self.tree.getroot()
 		conf.find(configData).text = str(value)
 		self._save()
+		
+	def updateSerie(self,s_id,values):
+		result = False
+		conf = self.tree.getroot()
+		for serie in conf.findall('serie'):
+			if serie.find('id').text == str(s_id):
+				for val in values.keys():
+					serie.find(val).text = str(values[val])
+				result = True
+		self._save()
+		return result
+
 		

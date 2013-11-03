@@ -7,7 +7,7 @@ import getpass
 
 C_YN = ['y','Y','n','N']
 
-def promptSimple(question):
+def promptSimple(question,default = ''):
 	"""
 		The ``promptSimple`` function
 		=============================
@@ -30,8 +30,13 @@ def promptSimple(question):
 		'42'
 		
 	"""
-	reponse = raw_input(question + "\n0 : Exit\n")
-	if reponse == "0":
+	str_default = ''
+	if default != '':
+		str_default = ' [' + str(default) + ']'
+	reponse = raw_input(question + str_default + "\n0 : Exit\n")
+	if reponse == '':
+		reponse = str(default)
+	elif reponse == "0":
 		sys.exit()
 	return reponse
 
