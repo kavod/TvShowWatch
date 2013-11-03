@@ -134,7 +134,7 @@ def action_run(conffile,t):
 				)
 
 				torrents = tc.get_torrents()
-				#print(str(len(torrents)) + " >= " + str(confTransmission['slotNumber']) + " ?")
+
 				while len(torrents) >= int(confTransmission['slotNumber']):
 					# If there is not slot available, close the older one
 					torrents = filter(keep_in_progress,torrents)
@@ -151,14 +151,7 @@ def action_run(conffile,t):
 			else:
 				print(" => No available torrent")
 		else:
-			str_search = '{0} S{1:02}E{2:02} {3}'
-			print(
-				str_search.format(
-					t[serie['id']].data['seriesname'],
-					int(serie['season']),
-					int(serie['episode']),
-					confTracker[3])
-					 + '\n => Next broadcast: ' + print_date(convert_date(episode['firstaired'])))
+			print(' => Next broadcast: ' + print_date(convert_date(episode['firstaired'])))
 
 
 def action_list(conffile,t):
