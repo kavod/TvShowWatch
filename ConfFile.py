@@ -4,12 +4,13 @@
 import os
 import sys
 import xml.etree.ElementTree as ET
+import transmissionrpc
 from Prompt import *
 from myDate import *
 from tracker import *
 
 CONFIG_FILE = 'series.xml'
-CONFIG_VERSION = '1.1'
+CONFIG_VERSION = '1.2'
 
 class ConfFile:
 	"""
@@ -59,11 +60,14 @@ class ConfFile:
 	"""
 	def _create(self):
 		tracker_conf = self.confTracker()
+		tc_conf = self.confTransmission()
 
 		conf = ET.Element("conf")
 		self.tree = ET.ElementTree(conf)
 		version = ET.SubElement(conf,'version')
 		version.text = CONFIG_VERSION
+
+		# Tracker conf
 		tracker = ET.SubElement(conf, "tracker")
 		tracker.text = str(tracker_conf[0])
 		s_username = ET.SubElement(conf, "user")
@@ -72,6 +76,19 @@ class ConfFile:
 		s_password.text = str(tracker_conf[2])
 		s_keywords = ET.SubElement(conf, "keywords")
 		s_keywords.text = ''
+
+		# Transmission conf
+		transmission = ET.SubElement(conf, "transmission")
+		tc_server = ET.SubElement(transmission, "server")
+		tc_server.text = str(tc_conf['server'])
+		tc_port = ET.SubElement(transmission, "port")
+		tc_port.text = str(tc_conf['port'])
+		tc_user = ET.SubElement(transmission, "user")
+		tc_user.text = str(tc_conf['user'])
+		tc_password = ET.SubElement(transmission, "password")
+		tc_password.text = str(tc_conf['password'])
+		
+
 		self._save()
 		return True
 
@@ -265,12 +282,73 @@ class ConfFile:
 
 		return [tracker_id, username, password]
 
+	"""
+		The ``confTransmission`` method
+		===============================
+		
+		Create Transmission configuration
+
+		:return: {'server', 'port', 'username', 'password'}
+		:rtype: dict
+
+		:Example:
+		f.confTransmission()
+		{
+			'server':	'localhost',
+			'port':		'9091',
+			'username':	'ObiWan',
+			'password':	'1234'
+		}
+		
+	"""
+	def confTransmission(self):
+		while True:	
+			server = self.select_transmissionServer()
+			port = int(self.select_transmissionPort())
+			user = self.select_transmissionUser()
+			password = self.select_transmissionPassword()
+			
+			try:
+				self.tc = transmissionrpc.Client(server, port, user, password)
+			except Exception as inst:
+				print('Transmission authentification failed')
+			else:
+				break
+
+		return {
+			'server':	server,
+			'port':		port,
+			'user':		user,
+			'password':	password
+			}
+
 	def getTracker(self):
 		conf = self.tree.getroot()
 		return [conf.find('tracker').text,conf.find('user').text,conf.find('password').text,conf.find('keywords').text]
 
+	def getTracker(self):
+		transmission = self.tree.getroot().find('transmission')
+		return {
+			'server':	transmission.find('server').text,
+			'port':		transmission.find('port').text,
+			'user':		transmission.find('user').text,
+			'password':	transmission.find('password').text
+			}
+
 	def select_tracker(self):
 		return promptChoice("Please select your tracker:",TRACKER_CONF)
+
+	def select_transmissionServer(self):
+		return promptSimple('Enter your Transmission server:','localhost')
+
+	def select_transmissionPort(self):
+		return int(promptSimple('Enter your Transmission port:','9091'))
+
+	def select_transmissionUser(self):
+		return promptSimple('Enter your Transmission username:')
+
+	def select_transmissionPassword(self):
+		return promptPass('Enter your Transmission password:')
 
 	def select_user(self):
 		return promptSimple('Enter your username:')
