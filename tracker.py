@@ -67,3 +67,17 @@ class Tracker:
 	def search(self,search):
 		return getattr(self, "search_" + self.trackerID )(search)
 
+	def download_t411(self,torrent_id):
+		print("/torrents/download/"+str(torrent_id))
+		stream = requests.post("https://api.t411.me/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True)
+		with open('file.torrent', 'wb') as f:
+			for chunk in stream.iter_content(chunk_size=1024): 
+				if chunk: # filter out keep-alive new chunks
+					f.write(chunk)
+			     		f.flush()
+
+	def download(self,torrent_id):
+		return getattr(self, "download_" + self.trackerID )(torrent_id)
+
+
+

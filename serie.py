@@ -57,15 +57,25 @@ def last_aired(t,series):
 	return result
 
 def action_run(conffile,t):
-	result = conffile.getTracker()
-	tracker = Tracker(result[0],result[1],result[2])
+	confTracker = conffile.getTracker()
+	tracker = Tracker(confTracker[0],confTracker[1],confTracker[2])
 	series = last_aired(t,conffile.listSeries())
 	for serie in series:
 		if serie[3] < date.today():
 			str_search = '{0} S{1:02}E{2:02} {3}'
-			print(str_search.format(serie[0],int(serie[1]),int(serie[2]),result[3]) +' broadcasted on ' + print_date(serie[3]))
-			nb_result = str(tracker.search(str_search.format(serie[0],int(serie[1]),int(serie[2]),result[3])).json()['total'])
-			print(nb_result + ' result(s)')
+			print(str_search.format(serie[0],int(serie[1]),int(serie[2]),confTracker[3]) + ' broadcasted on ' + print_date(serie[3]))
+			result = tracker.search(str_search.format(serie[0],int(serie[1]),int(serie[2]),confTracker[3]))
+			nb_result = int(result.json()['total'])
+			print(str(nb_result) + ' result(s)')
+
+			if nb_result > 1:
+				""" selection du meilleurs """
+			elif nb_result == 1:
+				tracker.download(result.json()['torrents'][0]['id'])
+				"""
+				print("/torrents/download/"+result.json()['torrents'][0]['id'])
+				with open('file.torrent', 'wb') as f:
+					f.write(request("/torrents/download/"+result.json()['torrents'][0]['id'], True))"""
 
 def action_list(conffile,t):
 	series = conffile.listSeries()
