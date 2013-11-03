@@ -144,12 +144,14 @@ def action_config(conffile, t):
     '''Change configuration'''
     logging.debug('Call function action_config()')
     trackerConf = conffile.getTracker()
-    configData = promptChoice("Selection value you want modify:",[
-						['tracker','Tracker : '+trackerConf[0]],
-						['user','Tracker Username : '+trackerConf[1]],
-						['password','Tracker Password : ******'],
-						['keywords','Tracker default keywords : '+str(trackerConf[3])]
-								])
+    configData = promptChoice(
+            "Selection value you want modify:",
+            [
+                ['tracker','Tracker : '+trackerConf[0]],
+                ['user','Tracker Username : '+trackerConf[1]],
+                ['password','Tracker Password : ******'],
+                ['keywords','Tracker default keywords : '+str(trackerConf[3])]
+            ])
     conffile.change(configData)
 
 def main():
@@ -174,7 +176,7 @@ def main():
     # Manage verbosity level
     if args.verbosity:
         logging.basicConfig(level=logging.DEBUG)
-    logging.info('SERIE started in verbosity mode')
+    logging.info('SERIES started in verbosity mode')
 
     # Initialize more data
     conffile = ConfFile(CONFIG_FILE)
