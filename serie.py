@@ -9,6 +9,7 @@ from datetime import date
 import string
 import logging
 import argparse
+import ftplib
 import xml.etree.ElementTree as ET
 import transmissionrpc
 from myDate import *
@@ -16,8 +17,7 @@ from types import *
 from Prompt import *
 from ConfFile import ConfFile
 from tracker import *
-
-
+from ftplib import FTP
 
 CONFIG_FILE = 'series.xml'
 
@@ -63,14 +63,16 @@ def last_aired(t,series):
 def keep_in_progress(tor):
 	return tor.status == 'seeding'
 
+def ignore_stopped(tor):
+	return tor.status != 'stopped'
+
 def action_run(conffile,t):
 	confTracker = conffile.getTracker()
 	tracker = Tracker(confTracker[0],confTracker[1],confTracker[2])
-	#series = last_aired(t,conffile.listSeries())
 	series = conffile.listSeries()	
 
 	for serie in series:
-		if serie['episode'] == 0:
+		if serie['episode'] == 0: # If last episode reached
 			print(t[serie['id']].data['seriesname'])
 			print(' => broadcast achieved - No more episode')
 			continue
@@ -107,18 +109,53 @@ def action_run(conffile,t):
 				torrent = tc.get_torrent(serie['slot_id'])
 				if torrent.status == 'seeding':
 					print(' => Torrent download in completed!')
+
+					if(confTransmission['folder'] is not None):
+
+						confTransmission = conffile.getTransmission()
+						ftp = FTP(confTransmission['server'])
+						ftp.login(confTransmission['user'],confTransmission['password']) 
+						for fichier in torrent.files().values():
+							chemin_cible = str(t[serie['id']].data['seriesname']) 
+							chemin_cible += '/season ' 
+							chemin_cible += str(serie['season'])
+							chemin_cible += '/' + "/".join(fichier['name'].split('/')[0:-1])
+							chemin = confTransmission['folder'] + '/'
+							for folder in chemin_cible.split('/'):
+								print(chemin + folder)
+								if not os.path.isdir(chemin + folder):
+									os.mkdir(chemin + folder)
+								chemin += folder + '/'
+							ftp.retrbinary(
+								'RETR ' + str(fichier['name']), 
+								open(confTransmission['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
+						ftp.quit()
+						print(' => File download in completed!')
+
+					result = last_aired(t,[serie['id']])
+					if (serie['id'] > 0):
+						conffile.updateSerie(serie['id'],{
+									'status':	10,
+									'season':	result[0][4],
+									'episode':	result[0][5],
+									'slot_id':	0
+									})
+					else:
+						print('It was episode final! Removing from conffile')
+						conffile.delSerie(serie['id'])
+
 				else:
 					print(' => Torrent download in progress')
 				continue
 
-		if convert_date(episode['firstaired']) < date.today():
+		if convert_date(episode['firstaired']) < date.today(): # If episode broadcast is in the past
 			conffile.updateSerie(serie['id'],{'status':20})
 			
 			result = tracker.search(str_search.format(t[serie['id']].data['seriesname'],int(serie['season']),int(serie['episode']),confTracker[3]))
 			nb_result = int(result.json()['total'])
 			logging.debug(str(nb_result) + ' result(s)')
 
-			if nb_result > 0:
+			if nb_result > 0: # If at least 1 relevant torrent is found
 				result = tracker.select_torrent(result.json()['torrents'])
 				logging.debug("selected torrent:")
 				logging.debug(result)
@@ -130,10 +167,10 @@ def action_run(conffile,t):
 						confTransmission['port'],
 						confTransmission['user'],
 						confTransmission['password']
-				
 				)
 
 				torrents = tc.get_torrents()
+				torrents = filter(ignore_stopped,torrents)
 
 				while len(torrents) >= int(confTransmission['slotNumber']):
 					# If there is not slot available, close the older one
@@ -146,6 +183,7 @@ def action_run(conffile,t):
 					print(torrents)
 				
 				new_torrent = tc.add_torrent('file://file.torrent')
+				os.remove('file.torrent')
 				tc.start_torrent(new_torrent.id)
 				conffile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 			else:
