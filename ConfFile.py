@@ -10,7 +10,7 @@ from myDate import *
 from tracker import *
 
 CONFIG_FILE = 'series.xml'
-CONFIG_VERSION = '1.5'
+CONFIG_VERSION = '1.6'
 
 TORRENT_STATUS = {
 			10: 'Waiting Broadcast',
@@ -95,7 +95,8 @@ class ConfFile:
 		tc_password.text = str(tc_conf['password'])
 		tc_slotNumber = ET.SubElement(transmission, "slotNumber")
 		tc_slotNumber.text = str(tc_conf['slotNumber'])
-		
+		tc_folder = ET.SubElement(transmission, "folder")
+		tc_folder.text = str(tc_conf['folder'])
 
 		self._save()
 		return True
@@ -338,6 +339,8 @@ class ConfFile:
 			password = self.select_transmissionPassword()
 			slot_number = self.select_transmissionSlotNumber()
 			
+			folder = self.select_folder()
+
 			try:
 				self.tc = transmissionrpc.Client(server, port, user, password)
 			except Exception as inst:
@@ -350,7 +353,8 @@ class ConfFile:
 			'port':		port,
 			'user':		user,
 			'password':	password,
-			'slotNumber':	slot_number
+			'slotNumber':	slot_number,
+			'folder':	folder
 			}
 
 	def getTracker(self):
@@ -365,7 +369,8 @@ class ConfFile:
 			'port':		transmission.find('port').text,
 			'user':		transmission.find('user').text,
 			'password':	transmission.find('password').text,
-			'slotNumber':	transmission.find('slotNumber').text
+			'slotNumber':	transmission.find('slotNumber').text,
+			'folder':	transmission.find('folder').text
 			}
 
 	def select_tracker(self):
@@ -385,6 +390,12 @@ class ConfFile:
 
 	def select_transmissionSlotNumber(self):
 		return promptSimple('Enter your maximum slot number:','6')
+
+	def select_folder(self):
+		if (promptYN("Once downloaded, do you need local file transfer?",'N')):
+			return promptSimple('Enter the destination folder:','.')
+		else:
+			return ''
 
 	def select_user(self):
 		return promptSimple('Enter your username:')
