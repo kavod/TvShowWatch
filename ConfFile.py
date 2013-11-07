@@ -8,8 +8,9 @@ import transmissionrpc
 from Prompt import *
 from myDate import *
 from tracker import *
+from MyFile import *
 
-CONFIG_FILE = 'series.xml'
+CONFIG_FILE = sys.path[0] + 'config.xml' if sys.path[0] != '' else 'config.xml'
 CONFIG_VERSION = '1.6'
 
 TORRENT_STATUS = {
@@ -18,7 +19,7 @@ TORRENT_STATUS = {
 			30: 'Leeching'
 		}
 
-class ConfFile:
+class ConfFile(MyFile):
 	"""
 		The ``ConfFile`` constructor
 		============================
@@ -34,18 +35,10 @@ class ConfFile:
 		>>> f = ConfFile()		
 	"""
 	def __init__(self, filename = CONFIG_FILE):
-		self.filename = filename
-		if not self.testFileExists():
-			print("Initial configuration")
-			self._create()
-		else:
-			self.tree = ET.parse(self.filename)
-			if self.getVersion() != CONFIG_VERSION:
-				if promptYN("Your configuration file version ({0}) is obsolet (<{1}). Do you want reset it?".format(self.getVersion(),CONFIG_VERSION),'N'):
-					self._create()
-				else:
-					sys.exit()
+		MyFile.__init__(self, filename, 'conf', 'configuration')
 
+	def _version(self):
+		return CONFIG_VERSION
 	"""
 		The ``_create`` method
 		=============================
@@ -68,10 +61,7 @@ class ConfFile:
 		tracker_conf = self.confTracker()
 		tc_conf = self.confTransmission()
 
-		conf = ET.Element("conf")
-		self.tree = ET.ElementTree(conf)
-		version = ET.SubElement(conf,'version')
-		version.text = CONFIG_VERSION
+		conf = self._create_root()
 
 		# Tracker conf
 		tracker = ET.SubElement(conf, "tracker")
@@ -101,45 +91,6 @@ class ConfFile:
 		self._save()
 		return True
 
-	"""
-		The ``_save`` method
-		====================
-		
-		Save configuration in config file
-
-		:return: True if file saving is OK
-		:rtype: boolean
-
-		:Example:
-
-		>>> f._save()
-		True
-		
-	"""
-	def _save(self):
-		self.tree.write(self.filename)	
-
-	"""
-		The ``testFileExists`` method
-		=============================
-		
-		Use it in order to test if configuration file exists
-
-		:return: True if file exists
-		:rtype: boolean
-
-		:Example:
-
-		>>> f._testFileExists()
-		True
-		
-	"""
-	def testFileExists(self):
-		if os.path.isfile(self.filename): 
-			conffile = open(self.filename, 'r')
-			conffile.readlines()
-			conffile.close()
-			return True
 
 	"""
 		The ``addSerie`` method
@@ -230,28 +181,6 @@ class ConfFile:
 				return True
 		return False
 
-	"""
-		The ``reset`` method
-		====================
-		
-		Use it in order to reset configuration file.
-
-		:return: True if reset completed
-		:rtype: boolean
-
-		:Example:
-		>>> f.reset()
-		Are you sure you want to delete configuration? [y/N]
-		n
-		False
-		
-	"""
-	def reset(self):
-		if promptYN("Are you sure you want to delete configuration?",'N'):
-			self._create()
-			print("Configuration file reseted")
-			return True
-		return False
 
 	"""
 		The ``listSeries`` method
@@ -280,9 +209,6 @@ class ConfFile:
 					})
 		return result
 
-	def getVersion(self):
-		conf = self.tree.getroot()
-		return conf.find('version').text
 
 	"""
 		The ``confTracker`` method
@@ -405,12 +331,6 @@ class ConfFile:
 
 	def select_keywords(self):
 		return promptSimple('Enter your default keywords:')
-
-	def change(self,configData):
-		value = getattr(self, "select_" + configData)()
-		conf = self.tree.getroot()
-		conf.find(configData).text = str(value)
-		self._save()
 		
 	def updateSerie(self,s_id,values):
 		result = False
