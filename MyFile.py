@@ -103,7 +103,7 @@ class MyFile:
 		
 	"""
 	def reset(self):
-		if promptYN("Are you sure you want to delete " + self.description + " ?",'N'):
+		if promptYN("Do you want to delete " + self.description + " ?",'N'):
 			self._create()
 			print(self.description + " reseted")
 			return True
