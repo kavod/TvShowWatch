@@ -116,15 +116,17 @@ class MyFile:
 	def change(self,configData):
 		path = configData.split('_')
 		value = getattr(self, "select_" + configData)()
-		node = self.tree.getroot()
-
+		conf = self.tree
+		node = conf.getroot()
+		
 		for path in configData.split('_'):
 			if node.find(path) is None:
 				node = ET.SubElement(node,path)
 			else:
 				node = node.find(path)
-
+		
 		node.text = str(value)
+		self.tree = conf
 		return str(value)
 #		self._save()
 	
