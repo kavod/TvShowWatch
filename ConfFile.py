@@ -58,14 +58,13 @@ class ConfFile(MyFile):
 		
 	"""
 	def _create(self):
-		self._create_root()
+		conf = self._create_root()
 		tracker_conf = self.confTracker()
 		tc_conf = self.confTransmission()
 
-		conf = self._create_root()
 
 		# Transmission conf
-		transmission = ET.SubElement(conf, "transmission")
+		transmission = conf.find('transmission')
 		tc_folder = ET.SubElement(transmission, "folder")
 		tc_folder.text = str(tc_conf['folder'])
 
@@ -132,7 +131,7 @@ class ConfFile(MyFile):
 			user = self.change('transmission_user')
 			password = self.change('transmission_password')
 			slotNumber = self.change('transmission_slotNumber')
-
+			self._save()
 			folder = self.select_transmission_folder()
 
 			try:
@@ -155,9 +154,12 @@ class ConfFile(MyFile):
 
 	def getTracker(self):
 		conf = self.tree.getroot().find('tracker')
-		keywords = conf.find('keywords').text if conf.find('keywords') is not None else '' 
+		if conf.find('keywords') is not None:
+			keywords = conf.find('keywords').text 
+		else:
+			keywords = '' 
 		return {
-			'id':		conf.find('tracker').text,
+			'id':		conf.find('id').text,
 			'user':		conf.find('user').text,
 			'password':	conf.find('password').text,
 			'keywords':	keywords
