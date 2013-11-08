@@ -1,5 +1,5 @@
-series
-======
+TvShowWatch
+===========
 
 Another TV Show download scheduler
 
