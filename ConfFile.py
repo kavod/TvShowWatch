@@ -5,6 +5,8 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 import transmissionrpc
+import smtplib
+from email.mime.text import MIMEText
 from Prompt import *
 from myDate import *
 from tracker import *
@@ -61,6 +63,7 @@ class ConfFile(MyFile):
 		conf = self._create_root()
 		tracker_conf = self.confTracker()
 		tc_conf = self.confTransmission()
+		email_conf = confEmail(self)
 
 
 		# Transmission conf
@@ -152,6 +155,50 @@ class ConfFile(MyFile):
 			'folder':	folder
 			}
 
+	def confEmail(self):
+		if (promptYN("Do you want to activate Email notification?",'N')):
+			while True:
+				
+				server = self.change('smtp_server')
+				port = self.change('smtp_port')
+				ssltls = self.change('smtp_ssltls')
+				if (promptYN("Authentification required?",'N')):
+					user = self.change('smtp_user')
+					password = self.change('smtp_password')
+				else:
+					user = ''
+					password = ''
+				emailSender = self.change('smtp_emailSender')
+
+				try:
+					msg = MIMEText('This is a test email')
+					msg['Subject'] = 'This is a test email'
+					msg['From'] = 'TvShowWatch script'
+					msg['To'] = emailSender
+					s = smtplib.SMTP(server,int(port))
+					if ssltls:
+						s.starttls() 
+					if user != '':
+						s.login(user,password) 
+					s.sendmail(emailSender,emailSender,msg.as_string())
+					s.quit()
+				except Exception as inst:
+					print('SMTP email sent failed')
+				else:
+					break
+
+			self._save()
+
+			return {
+				'server':	server,
+				'port':		port,
+				'ssltls':	ssltls,
+				'user':		user,
+				'password':	password,
+				'emailSender':	emailSender
+				}
+		return {}
+
 	def getTracker(self):
 		conf = self.tree.getroot().find('tracker')
 		if conf.find('keywords') is not None:
@@ -175,6 +222,20 @@ class ConfFile(MyFile):
 			'slotNumber':	transmission.find('slotNumber').text,
 			'folder':	transmission.find('folder').text
 			}
+
+	def getEmail(self):
+		smtp = self.tree.getroot().find('smtp')
+		if smtp is None:
+			return {}
+		else:
+			return {
+				'server':	smtp.find('server').text,
+				'port':		int(smtp.find('port').text),
+				'ssltls':	smtp.find('ssltls').text == 'True',
+				'user':		'' if smtp.find('user') is None else smtp.find('user').text,
+				'password':	'' if smtp.find('password') is None else smtp.find('password').text,
+				'emailSender':	smtp.find('emailSender').text
+				}
 
 	def select_tracker_id(self):
 		return promptChoice("Please select your tracker:",TRACKER_CONF)
@@ -209,5 +270,21 @@ class ConfFile(MyFile):
 		else:
 			return ''
 
+	def select_smtp_server(self):
+		return promptSimple('Enter your SMTP server:','localhost')
 
+	def select_smtp_port(self):
+		return int(promptSimple('Enter your SMTP port:','25'))
+
+	def select_smtp_ssltls(self):
+		return promptYN('Secure connection (SSL/TLS) is required?','N')
+
+	def select_smtp_user(self):
+		return promptSimple('Enter your SMTP username:')
+
+	def select_smtp_password(self):
+		return promptPass('Enter your SMTP password:')
+
+	def select_smtp_emailSender(self):
+		return promptSimple('Enter the sender Email (a test email will be sent to it)')
 		

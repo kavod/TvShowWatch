@@ -4,13 +4,12 @@
 import sys
 import os
 import tvdb_api
-import time
+#import time
 from datetime import date
 import string
 import logging
 import argparse
-import ftplib
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
 import transmissionrpc
 import smtplib
 import unicodedata
@@ -67,6 +66,22 @@ def last_aired(t,series):
 			next_episode['firstaired']])
 	return result
 
+def sendEmail(content,serie,conffile):
+	confEmail = conffile.getEmail()
+	if len(confEmail)>0:
+		msg = MIMEText(content)
+		msg['Subject'] = 'File download in completed!'
+		msg['From'] = 'TvShowWatch script'
+		s = smtplib.SMTP(confEmail['server'],confEmail['port'])
+		s.starttls()
+		s.login(confEmail['user'],confEmail['password'])
+		for email in serie['emails']:
+			if msg.has_key('to'):
+				msg.replace_header('to', email)
+			else:
+				msg['to'] = email
+			s.sendmail(confEmail['emailSender'],email,msg.as_string())
+		s.quit()
 
 def keep_in_progress(tor):
 	return tor.status == 'seeding'
@@ -77,8 +92,7 @@ def ignore_stopped(tor):
 def action_run(conffile,t):
 	confTracker = conffile.getTracker()
 	tracker = Tracker(confTracker['id'],confTracker['user'],confTracker['password'])
-	series = SerieList(LIST_FILE)
-#	series = conffile.listSeries()	
+	series = SerieList(LIST_FILE)	
 
 	for serie in series.listSeries():
 		if serie['episode'] == 0: # If last episode reached
@@ -145,23 +159,15 @@ def action_run(conffile,t):
 								open(confTransmission['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
 						ftp.quit()
 						print(' => File download in completed!')
-						msg = MIMEText(str_search.format(
-									t[serie['id']].data['seriesname'],
-									int(serie['season']),
-									int(serie['episode']),
-									confTracker['keywords'])
-									+ ' broadcasted on ' + print_date(convert_date(episode['firstaired']))
-									+ ' download completed')
-						msg['Subject'] = 'File download in completed!'
-						msg['From'] = 'Series script'
-						msg['To'] = E_MAIL
-						s = smtplib.SMTP('smtp.gmail.com',587)
-						s.starttls()
-						s.login(E_MAIL,PASSWORD)
-						s.sendmail(E_MAIL,E_MAIL,msg.as_string())
-						s.quit()
-						
-						
+
+						content = str_search.format(
+										t[serie['id']].data['seriesname'],
+										int(serie['season']),
+										int(serie['episode']),
+										confTracker['keywords'])
+										+ ' broadcasted on ' + print_date(convert_date(episode['firstaired']))
+										+ ' download completed'
+						sendEmail(content,serie,conffile)
 
 					result = last_aired(t,[serie['id']])
 					if (serie['id'] > 0):
@@ -281,8 +287,16 @@ def action_add(conffile,t):
 		else:
 			next_s = serie[4]
 			next_e = serie[5]
-
-	series.addSerie(result.data['id'],next_s,next_e)
+	if len(conffile.getEmail())>0 and promptYN('Voulez-vous rajouter des emails de notification ?'):
+		emails = []
+		email = 'start'
+		while email != '':
+			email = promptSimple("Enter an email [keep blank to finish]")
+			if email != '' and not re.match(r'[^@]+@[^@]+\.[^@]+',email):
+				print('Incorrect format')
+			else:
+				emails.append(email)
+	series.addSerie(result.data['id'],next_s,next_e,emails)
 
 	print(result.data['seriesname'] + u" added")
 
@@ -312,19 +326,32 @@ def action_config(conffile, t):
     logging.debug('Call function action_config()')
     trackerConf = conffile.getTracker()
     transConf = conffile.getTransmission()
+    smtpConf = conffile.getEmail()
     configData = promptChoice(
             "Selection value you want modify:",
             [
-                ['tracker_id','Tracker : '+trackerConf[0]],
-                ['tracker_user','Tracker Username : '+trackerConf[1]],
+                ['tracker_id','Tracker : '+trackerConf['id']],
+                ['tracker_user','Tracker Username : '+trackerConf['user']],
                 ['tracker_password','Tracker Password : ******'],
-                ['tracker_keywords','Tracker default keywords : '+str(trackerConf[3])],
+                ['tracker_keywords','Tracker default keywords : '+str(trackerConf['keywords'])],
                 ['transmission_server','Transmission Server : ' + str(transConf['server'])],
                 ['transmission_port','Transmission Port : ' + str(transConf['port'])],
                 ['transmission_user','Transmission User : ' + str(transConf['user'])],
                 ['transmission_password','Transmission Password : ******'],
                 ['transmission_slotNumber','Transmission maximum slots : ' + str(transConf['slotNumber'])],
-                ['transmission_folder','Local folder : ' + str(transConf['folder'])]
+                ['transmission_folder','Local folder : ' + str(transConf['folder'])],
+                ['smtp','Email Notification: ' + 'Enabled' if len(smtpConf)>0 else 'Disabled']
+            ])
+    if configData == 'smtp':
+        configData = promptChoice(
+            "Selection value you want modify:",
+            [
+                ['smtp_server','SMTP Server : ' + str(smtpConf['server'])],
+                ['smtp_port','SMTP Port : ' + str(smtpConf['port'])],
+                ['smtp_ssltls','Secure connection : ' + str(smtpConf['ssltls'])],
+                ['smtp_user','SMTP User : ' + str(smtpConf['user'])],
+                ['smtp_password','SMTP Password : ******'],
+                ['smtp_emailSender','Sender Email : ' + str(smtpConf['emailSender'])]
             ])
     conffile.change(configData)
     conffile._save()

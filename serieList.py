@@ -3,7 +3,7 @@
 
 from MyFile import *
 
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
+LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 LIST_VERSION = "1.0"
 
 class SerieList(MyFile):
@@ -42,7 +42,7 @@ class SerieList(MyFile):
 		True
 		
 	"""
-	def addSerie(self, s_id, s_season, s_episode):
+	def addSerie(self, s_id, s_season, s_episode, emails):
 
 		if self.testSerieExists(s_id):
 			print('TV Show already scheduled')
@@ -60,6 +60,11 @@ class SerieList(MyFile):
 		status.text = str(10)
 		slot_id = ET.SubElement(serie, "slot_id")
 		slot_id.text = str(0)
+
+		for email in emails:
+			node = ET.SubElement(serie, "email")
+			node.text = email
+
 		self._save()
 		return True
 
@@ -116,12 +121,16 @@ class SerieList(MyFile):
 		result = []
 		series = self.tree.getroot()
 		for serie in series.findall('serie'):
+			emails_list = []
+			for email in serie.findall('email'):
+				emails_list.append(email.text)
 			result.append({
 				'id': int(serie.find('id').text),
 				'season': int(serie.find('season').text),
 				'episode': int(serie.find('episode').text),
 				'status': int(serie.find('status').text),
-				'slot_id': int(serie.find('slot_id').text)
+				'slot_id': int(serie.find('slot_id').text),
+				'emails': emails_list
 					})
 		return result
 
