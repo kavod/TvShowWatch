@@ -5,6 +5,10 @@ import sys
 import json
 import requests
 import logging
+import re
+import unicodedata
+import string
+
 
 TRACKER_CONF = [
 	['t411','T411']
@@ -65,6 +69,8 @@ class Tracker:
 		return requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token})
 
 	def search(self,search):
+		search = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(search, 'utf-8')) if unicodedata.category(c) != 'Mn'))
+		search = re.sub('[%s]' % re.escape(string.punctuation), '', search)
 		return getattr(self, "search_" + self.trackerID )(search)
 
 	def download_t411(self,torrent_id):
