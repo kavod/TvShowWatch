@@ -13,6 +13,7 @@ import ftplib
 import xml.etree.ElementTree as ET
 import transmissionrpc
 import smtplib
+import unicodedata
 from myDate import *
 from types import *
 from Prompt import *
@@ -235,6 +236,7 @@ def action_add(conffile,t):
 	result = []
 	while len(result) < 1:
 		serie = promptSimple("Please type your TV Show ")
+		serie = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(serie, 'utf-8')) if unicodedata.category(c) != 'Mn'))
 		result = t.search(serie)
 
 		if len(result) == 0:
