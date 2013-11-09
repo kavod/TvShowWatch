@@ -2,9 +2,10 @@
 #encoding:utf-8
 
 from MyFile import *
+from myDate import *
 
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-LIST_VERSION = "1.0"
+LIST_VERSION = "1.1"
 
 class SerieList(MyFile):
 	def __init__(self, filename = LIST_FILE):
@@ -38,11 +39,11 @@ class SerieList(MyFile):
 
 		:Example:
 
-		>>> f._testFileExists()
+		>>> f.addSerie(2546,{'season':5,'episode':8,date(2013,10,3),['niouf@niouf.fr','niorf@niorf.fi'])
 		True
 		
 	"""
-	def addSerie(self, s_id, s_season, s_episode, emails):
+	def addSerie(self, s_id, seriesname, s_episode, emails):
 
 		if self.testSerieExists(s_id):
 			print('TV Show already scheduled')
@@ -52,14 +53,18 @@ class SerieList(MyFile):
 		serie = ET.SubElement(series, "serie")
 		serie_id = ET.SubElement(serie, "id")
 		serie_id.text = str(s_id)
+		name = ET.SubElement(serie, "name")
+		name.text = str(seriesname)
 		serie_s = ET.SubElement(serie, "season")
-		serie_s.text = str(s_season)
+		serie_s.text = str(s_episode['season'])
 		serie_e = ET.SubElement(serie, "episode")
-		serie_e.text = str(s_episode)
+		serie_e.text = str(s_episode['episode'])
 		status = ET.SubElement(serie, "status")
 		status.text = str(10)
 		slot_id = ET.SubElement(serie, "slot_id")
 		slot_id.text = str(0)
+		expected = ET.SubElement(serie, "expected")
+		expected.text = s_episode['aired'].strftime("%Y-%m-%d")
 
 		for email in emails:
 			node = ET.SubElement(serie, "email")
@@ -125,12 +130,14 @@ class SerieList(MyFile):
 			for email in serie.findall('email'):
 				emails_list.append(email.text)
 			result.append({
-				'id': int(serie.find('id').text),
-				'season': int(serie.find('season').text),
-				'episode': int(serie.find('episode').text),
-				'status': int(serie.find('status').text),
-				'slot_id': int(serie.find('slot_id').text),
-				'emails': emails_list
+				'id': 		int(serie.find('id').text),
+				'name':		str(serie.find('name').text),
+				'season': 	int(serie.find('season').text),
+				'episode': 	int(serie.find('episode').text),
+				'status': 	int(serie.find('status').text),
+				'slot_id': 	int(serie.find('slot_id').text),
+				'expected':	convert_date(serie.find('expected').text),
+				'emails': 	emails_list
 					})
 		return result
 

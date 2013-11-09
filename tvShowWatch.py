@@ -28,49 +28,54 @@ PASSWORD = 'niouf'
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
 
-def last_aired(t,series):
-	
+def last_aired(serie_id):
+	t = tvdb_api.Tvdb()
+	logging.debug('API initiator: %s', t)
 	result = []
 	last_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
 	next_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
 
-	for serie_id in series:
-		if type(serie_id) is not IntType:
-			serie_id = serie_id.find('id').text
-		serie = t[int(serie_id)]
-		# Delete of Special season
-		if 0 in serie.keys():
-			del serie[0]
+	#for serie_id in series:
+	if type(serie_id) is not IntType:
+		serie_id = serie_id.find('id').text
+	serie = t[int(serie_id)]
+	# Delete of Special season
+	if 0 in serie.keys():
+		del serie[0]
 
-		nb_seasons = len(serie)
+	nb_seasons = len(serie)
 
-		for episode in serie[nb_seasons].values():
-		 
-		 if episode['firstaired'] is not None:
-		  date_firstaired = convert_date(episode['firstaired'])
-		  if date_firstaired >= datetime.date.today():
-			next_episode = episode
-		  	next_episode['firstaired'] = date_firstaired
-		  	break
-		  else:
-		   last_episode = episode
-		   last_episode['firstaired'] = date_firstaired
+	for episode in serie[nb_seasons].values():
+	 
+	 if episode['firstaired'] is not None:
+	  date_firstaired = convert_date(episode['firstaired'])
+	  if date_firstaired >= datetime.date.today():
+		next_episode = episode
+	  	next_episode['firstaired'] = date_firstaired
+	  	break
+	  else:
+	   last_episode = episode
+	   last_episode['firstaired'] = date_firstaired
 
-		result.append(
-			[serie.data['seriesname'],
-			last_episode['seasonnumber'],
-			last_episode['episodenumber'],
-			last_episode['firstaired'],
-			next_episode['seasonnumber'],
-			next_episode['episodenumber'],
-			next_episode['firstaired']])
-	return result
+	return	{
+			'seriename':	serie.data['seriesname'],
+			'last':	{
+				'season':	int(last_episode['seasonnumber']),
+				'episode':	int(last_episode['episodenumber']),
+				'aired':	last_episode['firstaired']
+				},
+			'next':	{
+				'season':	int(next_episode['seasonnumber']),
+				'episode':	int(next_episode['episodenumber']),
+				'aired':	next_episode['firstaired']
+				}
+		}
 
 def sendEmail(content,serie,conffile):
 	confEmail = conffile.getEmail()
 	if len(confEmail)>0:
 		msg = MIMEText(content)
-		msg['Subject'] = 'File download in completed!'
+		msg['Subject'] = 'File download is completed!'
 		msg['From'] = 'TvShowWatch script'
 		s = smtplib.SMTP(confEmail['server'],confEmail['port'])
 		s.starttls()
@@ -83,32 +88,138 @@ def sendEmail(content,serie,conffile):
 			s.sendmail(confEmail['emailSender'],email,msg.as_string())
 		s.quit()
 
+def transferFile(fichiers,serie,confTransmission):
+	ftp = FTP(confTransmission['server'])
+	ftp.login(confTransmission['user'],confTransmission['password']) 
+	for fichier in fichiers.values():
+		pattern = '{0}/season {1}/{2}'
+		chemin_cible = pattern.format(
+				str(serie['name']),
+				str(serie['season']),
+				"/".join(fichier['name'].split('/')[0:-1])
+						)
+		chemin = confTransmission['folder'] + '/'
+		for folder in chemin_cible.split('/'):
+			if not os.path.isdir(chemin + folder):
+				os.mkdir(chemin + folder)
+			chemin += folder + '/'
+		ftp.retrbinary(
+			'RETR ' + str(fichier['name']), 
+			open(confTransmission['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
+	ftp.quit()
+	print(' => File download is completed!')
+
+def add_torrent(result, tracker,confTransmission):
+	result = tracker.select_torrent(result)
+	logging.debug("selected torrent:")
+	logging.debug(result)
+	print(" => Download torrent!")
+	tracker.download(result['id'])
+	tc = transmissionrpc.Client(
+			confTransmission['server'],
+			confTransmission['port'],
+			confTransmission['user'],
+			confTransmission['password']
+	)
+
+	torrents = tc.get_torrents()
+	torrents = filter(ignore_stopped,torrents)
+
+	while len(torrents) >= int(confTransmission['slotNumber']):
+		# If there is not slot available, close the older one
+		torrents = filter(keep_in_progress,torrents)
+		torrent = sorted(torrents, key=lambda tor: tor.id, reverse=True)[0]
+		tc.remove_torrent(torrent.id, delete_data=True)
+		print("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
+		torrents = tc.stop_torrent(torrent.id)
+		torrents = tc.get_torrents()
+		print(torrents)
+	
+	new_torrent = tc.add_torrent('file://file.torrent')
+	os.remove('file.torrent')
+	tc.start_torrent(new_torrent.id)
+	return new_torrent
+
+def input_serie():
+	t = tvdb_api.Tvdb()
+	logging.debug('API initiator: %s', t)
+	result = []
+	while len(result) < 1:
+		serie = promptSimple("Please type your TV Show ")
+		serie = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(serie, 'utf-8')) if unicodedata.category(c) != 'Mn'))
+		result = t.search(serie)
+
+		if len(result) == 0:
+			print "Unknowned TV Show"
+		elif len(result) > 1:
+			choices = []
+			for val in result:
+				if not 'firstaired' in val.keys():
+					val['firstaired'] = '????'
+				choices.append([val['id'],val['seriesname']+' (' + val['firstaired'][0:4] + ')'])
+			result = promptChoice("Did you mean...",choices)
+			result = t[result]
+
+		elif len(result) == 1:
+			result = t[result[0]['id']]
+	return result
+
+def input_emails():
+	emails = []
+	email = 'start'
+	while email != '':
+		email = promptSimple("Enter an email [keep blank to finish]")
+		if email != '' and not re.match(r'[^@]+@[^@]+\.[^@]+',email):
+			print('Incorrect format')
+		elif re.match(r'[^@]+@[^@]+\.[^@]+',email):
+			emails.append(email)
+	return emails
+
+def last_or_next(serie):
+	if (serie['last']['season'] == 0):
+		if promptYN("Last season not yet started. Do you want to schedule the Season pilot on " + print_date(serie['next']['aired']),'y'):
+			return serie['next']
+		else:
+			sys.exit()
+	elif (serie['next']['season'] == 0):
+		if promptYN("Last season achieved. Do you want to download the Season final on " + print_date(serie['last']['aired']),'n'):
+			return serie['last']
+		else:
+			sys.exit()	
+	else:	
+		print("Next episode download scheduled on " + print_date(serie['next']['aired']))
+		str_last = 'Do you want also download the last aired : S{0:02}E{1:02} - {2} ?'
+		if promptYN(str_last.format(serie['last']['season'],serie['last']['episode'],print_date(serie['last']['aired'])),'N'):
+			return serie['last']
+		else:
+			return serie['next']
+
 def keep_in_progress(tor):
 	return tor.status == 'seeding'
 
 def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
-def action_run(conffile,t):
+def action_run(conffile):
 	confTracker = conffile.getTracker()
 	tracker = Tracker(confTracker['id'],confTracker['user'],confTracker['password'])
 	series = SerieList(LIST_FILE)	
 
 	for serie in series.listSeries():
 		if serie['episode'] == 0: # If last episode reached
-			print(t[serie['id']].data['seriesname'])
-			print(' => broadcast achieved - No more episode')
+			print(serie['name'])
+			print(' => broadcast achieved - No more episode - Removing from list')
+			series.delSerie(serie['id'])
 			continue
 
-		episode = t[serie['id']][serie['season']][serie['episode']]
 		str_search = '{0} S{1:02}E{2:02} {3}'
-		print(
-			str_search.format(
-				t[serie['id']].data['seriesname'],
-				int(serie['season']),
-				int(serie['episode']),
-				confTracker['keywords'])
-				 + ' broadcasted on ' + print_date(convert_date(episode['firstaired'])))
+		str_search = str_search.format(
+					serie['name'],
+					int(serie['season']),
+					int(serie['episode']),
+					confTracker['keywords']
+						)
+		print(str_search + ' broadcasted on ' + print_date(serie['expected']))
 
 		if serie['status'] == 30: # Torrent already active
 			confTransmission = conffile.getTransmission()
@@ -131,50 +242,19 @@ def action_run(conffile,t):
 			else:
 				torrent = tc.get_torrent(serie['slot_id'])
 				if torrent.status == 'seeding':
-					print(' => Torrent download in completed!')
+					print(' => Torrent download is completed!')
 
 					if(confTransmission['folder'] is not None):
-
-						confTransmission = conffile.getTransmission()
-						ftp = FTP(confTransmission['server'])
-						ftp.login(confTransmission['user'],confTransmission['password']) 
-						for fichier in torrent.files().values():
-							pattern = '{0}/season {1}/{2}'
-							chemin_cible = pattern.format(
-									str(t[serie['id']].data['seriesname']),
-									str(serie['season']),
-									"/".join(fichier['name'].split('/')[0:-1])
-											)
-							"""chemin_cible = str(t[serie['id']].data['seriesname']) 
-							chemin_cible += '/season ' 
-							chemin_cible += str(serie['season'])
-							chemin_cible += '/' + "/".join(fichier['name'].split('/')[0:-1])"""
-							chemin = confTransmission['folder'] + '/'
-							for folder in chemin_cible.split('/'):
-								if not os.path.isdir(chemin + folder):
-									os.mkdir(chemin + folder)
-								chemin += folder + '/'
-							ftp.retrbinary(
-								'RETR ' + str(fichier['name']), 
-								open(confTransmission['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
-						ftp.quit()
-						print(' => File download in completed!')
-
-						content = str_search.format(
-										t[serie['id']].data['seriesname'],
-										int(serie['season']),
-										int(serie['episode']),
-										confTracker['keywords'])
-						content += ' broadcasted on ' + print_date(convert_date(episode['firstaired']))
-						content += ' download completed'
+						transferFile(torrent.files(),serie,confTransmission)
+						content = str_search + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
 						sendEmail(content,serie,conffile)
 
-					result = last_aired(t,[serie['id']])
-					if (serie['id'] > 0):
+					result = last_aired(serie['id'])
+					if (result['next']['episode'] > 0):
 						series.updateSerie(serie['id'],{
 									'status':	10,
-									'season':	result[0][4],
-									'episode':	result[0][5],
+									'season':	result['next']['season'],
+									'episode':	result['next']['episode'],
 									'slot_id':	0
 									})
 					else:
@@ -185,143 +265,74 @@ def action_run(conffile,t):
 					print(' => Torrent download in progress')
 				continue
 
-		if convert_date(episode['firstaired']) < date.today(): # If episode broadcast is in the past
+		if serie['expected'] < date.today(): # If episode broadcast is in the past
 			series.updateSerie(serie['id'],{'status':20})
-			
-			result = tracker.search(str_search.format(t[serie['id']].data['seriesname'],int(serie['season']),int(serie['episode']),confTracker['keywords']))
+			result = tracker.search(str_search)
 			nb_result = int(result.json()['total'])
 			logging.debug(str(nb_result) + ' result(s)')
 
 			if nb_result > 0: # If at least 1 relevant torrent is found
-				result = tracker.select_torrent(result.json()['torrents'])
-				logging.debug("selected torrent:")
-				logging.debug(result)
-				print(" => Download torrent!")
-				tracker.download(result['id'])
-				confTransmission = conffile.getTransmission()
-				tc = transmissionrpc.Client(
-						confTransmission['server'],
-						confTransmission['port'],
-						confTransmission['user'],
-						confTransmission['password']
-				)
-
-				torrents = tc.get_torrents()
-				torrents = filter(ignore_stopped,torrents)
-
-				while len(torrents) >= int(confTransmission['slotNumber']):
-					# If there is not slot available, close the older one
-					torrents = filter(keep_in_progress,torrents)
-					torrent = sorted(torrents, key=lambda tor: tor.id, reverse=True)[0]
-					tc.remove_torrent(torrent.id, delete_data=True)
-					print("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
-					torrents = tc.stop_torrent(torrent.id)
-					torrents = tc.get_torrents()
-					print(torrents)
-				
-				new_torrent = tc.add_torrent('file://file.torrent')
-				os.remove('file.torrent')
-				tc.start_torrent(new_torrent.id)
+				new_torrent = add_torrent(result.json()['torrents'], tracker,conffile.getTransmission())
 				series.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 			else:
 				print(" => No available torrent")
 		else:
-			print(' => Next broadcast: ' + print_date(convert_date(episode['firstaired'])))
+			print(' => Next broadcast: ' + print_date(serie['expected']))
 
 
-def action_list(conffile,t):
+def action_list(conffile):
 	series = SerieList(LIST_FILE)
 	if len(series.listSeries())>0:	
 		for serie in series.listSeries():
-			print t[serie['id']].data['seriesname']
+			print serie['name']
 	else:
 		print "No TV Show scheduled"
 		sys.exit()
 
-def action_add(conffile,t):
-	result = []
-	while len(result) < 1:
-		serie = promptSimple("Please type your TV Show ")
-		serie = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(serie, 'utf-8')) if unicodedata.category(c) != 'Mn'))
-		result = t.search(serie)
+def action_add(conffile):
 
-		if len(result) == 0:
-			print "Unknowned TV Show"
-		elif len(result) > 1:
-			choices = []
-			for val in result:
-				if not 'firstaired' in val.keys():
-					val['firstaired'] = '????'
-				choices.append([val['id'],val['seriesname']+' (' + val['firstaired'][0:4] + ')'])
-			result = promptChoice("Did you mean...",choices)
-			result = t[result]
-
-		elif len(result) == 1:
-			result = t[result[0]['id']]
-
+	result = input_serie()
 	series = SerieList(LIST_FILE)
 
 	if series.testSerieExists(int(result.data['id'])):
 		print(u'Already scheduled TV Show')
 		sys.exit()
 
-	serie = last_aired(t,[int(result.data['id'])])
-	serie = serie[0]
+	serie = last_aired(int(result.data['id']))
 
-	if (serie[1] == 0):
-		if promptYN("Last season not yet started. Do you want to schedule the Season pilot on " + print_date(serie[6]),'y'):
-			next_s = serie[4]
-			next_e = serie[5]
-		else:
-			sys.exit()
-	elif (serie[4] == 0):
-		if promptYN("Last season achieved. Do you want to download the Season final on " + print_date(serie[3]),'n'):
-			next_s = serie[1]
-			next_e = serie[2]
-		else:
-			sys.exit()	
-	else:		
-		if promptYN("Next episode download scheduled on " + print_date(serie[6]) + "\nDo you want also download the last aired : S" + serie[1] + "E" + serie[2] + " - " + print_date(serie[3]) + " ?",'N'):
-			next_s = serie[1]
-			next_e = serie[2]
-		else:
-			next_s = serie[4]
-			next_e = serie[5]
+	next = last_or_next(serie)
+
 	if len(conffile.getEmail())>0 and promptYN('Voulez-vous rajouter des emails de notification ?'):
+		emails = input_emails()
+	else:
 		emails = []
-		email = 'start'
-		while email != '':
-			email = promptSimple("Enter an email [keep blank to finish]")
-			if email != '' and not re.match(r'[^@]+@[^@]+\.[^@]+',email):
-				print('Incorrect format')
-			elif re.match(r'[^@]+@[^@]+\.[^@]+',email):
-				emails.append(email)
-	series.addSerie(result.data['id'],next_s,next_e,emails)
+
+	series.addSerie(result.data['id'],result.data['seriesname'],next,emails)
 
 	print(result.data['seriesname'] + u" added")
 
-def action_reset(conffile, t):
+def action_reset(conffile):
     '''Reset the configuration and/or the series list'''
     logging.debug('Call function action_reset()')
     series = SerieList(LIST_FILE)
     conffile.reset()
     series.reset()
 
-def action_del(conffile, t):
+def action_del(conffile):
 	'''Delete TV show from configuration file'''
 	logging.debug('Call function action_del()')
 	choix = []
 	series = SerieList(LIST_FILE)
 	if len(series.listSeries())>0:	
 		for serie in series.listSeries():
-			choix.append([serie['id'],t[serie['id']].data['seriesname']])
+			choix.append([serie['id'],serie['name']])
 	else:
 		print "No TV Show scheduled"
 		sys.exit()
 	s_id = promptChoice("Which TV Show do you want to unschedule?",choix)
 	series.delSerie(s_id)
 
-def action_config(conffile, t):
+def action_config(conffile):
     '''Change configuration'''
     logging.debug('Call function action_config()')
     trackerConf = conffile.getTracker()
@@ -383,8 +394,8 @@ def main():
     # Initialize more data
     conffile = ConfFile(CONFIG_FILE)
     logging.debug('Loading of conffile: %s', CONFIG_FILE)
-    t = tvdb_api.Tvdb()
-    logging.debug('API initiator: %s', t)
+#    t = tvdb_api.Tvdb()
+#    logging.debug('API initiator: %s', t)
     action_fct = {
             'list':action_list,
             'run':action_run,
@@ -399,7 +410,7 @@ def main():
     fct = action_fct[args.action]
     logging.debug('Action function: %s', fct)
 
-    fct(conffile, t)
+    fct(conffile)
 
 if __name__ == '__main__':
     main()
