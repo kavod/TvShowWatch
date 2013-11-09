@@ -143,11 +143,11 @@ def promptYN(question,default = C_YN[0]):
 		False
 		
 	"""
+	if default not in C_YN:
+		default = C_YN[0]
+	str_y = C_YN[1] if default.lower() == C_YN[0] else C_YN[0] 
+	str_n = C_YN[3] if default.lower() == C_YN[2] else C_YN[2] 
 	while True:
-		if default not in C_YN:
-			default = C_YN[0]
-		str_y = C_YN[1] if default.lower() == C_YN[0] else C_YN[0] 
-		str_n = C_YN[3] if default.lower() == C_YN[2] else C_YN[2] 
 		reponse = raw_input(question + " [" + str(str_y) + "/" + str(str_n) + "] ")
 
 		reponse = str(default) if reponse == '' else reponse
