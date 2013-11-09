@@ -63,7 +63,7 @@ class ConfFile(MyFile):
 		conf = self._create_root()
 		tracker_conf = self.confTracker()
 		tc_conf = self.confTransmission()
-		email_conf = confEmail(self)
+		email_conf = self.confEmail(self)
 
 
 		# Transmission conf
