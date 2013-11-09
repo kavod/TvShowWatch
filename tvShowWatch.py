@@ -165,8 +165,8 @@ def action_run(conffile,t):
 										int(serie['season']),
 										int(serie['episode']),
 										confTracker['keywords'])
-										+ ' broadcasted on ' + print_date(convert_date(episode['firstaired']))
-										+ ' download completed'
+						content += ' broadcasted on ' + print_date(convert_date(episode['firstaired']))
+						content += ' download completed'
 						sendEmail(content,serie,conffile)
 
 					result = last_aired(t,[serie['id']])
