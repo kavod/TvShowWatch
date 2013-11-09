@@ -76,10 +76,10 @@ def sendEmail(content,serie,conffile):
 		s.starttls()
 		s.login(confEmail['user'],confEmail['password'])
 		for email in serie['emails']:
-			if msg.has_key('to'):
-				msg.replace_header('to', email)
+			if msg.has_key('To'):
+				msg.replace_header('To', email)
 			else:
-				msg['to'] = email
+				msg['To'] = email
 			s.sendmail(confEmail['emailSender'],email,msg.as_string())
 		s.quit()
 
@@ -294,7 +294,7 @@ def action_add(conffile,t):
 			email = promptSimple("Enter an email [keep blank to finish]")
 			if email != '' and not re.match(r'[^@]+@[^@]+\.[^@]+',email):
 				print('Incorrect format')
-			else:
+			elif re.match(r'[^@]+@[^@]+\.[^@]+',email):
 				emails.append(email)
 	series.addSerie(result.data['id'],next_s,next_e,emails)
 
