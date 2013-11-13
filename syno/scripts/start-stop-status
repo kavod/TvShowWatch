@@ -1,0 +1,110 @@
+#!/bin/sh
+
+
+PATH=/var/packages/python/target/bin:$PATH
+CRONFILE=/etc/crontab
+TMPFILE=/tmp/crontab
+LogFile=/var/log/serie.log
+CRONLINE="21\t*\t*\t*\t*\troot\tpython /var/packages/TvShowWatch/target/tvShowWatch.py -c\"/var/packages/TvShowWatch/etc/config.xml\">>$LogFile"
+CRON_SED_LINE='/^[0-9][0-9]\t\*\t\*\t\*\t\*\t[a-z]\{1,\}\tpython \/var\/packages\/TvShowWatch\/target\/tvShowWatch\.py -c\"\/var\/packages\/TvShowWatch\/etc\/config\.xml\">>\/var\/log\/serie\.log$/'
+
+ValidateConfFile() {
+        retval=""
+        if [ -e "/var/packages/TvShowWatch/etc/config.xml" ]; then
+                retval="1"                
+        else          
+                retval="0"
+        fi                
+        echo "$retval"                                                                                                                          
+}     
+
+StartPackage () {
+        # Don't start if already started
+        if [ -e "/var/packages/tvShowWatch/enabled" ]; then
+                exit 0
+        fi
+
+        # Check configuration file
+        retval=$( ValidateConfFile )
+        if [[ "$retval" == "0" ]]; then
+                echo "Configuration file unfoundable"
+                echo "Configuration file unfoundable" >> $LogFile
+                exit 1
+        fi
+
+        # Log
+        echo `date`" : Starting TvShowWatch..." >> $LogFile
+
+        # Start Package
+        echo "Starting TvShowWatch..."
+#       python /var/packages/TvShowWatch/target/tvShowWatch.py >> $LogFile
+        echo -e $CRONLINE >>$CRONFILE
+        /usr/syno/etc/rc.d/S04crond.sh stop
+        sleep 1
+        /usr/syno/etc/rc.d/S04crond.sh start
+
+        # Enable desktop icon & config file editor
+#       if [ ! -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
+#               ln -sf "/var/packages/TvShowWatch/target/application" "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
+#       fi
+}
+
+StopPackage () {
+        # Unink desktop redirection
+        if [ -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
+                        rm "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
+        fi
+        sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
+        mv $TMPFILE $CRONFILE
+        sleep 1
+        /usr/syno/etc/rc.d/S04crond.sh stop
+        sleep 1
+        /usr/syno/etc/rc.d/S04crond.sh start
+}
+                                                                                                                                                                             
+
+                 
+case $1 in                              
+        validate)                                          
+                retval=$( ValidateConfFile )
+                if [[ "$retval" == "1" ]]; then
+                        echo "Conf File validated"
+                else              
+                        echo "Conf File not validated"
+                fi                     
+                ;;                                   
+        start)                                                   
+                StartPackage
+                ;;
+        stop)
+                StopPackage
+                ;;                                         
+        restart)
+                StopPackage
+                sleep 1               
+                StartPackage                                              
+                ;;                   
+        status)                            
+                if [ "$(ps | grep vShowWatch | grep -vc grep)" -gt "0" ]; then
+                        echo "tvShowWatch is running..."
+                        exit 0
+                fi                                
+                if [ "$(sed -n "${CRON_SED_LINE}p" $CRONFILE |wc -l)" -gt "0" ]; then
+                        echo "tvShowWatch is planned to run..."                                                      
+                        exit 0
+                fi
+                echo "tvShowWatch is not running..."
+                exit 1
+                ;;                 
+        log)                                                           
+                echo $LogFile                                             
+                exit 0
+                ;;                                  
+        *)                   
+                echo "Usage: $0 {start|stop|restart|status|log}" >&2
+                exit 1                     
+                ;;
+esac                                        
+ 
+
+
