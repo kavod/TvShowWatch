@@ -1,0 +1,6 @@
+package="TvShowWatch"
+version="0.1"
+maintainer="Kavod"
+description="TvShowWatch manage your TV Show downloads for you"
+arch="noarch"
+reloadui="no"
