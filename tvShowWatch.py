@@ -380,6 +380,12 @@ def main():
             help='action triggered by the script'
         )
     parser.add_argument(
+            "-c",
+            "--config",
+            default=CONFIG_FILE,
+            help='indicates the configuration file location. By default:'+CONFIG_FILE
+        )
+    parser.add_argument(
             "-v",
             "--verbosity",
             action="store_true",
@@ -393,7 +399,7 @@ def main():
     logging.info('SERIES started in verbosity mode')
 
     # Initialize more data
-    conffile = ConfFile(CONFIG_FILE)
+    conffile = ConfFile(args.config)
     logging.debug('Loading of conffile: %s', CONFIG_FILE)
 #    t = tvdb_api.Tvdb()
 #    logging.debug('API initiator: %s', t)
