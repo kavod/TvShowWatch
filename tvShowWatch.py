@@ -223,13 +223,14 @@ def action_run(conffile):
 
 		if serie['status'] == 30: # Torrent already active
 			confTransmission = conffile.getTransmission()
-			tc = transmissionrpc.Client(
+			if 'tc' not in locals():
+				tc = transmissionrpc.Client(
 					confTransmission['server'],
 					confTransmission['port'],
 					confTransmission['user'],
 					confTransmission['password']
 			
-			)
+				)
 
 			tor_found = False
 			for tor in tc.get_torrents(): # Check if torrent still there!
