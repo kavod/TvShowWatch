@@ -223,13 +223,14 @@ def action_run(conffile):
 
 		if serie['status'] == 30: # Torrent already active
 			confTransmission = conffile.getTransmission()
-			tc = transmissionrpc.Client(
+			if 'tc' not in locals():
+				tc = transmissionrpc.Client(
 					confTransmission['server'],
 					confTransmission['port'],
 					confTransmission['user'],
 					confTransmission['password']
 			
-			)
+				)
 
 			tor_found = False
 			for tor in tc.get_torrents(): # Check if torrent still there!
@@ -255,7 +256,8 @@ def action_run(conffile):
 									'status':	10,
 									'season':	result['next']['season'],
 									'episode':	result['next']['episode'],
-									'slot_id':	0
+									'slot_id':	0,
+									'expected':	result['next']['aired']
 									})
 					else:
 						print('It was episode final! Removing from serie list')
