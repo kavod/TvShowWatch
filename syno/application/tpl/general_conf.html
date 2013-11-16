@@ -13,12 +13,16 @@
 <div id="header2">
 	<ul class="rubs">
 		<li><a href="general_conf.php?page=home">Home</a></li>
-		<li><a href="general_conf.php?page=general_conf">General Conf</a></li>
-		<li><a href="general_conf.php?page=series_list">Series List</a></li>
+		<li{if="$page == 'config'"} class="actif"{/if}><a href="general_conf.php?page=general_conf">General Conf</a></li>
+		<li{if="$page == 'keywords'"} class="actif"{/if}><a href="general_conf.php?page=keywords">Keywords</a></li>
+		<li{if="$page == 'series'"} class="actif"{/if}><a href="general_conf.php?page=series_list">Series List</a></li>
 	</ul>
 </div>
-<div class="contenu">
 
+<div class="contenu">
+{if="isset($msg)"}
+<div class="message">{$msg}</div>
+{/if}
 {loop="form"}
 	<form method="POST" action="{$value.action}" enctype="multipart/form-data" class="myForm" onSubmit="return validateForm(this)">
 		<h1>{$value.title}</h1>
@@ -30,7 +34,7 @@
 {if="$value.type == 'text'"}
 <input type="text" name="{$value.field_id}" value="{$value.value}" />
 {elseif condition="$value.type == 'password'"}
-<input type="password" name="{$value.field_id}" />
+<input type="password" name="{$value.field_id}" value="{$value.value}" />
 {elseif condition="$value.type == 'file'"}
 <input type="file" name="{$value.field_id}" />
 {elseif condition="$value.type == 'list'"}

@@ -15,9 +15,9 @@ syno/package.tgz: syno/package.tar
 	gzip -c syno/package.tar > $@
 
 clean:
-	for i in `find . -name *.pyc`; do rm -rf $i ; done
-	for i in `find . -name *~`; do rm -rf $i ; done
-	for i in `find . -name *.xml`; do rm -rf $i ; done
+	for i in `find . -name "*.pyc"`; do rm -rf $i ; done
+	for i in `find . -name "*~"`; do rm -rf $i ; done
+#	for i in `find . -name "*.xml"`; do rm -rf $i ; done
 
 mrproper: clean
 	rm -rf $(EXEC)

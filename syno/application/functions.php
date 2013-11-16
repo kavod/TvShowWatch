@@ -1,5 +1,5 @@
 <? 
-function tracker_conf($tracker_id,$username,$password,$keywords)
+function tracker_conf($tracker_id,$username,$password)
 {
 	$config_out = "<tracker><id>";
 	$config_out .= $tracker_id;
@@ -8,12 +8,6 @@ function tracker_conf($tracker_id,$username,$password,$keywords)
 	$config_out .= "</user><password>";
 	$config_out .= $password;
 	$config_out .= "</password>";
-	if ($keywords != "")
-	{
-		$config_out .= "<keywords>";
-		$config_out .= $keywords;
-		$config_out .= "</keywords>";
-	}
 	$config_out .= "</tracker>";
 	return $config_out;
 }
@@ -36,6 +30,9 @@ function transmission_conf($server,$port,$username,$password,$slotNumber,$folder
 		$config_out .= "<folder>";
 		$config_out .= $folder;
 		$config_out .= "</folder>";
+	} else
+	{
+		$config_out .= "<folder />";
 	}
 	$config_out .= "</transmission>";
 	return $config_out;
@@ -48,7 +45,7 @@ function email_conf($server,$port,$ssltls,$username,$password,$emailSender)
 	$config_out .= "</server><port>";
 	$config_out .= $port;
 	$config_out .= "</port><ssltls>";
-	$config_out .= ($ssltls==1) ? 'True' : 'False';
+	$config_out .= ($ssltls=='1') ? 'True' : 'False';
 	$config_out .= "</ssltls>";
 	if ($username != "")
 	{
@@ -62,6 +59,19 @@ function email_conf($server,$port,$ssltls,$username,$password,$emailSender)
 	$config_out .= $emailSender;
 	$config_out .= "</emailSender>";
 	$config_out .= "</smtp>";
+	return $config_out;
+}
+
+function keywords_conf($keywords)
+{
+	$config_out = "<keywords>";
+	foreach ($keywords as $keyword)
+	{
+		$config_out .= "<keyword>";
+		$config_out .= $keyword;
+		$config_out .= "</keyword>";
+	}
+	$config_out .= "</keywords>";
 	return $config_out;
 }
 

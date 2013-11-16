@@ -248,7 +248,7 @@ def action_run(conffile):
 
 					if(confTransmission['folder'] is not None):
 						transferFile(torrent.files(),serie,confTransmission)
-						content = str_search[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
+						content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
 						sendEmail(content,serie,conffile)
 
 					result = last_aired(serie['id'])
