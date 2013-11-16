@@ -6,8 +6,9 @@ body {
 
 #header1 {
 	background-color: orange;
-	width: 990px;
+	width: 800px;
 	height: 50px;
+	margin-top: 0px; 
 }
 
 #title {
@@ -15,13 +16,13 @@ body {
 	color: green;
 	font-weight: bold;
 	margin-left: 60px;
-	margin-top: 6px;
+	margin-top: 0px;
 	padding: 8px;
 }
 
 #header2 {
 	background-color:green;
-	width: 900px;
+	width: 800px;
 	height: 30px;
 }
 
@@ -30,6 +31,17 @@ body {
 	font-size: 16px;
 	color: green;
 	margin: 0;
+}
+
+
+.rubs .actif {
+	border-bottom: 1px solid white;
+	background-color: white;
+	color: green;
+}
+
+.rubs .actif a {
+	color: green;
 }
 
 a {
@@ -42,12 +54,6 @@ a {
 a:hover {
 	background: white;
 	color: #ff9900;
-}
-
-.actif {
-	border-bottom: 1px solid white;
-	background-color: white;
-	padding: 4px;
 }
 
 /*.rubs a {
@@ -67,8 +73,8 @@ a:hover {
 }
 
 .contenu {
-	margin-left: 200px;
-	width: 700px;
+	margin-left: 50px;
+	width: 650px;
 }
 
 .mandatory {
@@ -95,3 +101,14 @@ a:hover {
 	width: 250px;
 	display: inline-block;
 }
+
+.message {	
+	margin-left: auto;
+	margin-right: auto;
+	width: 400px;
+	border: 3px solid orange;
+	background-color: #fafad2;
+	text-align:center;
+	font-size: 18px;
+}
+
