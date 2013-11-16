@@ -13,7 +13,7 @@ from tracker import *
 from MyFile import *
 
 CONFIG_FILE = sys.path[0] + 'config.xml' if sys.path[0] != '' else 'config.xml'
-CONFIG_VERSION = '1.7'
+CONFIG_VERSION = '1.8'
 
 TORRENT_STATUS = {
 			10: 'Waiting Broadcast',
@@ -64,6 +64,7 @@ class ConfFile(MyFile):
 		tracker_conf = self.confTracker()
 		tc_conf = self.confTransmission()
 		email_conf = self.confEmail()
+		self.changeKeywords()
 
 
 		# Transmission conf
@@ -201,16 +202,32 @@ class ConfFile(MyFile):
 
 	def getTracker(self):
 		conf = self.tree.getroot().find('tracker')
-		if conf.find('keywords') is not None:
+		"""if conf.find('keywords') is not None:
 			keywords = conf.find('keywords').text 
 		else:
-			keywords = '' 
+			keywords = '' """
 		return {
 			'id':		conf.find('id').text,
 			'user':		conf.find('user').text,
-			'password':	conf.find('password').text,
-			'keywords':	keywords
+			'password':	conf.find('password').text
+			#,'keywords':	keywords
 			}
+
+	def changeKeywords(self):
+		keywords = promptList('Enter your keywords [keep blank to save]:')
+		conf = self.tree.getroot().find('keywords')
+		for keywordNode in conf.findall('keyword'):
+			conf.remove(keywordNode)
+		for keyword in keywords:
+			keywordNode = ET.SubElement(conf, "keyword")
+			keywordNode.text = str(keyword)
+
+	def getKeywords(self):
+		conf = self.tree.getroot()
+		keywords_list = []
+		for keyword in conf.find('keywords').findall('keyword'):
+			keywords_list.append(keyword.text)
+		return keywords_list
 
 	def getTransmission(self):
 		transmission = self.tree.getroot().find('transmission')
@@ -246,8 +263,6 @@ class ConfFile(MyFile):
 	def select_tracker_password(self):
 		return promptPass('Enter your password:')
 
-	def select_tracker_keywords(self):
-		return promptSimple('Enter your default keywords:')
 
 	def select_transmission_server(self):
 		return promptSimple('Enter your Transmission server:','localhost')

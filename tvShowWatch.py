@@ -15,7 +15,7 @@ import smtplib
 import unicodedata
 from myDate import *
 from types import *
-from Prompt import *
+import Prompt
 from ConfFile import ConfFile
 from serieList import SerieList
 from tracker import *
@@ -133,7 +133,6 @@ def add_torrent(result, tracker,confTransmission):
 		print("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
 		torrents = tc.stop_torrent(torrent.id)
 		torrents = tc.get_torrents()
-		print(torrents)
 	
 	new_torrent = tc.add_torrent('file://file.torrent')
 	os.remove('file.torrent')
@@ -145,19 +144,19 @@ def input_serie():
 	logging.debug('API initiator: %s', t)
 	result = []
 	while len(result) < 1:
-		serie = promptSimple("Please type your TV Show ")
+		serie = Prompt.promptSimple("Please type your TV Show ")
 		serie = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(serie, 'utf-8')) if unicodedata.category(c) != 'Mn'))
 		result = t.search(serie)
 
 		if len(result) == 0:
-			print "Unknowned TV Show"
+			print("Unknowned TV Show")
 		elif len(result) > 1:
 			choices = []
 			for val in result:
 				if not 'firstaired' in val.keys():
 					val['firstaired'] = '????'
 				choices.append([val['id'],val['seriesname']+' (' + val['firstaired'][0:4] + ')'])
-			result = promptChoice("Did you mean...",choices)
+			result = Prompt.promptChoice("Did you mean...",choices)
 			result = t[result]
 
 		elif len(result) == 1:
@@ -168,7 +167,7 @@ def input_emails():
 	emails = []
 	email = 'start'
 	while email != '':
-		email = promptSimple("Enter an email [keep blank to finish]")
+		email = Prompt.promptSimple("Enter an email [keep blank to finish]")
 		if email != '' and not re.match(r'[^@]+@[^@]+\.[^@]+',email):
 			print('Incorrect format')
 		elif re.match(r'[^@]+@[^@]+\.[^@]+',email):
@@ -177,19 +176,19 @@ def input_emails():
 
 def last_or_next(serie):
 	if (serie['last']['season'] == 0):
-		if promptYN("Last season not yet started. Do you want to schedule the Season pilot on " + print_date(serie['next']['aired']),'y'):
+		if Prompt.promptYN("Last season not yet started. Do you want to schedule the Season pilot on " + print_date(serie['next']['aired']),'y'):
 			return serie['next']
 		else:
 			sys.exit()
 	elif (serie['next']['season'] == 0):
-		if promptYN("Last season achieved. Do you want to download the Season final on " + print_date(serie['last']['aired']),'n'):
+		if Prompt.promptYN("Last season achieved. Do you want to download the Season final on " + print_date(serie['last']['aired']),'n'):
 			return serie['last']
 		else:
 			sys.exit()	
 	else:	
 		print("Next episode download scheduled on " + print_date(serie['next']['aired']))
 		str_last = 'Do you want also download the last aired : S{0:02}E{1:02} - {2} ?'
-		if promptYN(str_last.format(serie['last']['season'],serie['last']['episode'],print_date(serie['last']['aired'])),'N'):
+		if Prompt.promptYN(str_last.format(serie['last']['season'],serie['last']['episode'],print_date(serie['last']['aired'])),'N'):
 			return serie['last']
 		else:
 			return serie['next']
@@ -213,13 +212,15 @@ def action_run(conffile):
 			continue
 
 		str_search = '{0} S{1:02}E{2:02} {3}'
-		str_search = str_search.format(
+		str_search_list = []
+		for keyword in conffile.getKeywords():
+			str_search_list.append(str_search.format(
 					serie['name'],
 					int(serie['season']),
 					int(serie['episode']),
-					confTracker['keywords']
-						)
-		print(str_search + ' broadcasted on ' + print_date(serie['expected']))
+					keyword
+						))
+		print(str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']))
 
 		if serie['status'] == 30: # Torrent already active
 			confTransmission = conffile.getTransmission()
@@ -247,7 +248,7 @@ def action_run(conffile):
 
 					if(confTransmission['folder'] is not None):
 						transferFile(torrent.files(),serie,confTransmission)
-						content = str_search + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
+						content = str_search[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
 						sendEmail(content,serie,conffile)
 
 					result = last_aired(serie['id'])
@@ -269,14 +270,15 @@ def action_run(conffile):
 
 		if serie['expected'] < date.today(): # If episode broadcast is in the past
 			series.updateSerie(serie['id'],{'status':20})
-			result = tracker.search(str_search)
-			nb_result = int(result.json()['total'])
-			logging.debug(str(nb_result) + ' result(s)')
+			for search in str_search_list:
+				result = tracker.search(search)
+				nb_result = int(result.json()['total'])
+				logging.debug(str(nb_result) + ' result(s)')
 
-			if nb_result > 0: # If at least 1 relevant torrent is found
-				new_torrent = add_torrent(result.json()['torrents'], tracker,conffile.getTransmission())
-				series.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
-			else:
+				if nb_result > 0: # If at least 1 relevant torrent is found
+					new_torrent = add_torrent(result.json()['torrents'], tracker,conffile.getTransmission())
+					series.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
+			if (nb_result < 1):
 				print(" => No available torrent")
 		else:
 			print(' => Next broadcast: ' + print_date(serie['expected']))
@@ -286,9 +288,9 @@ def action_list(conffile):
 	series = SerieList(LIST_FILE)
 	if len(series.listSeries())>0:	
 		for serie in series.listSeries():
-			print serie['name']
+			print(serie['name'])
 	else:
-		print "No TV Show scheduled"
+		print("No TV Show scheduled")
 		sys.exit()
 
 def action_add(conffile):
@@ -304,7 +306,7 @@ def action_add(conffile):
 
 	next = last_or_next(serie)
 
-	if len(conffile.getEmail())>0 and promptYN('Voulez-vous rajouter des emails de notification ?'):
+	if len(conffile.getEmail())>0 and Prompt.promptYN('Voulez-vous rajouter des emails de notification ?'):
 		emails = input_emails()
 	else:
 		emails = []
@@ -329,9 +331,9 @@ def action_del(conffile):
 		for serie in series.listSeries():
 			choix.append([serie['id'],serie['name']])
 	else:
-		print "No TV Show scheduled"
+		print("No TV Show scheduled")
 		sys.exit()
-	s_id = promptChoice("Which TV Show do you want to unschedule?",choix)
+	s_id = Prompt.promptChoice("Which TV Show do you want to unschedule?",choix)
 	series.delSerie(s_id)
 
 def action_config(conffile):
@@ -340,13 +342,19 @@ def action_config(conffile):
     trackerConf = conffile.getTracker()
     transConf = conffile.getTransmission()
     smtpConf = conffile.getEmail()
-    configData = promptChoice(
+    keywordsConf = conffile.getKeywords()
+    if (keywordsConf is not None):
+	print keywordsConf
+        keywords_default = ' / '.join(keywordsConf)
+    else:
+        keywords_default = ''
+    configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
                 ['tracker_id','Tracker : '+trackerConf['id']],
                 ['tracker_user','Tracker Username : '+trackerConf['user']],
                 ['tracker_password','Tracker Password : ******'],
-                ['tracker_keywords','Tracker default keywords : '+str(trackerConf['keywords'])],
+                ['keywords','Torrent search keywords : '+keywords_default],
                 ['transmission_server','Transmission Server : ' + str(transConf['server'])],
                 ['transmission_port','Transmission Port : ' + str(transConf['port'])],
                 ['transmission_user','Transmission User : ' + str(transConf['user'])],
@@ -356,7 +364,7 @@ def action_config(conffile):
                 ['smtp','Email Notification: ' + 'Enabled' if len(smtpConf)>0 else 'Disabled']
             ])
     if configData == 'smtp':
-        configData = promptChoice(
+        configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
                 ['smtp_server','SMTP Server : ' + str(smtpConf['server'])],
@@ -366,8 +374,13 @@ def action_config(conffile):
                 ['smtp_password','SMTP Password : ******'],
                 ['smtp_emailSender','Sender Email : ' + str(smtpConf['emailSender'])]
             ])
-    conffile.change(configData)
+        conffile.change(configData)
+    elif configData == 'keywords':
+	conffile.changeKeywords()
+    else:
+        conffile.change(configData)
     conffile._save()
+
 
 def main():
 
@@ -392,12 +405,21 @@ def main():
             action="store_true",
             help='maximum output verbosity'
         )
+    parser.add_argument(
+            "--arg",
+            default='',
+            help='arguments for bash execution'
+        )
     args = parser.parse_args()
 
     # Manage verbosity level
     if args.verbosity:
         logging.basicConfig(level=logging.DEBUG)
     logging.info('SERIES started in verbosity mode')
+
+    global arg;
+    if args.arg != '':
+        Prompt.arg = args.arg.split(',')
 
     # Initialize more data
     conffile = ConfFile(args.config)
