@@ -5,6 +5,9 @@ import os
 import sys
 import getpass
 
+global arg
+arg = []
+
 C_YN = ['y','Y','n','N']
 
 def promptSimple(question,default = ''):
@@ -33,12 +36,25 @@ def promptSimple(question,default = ''):
 	str_default = ''
 	if default != '':
 		str_default = ' [' + str(default) + ']'
-	reponse = raw_input(question + str_default + "\n0 : Exit\n")
+	if (len(arg)>0):
+		reponse = arg.pop(0)
+	else:
+		reponse = raw_input(question + str_default + "\n0 : Exit\n")
 	if reponse == '':
 		reponse = str(default)
 	elif reponse == "0":
 		sys.exit()
 	return reponse
+
+
+def promptList(question):
+	result = []
+	reponse = 'start'
+	while reponse != '':
+		reponse = promptSimple(question)
+		if reponse != '':
+			result.append(reponse)
+	return result
 
 def promptPass(question):
 	"""
@@ -64,7 +80,10 @@ def promptPass(question):
 		'You got it'
 		
 	"""
-	reponse = getpass.getpass(question + "\n0 : Exit\n")
+	if (len(arg)>0):
+		reponse = arg.pop(0)
+	else:
+		reponse = getpass.getpass(question + "\n0 : Exit\n")
 	if reponse == "0":
 		sys.exit()
 	return reponse
@@ -107,7 +126,10 @@ def promptChoice(question,choix,default = 0):
 		for i,val in enumerate(choix):
 			possible.append(str(val[0]))
 			print(str(i+1) + " : " + val[1])
-		reponse = raw_input("0 : Exit\n")
+		if (len(arg)>0):
+			reponse = arg.pop(0)
+		else:
+			reponse = raw_input("0 : Exit\n")
 
 		if reponse == "0":
 			sys.exit()
@@ -148,7 +170,10 @@ def promptYN(question,default = C_YN[0]):
 	str_y = C_YN[1] if default.lower() == C_YN[0] else C_YN[0] 
 	str_n = C_YN[3] if default.lower() == C_YN[2] else C_YN[2] 
 	while True:
-		reponse = raw_input(question + " [" + str(str_y) + "/" + str(str_n) + "] ")
+		if (len(arg)>0):
+			reponse = arg.pop(0)
+		else:
+			reponse = raw_input(question + " [" + str(str_y) + "/" + str(str_n) + "] ")
 
 		reponse = str(default) if reponse == '' else reponse
 
