@@ -1,8 +1,0 @@
-<?
-include "inc/rain.tpl.class.php"; //include Rain TPL
-raintpl::$tpl_dir = "tpl/"; // template directory
-raintpl::$cache_dir = "tmp/"; // cache directory
-$tpl = new raintpl(); //include Rain TPL
-$tpl->assign( "age", "30" ); // assign variable
-$tpl->draw( "mytemplate" ); // draw the template
-?>
