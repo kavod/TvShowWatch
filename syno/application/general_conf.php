@@ -2,6 +2,9 @@
 include "inc/rain.tpl.class.php"; //include Rain TPL
 include "functions.php";
 
+define("CONF_VERSION", '1.7');
+define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
+
 raintpl::$tpl_dir = "tpl/"; // template directory
 raintpl::$cache_dir = "tmp/"; // cache directory
 
@@ -30,7 +33,7 @@ case 'series_list':
 	break;
 
 case 'save_conf':
-	define('VERSION','1.7');
+	define('VERSION',CONF_VERSION);
 
 	$format = "<conf><version>%s</version>%s%s%s</conf>";
 	$traker_conf = tracker_conf($_POST['tracker_id'],$_POST['tracker_username'],$_POST['tracker_password'],$_POST['tracker_keywords']);
@@ -38,7 +41,7 @@ case 'save_conf':
 	$email_conf = email_conf($_POST['smtp_server'],$_POST['smtp_port'],$_POST['smtp_ssltls'],$_POST['smtp_username'],$_POST['smtp_password'],$_POST['smtp_emailSender']);
 	$config_out = sprintf($format, VERSION,$traker_conf, $transmission_conf, $email_conf);
 
-	$fp = fopen('/var/packages/TvShowWatch/etc/config.xml', 'w');
+	$fp = fopen(CONF_FILE, 'w');
 	fwrite($fp, $config_out);
 	fclose($fp);
 	echo "OK";
@@ -46,9 +49,19 @@ case 'save_conf':
 
 case 'general_conf':
 default:
-	$doc = new DOMDocument();
-	$doc->load($dossier = '/var/packages/TvShowWatch/etc/series.xml');
-	$trackerVal = $doc->getElementsByTagName('tracker')->item(0);
+	if (file_exists(CONF_FILE))
+	{
+		$doc = new DOMDocument();
+		$doc->load(CONF_FILE);
+		$confVal = getArray($doc);
+	} else 
+	{
+		$confVal = Array ('conf' => Array(
+						'tracker' => Array('id'=>'','user'=>'','keywords'=>''),
+						'transmission' => Array('server'=>'','port'=>'','user'=>'','slotNumber' => 6,'folder'=>''),
+						'smtp' => Array('server','port','ssltls' => 'False','user','password','emailSender')
+							));
+	}
 	$tracker = array(
 			'title' => 'Tracker',
 			'champs' => array(
@@ -58,23 +71,28 @@ default:
 						'label'		=> 'Tracker provider',
 						'choices'	=> array(
 										array('id' => 't411', 'label' => 'T411')
-									)
+									),
+						'value'		=> $confVal['conf']['tracker']['id'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'tracker_username',
 						'type'		=> 'text',
 						'label'		=> 'Tracker username',
-						'value'		=> $trackerVal->getElementsByTagName('username')->item(0)->value
+						'value'		=> $confVal['conf']['tracker']['user'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'tracker_password',
 						'type'		=> 'password',
-						'label'		=> 'Tracker password'
+						'label'		=> 'Tracker password',
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'tracker_keywords',
 						'type'		=> 'text',
-						'label'		=> 'Default search keywords'
+						'label'		=> 'Default search keywords',
+						'value'		=> $confVal['conf']['tracker']['keywords']
 						)
 					)
 			);
@@ -89,33 +107,43 @@ default:
 					array(
 						'field_id'	=> 'trans_server',
 						'type'		=> 'text',
-						'label'		=> 'Transmission server'
+						'label'		=> 'Transmission server',
+						'value'		=> $confVal['conf']['transmission']['server'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_port',
 						'type'		=> 'text',
-						'label'		=> 'Transmission port'
+						'label'		=> 'Transmission port',
+						'value'		=> $confVal['conf']['transmission']['port'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_username',
 						'type'		=> 'text',
-						'label'		=> 'Transmission Username'
+						'label'		=> 'Transmission Username',
+						'value'		=> $confVal['conf']['transmission']['user'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_password',
 						'type'		=> 'password',
-						'label'		=> 'Transmission Password'
+						'label'		=> 'Transmission Password',
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_slotNumber',
 						'type'		=> 'list',
 						'label'		=> 'Transmission maximum slots',
-						'choices'	=> $slot_list
+						'choices'	=> $slot_list,
+						'value'		=> $confVal['conf']['transmission']['slotNumber'],
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_folder',
 						'type'		=> 'text',
-						'label'		=> 'Local Transfer directory (keep empty for disable)'
+						'label'		=> 'Local Transfer directory (keep empty for disable)',
+						'value'		=> $confVal['conf']['transmission']['folder']
 						)
 					)
 			);
@@ -130,17 +158,26 @@ default:
 						'choices'	=> array(
 										array('id' => '0', 'label' => 'No'),
 										array('id' => '1', 'label' => 'Yes'),
-									)
+									),
+						'value'		=> ($confVal['conf']['smtp']['server']=='') ? 0 : 1,
+						'mandatory'	=> true,
+						'onChange'	=> "(this.value==0)?mode = 'fieldHidden':mode = 'fieldDisplay';visiField(['smtp_server','smtp_port','smtp_ssltls','smtp_emailSender','smtp_username','smtp_password'],mode);(mode=='fieldDisplay')?document.getElementsByName('smtp_ssltls')[0].onchange():true;"
 						),
 					array(
 						'field_id'	=> 'smtp_server',
 						'type'		=> 'text',
-						'label'		=> 'SMTP server'
+						'label'		=> 'SMTP server',
+						'value'		=> $confVal['conf']['smtp']['server'],
+						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_port',
 						'type'		=> 'text',
-						'label'		=> 'SMTP server'
+						'label'		=> 'SMTP port',
+						'value'		=> $confVal['conf']['smtp']['port'],
+						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_ssltls',
@@ -149,22 +186,34 @@ default:
 						'choices'	=> array(
 										array('id' => '0', 'label' => 'No'),
 										array('id' => '1', 'label' => 'Yes'),
-									)
+									),
+						'value'		=> ($confVal['conf']['smtp']['ssltls']=='True') ? 1 : 0,
+						'onChange'	=> "(this.value==0)?mode = 'fieldHidden':mode = 'fieldDisplay';visiField(['smtp_username','smtp_password'],mode)",
+						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_username',
 						'type'		=> 'text',
-						'label'		=> 'Authentification Username'
+						'label'		=> 'Authentification Username',
+						'value'		=> $confVal['conf']['smtp']['user'],
+						'visible'	=> ($confVal['conf']['smtp']['ssltls']!='False'),
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_password',
 						'type'		=> 'password',
-						'label'		=> 'Authentification Password'
+						'label'		=> 'Authentification Password',
+						'visible'	=> ($confVal['conf']['smtp']['ssltls']!='False'),
+						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_emailSender',
 						'type'		=> 'text',
-						'label'		=> 'Sender Email'
+						'label'		=> 'Sender Email',
+						'value'		=> $confVal['conf']['smtp']['emailSender'],
+						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'mandatory'	=> true
 						)
 					)
 			);
