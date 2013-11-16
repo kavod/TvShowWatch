@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>{$title}</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="styles.css" rel="stylesheet" type="text/css" />
+<SCRIPT LANGUAGE=Javascript SRC="tpl/script.js"></SCRIPT>
+</head>
+<body>
+<div id="header1">
+	<p id="title">{$title}</p>
+</div>
+<div id="header2">
+	<ul class="rubs">
+		<li><a href="general_conf.php?page=home">Home</a></li>
+		<li><a href="general_conf.php?page=general_conf">General Conf</a></li>
+		<li><a href="general_conf.php?page=series_list">Series List</a></li>
+	</ul>
+</div>
+<div class="contenu">
+
+{loop="form"}
+	<form method="POST" action="{$value.action}" enctype="multipart/form-data" class="myForm" onSubmit="return validateForm(this)">
+		<h1>{$value.title}</h1>
+{loop="value.part"}
+		<h2>{$value.title}</h2>
+{loop="value.champs"}
+		<div class="{if="$value.visible === false"}fieldHidden{else}fieldDisplay{/if}" id="{$value.field_id}">
+			<div class="label">{$value.label}: {if="$value.mandatory == true"}<span class="mandatory"> *</span>{/if}</div><div class="champs">
+{if="$value.type == 'text'"}
+<input type="text" name="{$value.field_id}" value="{$value.value}" />
+{elseif condition="$value.type == 'password'"}
+<input type="password" name="{$value.field_id}" />
+{elseif condition="$value.type == 'file'"}
+<input type="file" name="{$value.field_id}" />
+{elseif condition="$value.type == 'list'"}
+<select name="{$value.field_id}"{if="$value.onChange != ''"} onChange="{$value.onChange}"{/if}>
+{$selected = $value.value}
+{loop="value.choices"}
+<option value="{$value.id}"{if="$value.id == $selected"} selected{/if}>{$value.label}</option>
+{/loop}
+</select>
+{/if}
+</div><br /></div>
+{/loop}
+<br />
+{/loop}
+
+		<input type="submit" name="envoyer" value="Submit">
+	</form>
+{/loop}
+</div>
+</body>
+</html>
