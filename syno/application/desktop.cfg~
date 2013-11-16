@@ -1,0 +1,6 @@
+text = TvShowWatch
+description = The TvShowWatch package1
+path = /webman/3rdparty/TvShowWatch/index.php
+icon = images/desk_monspk.png
+icon_alt = images/desk_monspk_alt.png
+adminonly = true
