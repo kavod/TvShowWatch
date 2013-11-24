@@ -44,14 +44,14 @@ body {
 	color: green;
 }
 
-a {
+.rubs a {
 	display: block;
 	color: white;
 	text-decoration: none;
 	padding: 4px;
 }
 
-a:hover {
+.rubs a:hover {
 	background: white;
 	color: #ff9900;
 }
@@ -70,6 +70,24 @@ a:hover {
 	margin: 2px 2px 0 2px;
 	border: 1px solid black;
 	background-color: #ff9900;
+}
+
+.serielist a {
+	color: blue;
+	text-decoration: none;
+	padding: 4px;
+}
+
+.serielist a:hover {
+	background: white;
+	color: #ff9900;
+}
+
+.serielist li {
+	margin: 10px 2px 0 2px;
+	border: 0px;
+	list-style-type:none;
+	font-size: 14px;
 }
 
 .contenu {

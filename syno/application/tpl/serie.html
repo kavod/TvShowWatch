@@ -1,0 +1,11 @@
+{include="header" cache="3600"}
+<div class="contenu">
+{if="isset($msg)"}
+<div class="message">{$msg}</div>
+{/if}
+<div class="banner"><img src="{$banner}#" /></div>
+<h1>{$seriename}</h1>
+<p>{$description}</p>
+<p>{$current}</p>
+</div>
+{include="footer" cache="3600"}

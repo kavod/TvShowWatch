@@ -12,6 +12,36 @@ function tracker_conf($tracker_id,$username,$password)
 	return $config_out;
 }
 
+function tracker_api_conf($post)
+{
+	$conf_out = '{"id":"' . $post['tracker_id'] . '","user":"'.$post['tracker_username'].'"';
+	$conf_out .= ($post['tracker_password'] != 'initial') ? ',"password":"'.$post['tracker_password'] . '"' : '';
+	$conf_out .= '}';
+	return $conf_out;
+}
+
+function transmission_api_conf($post)
+{
+	$conf_out = '{"server":"' . $post['trans_server'] . '","port":'.$post['trans_port'];
+	$conf_out .= ',"user":"' . $post['trans_username'] . '"';
+	$conf_out .= ($post['trans_password'] != 'initial') ? ',"password":"'.$post['trans_password'] . '"' : '';
+	$conf_out .= ',"slotNumber":' . $post['trans_slotNumber'];
+	$conf_out .= ',"folder":"' . $post['trans_folder'] . '"';
+	$conf_out .= '}';
+	return $conf_out;
+}
+
+function email_api_conf($post)
+{
+	$conf_out = '{"server":"' . $post['smtp_server'] . '","port":'.$post['smtp_port'];
+	$conf_out .= ($post['smtp_ssltls'] == '1') ? ',"ssltls":"True"' : ',"ssltls":"False"';
+	$conf_out .= ',"user":"' . $post['smtp_username'] . '"';
+	$conf_out .= ($post['smtp_password'] != 'initial') ? ',"password":"'.$post['smtp_password'] . '"' : '';
+	$conf_out .= ',"emailSender":"' . $post['smtp_emailSender'] . '"';
+	$conf_out .= '}';
+	return $conf_out;
+}
+
 function transmission_conf($server,$port,$username,$password,$slotNumber,$folder)
 {
 	$config_out = "<transmission><server>";

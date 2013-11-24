@@ -20,7 +20,7 @@ class Tracker:
 		tracker_found = False
 		for i in TRACKER_CONF:
 			if i[0] == trackerID:
-				print("tracker : " + str(trackerID))
+				logging.info("tracker : " + str(trackerID))
 				self.trackerID = trackerID
 				tracker_found = True
 				break

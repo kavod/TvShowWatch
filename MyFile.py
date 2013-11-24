@@ -6,40 +6,71 @@ import sys
 import logging
 import xml.etree.ElementTree as ET
 from Prompt import *
+import messages
 
 FILE = sys.path[0] + '/test.xml' if sys.path[0] != '' else 'test.xml'
 FILE_VERSION = "1.0"
 
 class MyFile:
-	def __init__(self, filename = FILE, root = 'root', description = 'file'):
+	def __init__(self, root = 'root', description = 'file'):
 		self.description = description
 		self.root = root
+		self.pushOpened(False)
+
+	def openFile(self,filename = FILE,createIfNotExist=True):
 		self.filename = filename
 		if not self.testFileExists():
-			logging.info(description + " creation")
-			self._create()
+			if (createIfNotExist):
+				logging.info(self.description + " creation")
+				self.createBlankFile(filename)
+				return self._create()
+				#return {'rtn':'200','error':messages.returnCode['200']}
+			else:
+				self.pushOpened(False)
+				return {'rtn':'401','error':messages.returnCode['401'].format(self.description)}
 		else:
 			self.tree = ET.parse(self.filename)
 			if self.getVersion() != self._version():
-				if promptYN("Your {0} file version ({1}) is obsolet (<{2}). Do you want reset it?".format(description,self.getVersion(),self._version()),'N'):
-					self._create()
-				else:
-					sys.exit()
+				self.pushOpened(False)
+				return {'rtn':'402','error':messages.returnCode['402'].format(self.description,self.getVersion(),self._version())}
+			else:
+				self.pushOpened(True)
+				return {'rtn':'200','error':messages.returnCode['200']}
+	
+	def pushOpened(self,state=False):
+		self.opened = state
+		logging.info(self.description + " opened state is now " + str(self.opened))
 
-	# You MUST redifine this method with the appropriate constant
+	# You MUST redefine this method with the appropriate constant
 	def _version(self):
 		return FILE_VERSION
 
-	def _create(self):
+	def createBlankFile(self,filename = FILE):
+		self.filename = filename
 		self._create_root()
+		self.pushOpened(True)
+
+	def openedFile(self):
+		logging.info("Opened file " + str(self.filename) + " : " + str(self.opened))
+		if(self.opened):
+			return {'rtn':'200','error':messages.returnCode['200']}
+		else:
+			return {'rtn':'403','error':messages.returnCode['403'].format(self.description)}
+
+	def _create(self):
+		logging.info("Creating file " + str(self.filename))
+		#self._create_root()
 		self._save()
-		return self._create_root()
+		self.pushOpened(True)
+		return {'rtn':'200','error':messages.returnCode['200']}
+		#return self._create_root()
 
 	def _create_root(self):
 		root = ET.Element(self.root)
 		self.tree = ET.ElementTree(root)
 		version = ET.SubElement(root,'version')
 		version.text = self._version()
+		self.pushOpened(False)
 
 		return root
 
@@ -59,6 +90,7 @@ class MyFile:
 		
 	"""
 	def _save(self):
+		#ET.dump(self.tree)
 		self.tree.write(self.filename)
 		return True
 
@@ -102,8 +134,9 @@ class MyFile:
 		False
 		
 	"""
-	def reset(self):
+	def reset(self,filename = FILE):
 		if promptYN("Do you want to delete " + self.description + " ?",'N'):
+			self.createBlankFile(filename)
 			self._create()
 			print(self.description + " reseted")
 			return True
@@ -113,9 +146,10 @@ class MyFile:
 		conf = self.tree.getroot()
 		return conf.find('version').text
 
-	def change(self,configData):
+	def change(self,configData,value='None'):
 		path = configData.split('_')
-		value = getattr(self, "select_" + configData)()
+		if value == 'None':
+			value = getattr(self, "select_" + configData)()
 		conf = self.tree
 		node = conf.getroot()
 		
