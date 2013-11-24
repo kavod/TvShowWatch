@@ -6,6 +6,8 @@ import sys
 import xml.etree.ElementTree as ET
 import transmissionrpc
 import smtplib
+import logging
+from transmissionrpc.error import TransmissionError, HTTPHandlerError
 from email.mime.text import MIMEText
 from Prompt import *
 from myDate import *
@@ -36,8 +38,11 @@ class ConfFile(MyFile):
 
 		>>> f = ConfFile()		
 	"""
-	def __init__(self, filename = CONFIG_FILE):
-		MyFile.__init__(self, filename, 'conf', 'configuration')
+	def __init__(self):
+		MyFile.__init__(self, 'conf', 'configuration')
+
+	def openFile(self,filename = CONFIG_FILE):
+		return MyFile.openFile(self,filename,False)
 
 	def _version(self):
 		return CONFIG_VERSION
@@ -59,12 +64,13 @@ class ConfFile(MyFile):
 		True
 		
 	"""
-	def _create(self):
-		conf = self._create_root()
-		tracker_conf = self.confTracker()
-		tc_conf = self.confTransmission()
-		email_conf = self.confEmail()
-		self.changeKeywords()
+	def _create(self,df_tracker={},df_tc={},df_email={}): #Passage en None
+		conf = self.tree.getroot()
+		#conf = self._create_root()
+                tracker_conf = self.confTracker()
+                tc_conf = self.confTransmission()
+                email_conf = self.confEmail()
+                self.changeKeywords()
 
 
 		# Transmission conf
@@ -95,10 +101,12 @@ class ConfFile(MyFile):
 			username = self.change('tracker_user')
 			password = self.change('tracker_password')
 			
-			tracker = Tracker(tracker_id,username,password)
-			if tracker.test():
+			#tracker = Tracker(tracker_id,username,password)
+			#if tracker.test():
+			if self.testTracker()['rtn']=='200':
 				break
-			print('Invalid authentification')
+			else:
+				print('Invalid authentification')
 			
 		self._save()
 		return {
@@ -106,6 +114,18 @@ class ConfFile(MyFile):
 			'username': 	username,
 			'password':	password
 			}
+
+	def testTracker(self):
+		logging.info('testTracker')
+		trackerConf = self.getTracker()
+		if trackerConf['id'] == '' or trackerConf['user'] == '':
+			return {'rtn':'405','error':messages.returnCode['405'].format('Tracker')}
+		try:
+			tracker = Tracker(trackerConf['id'],trackerConf['user'],trackerConf['password'])
+		except Exception,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
 
 	"""
 		The ``confTransmission`` method
@@ -136,14 +156,19 @@ class ConfFile(MyFile):
 			password = self.change('transmission_password')
 			slotNumber = self.change('transmission_slotNumber')
 			self._save()
-			folder = self.select_transmission_folder()
-
-			try:
+			folder = self.change('transmission_folder')
+			#folder = self.select_transmission_folder()
+			test = self.testTransmission()
+			if (test['rtn']=='200'):
+				break
+			else:
+				print(test['error'])
+			"""try:
 				self.tc = transmissionrpc.Client(server, port, user, password)
 			except Exception as inst:
 				print('Transmission authentification failed')
 			else:
-				break
+				break"""
 
 		self._save()
 
@@ -155,6 +180,17 @@ class ConfFile(MyFile):
 			'slotNumber':	slotNumber,
 			'folder':	folder
 			}
+
+	def testTransmission(self):
+		tc = self.getTransmission()
+		if tc['server'] == '' or tc['port'] == '':
+			 return {'rtn':'405','error':messages.returnCode['405'].format('Transmission')}
+		try:
+			transmissionrpc.Client(tc['server'], tc['port'], tc['user'], tc['password'])
+		except TransmissionError,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Transmission',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
 
 	def confEmail(self):
 		if (promptYN("Do you want to activate Email notification?",'N')):
@@ -171,6 +207,7 @@ class ConfFile(MyFile):
 					password = ''
 				emailSender = self.change('smtp_emailSender')
 
+				"""
 				try:
 					msg = MIMEText('This is a test email')
 					msg['Subject'] = 'This is a test email'
@@ -185,8 +222,11 @@ class ConfFile(MyFile):
 					s.quit()
 				except Exception as inst:
 					print('SMTP email sent failed')
-				else:
+				"""
+				if (self.testEmail()['rtn']=='200'):
 					break
+				else:
+					print('Error sending test Email')
 
 			self._save()
 
@@ -200,59 +240,107 @@ class ConfFile(MyFile):
 				}
 		return {}
 
+	def testEmail(self,send=False):
+		email = self.getEmail()
+		if len(email) < 1:
+			 return {'rtn':'405','error':messages.returnCode['405'].format('Email')}
+		try:
+			msg = MIMEText('This is a test email')
+			msg['Subject'] = 'This is a test email'
+			msg['From'] = 'TvShowWatch script'
+			msg['To'] = email['emailSender']
+			s = smtplib.SMTP(email['server'],int(email['port']))
+			if email['ssltls']:
+				s.starttls() 
+			if email['user'] != '':
+				s.login(email['user'],email['password']) 
+			if send:
+				s.sendmail(email['emailSender'],email['emailSender'],msg.as_string())
+			s.quit()
+		except Exception,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('SMTP server',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
+
 	def getTracker(self):
+		logging.info('getTracker')
 		conf = self.tree.getroot().find('tracker')
 		"""if conf.find('keywords') is not None:
 			keywords = conf.find('keywords').text 
 		else:
 			keywords = '' """
-		return {
-			'id':		conf.find('id').text,
-			'user':		conf.find('user').text,
-			'password':	conf.find('password').text
-			#,'keywords':	keywords
-			}
+		if conf is not None and conf.find('id') is not None and conf.find('user') is not None and conf.find('password') is not None:
+			return {
+				'id':		conf.find('id').text,
+				'user':		conf.find('user').text,
+				'password':	conf.find('password').text
+				}
+		else:
+			return {
+				'id':		'',
+				'user':		'',
+				'password':	''
+				}
 
-	def changeKeywords(self):
-		keywords = promptList('Enter your keywords [keep blank to save]:')
-		conf = self.tree.getroot().find('keywords')
-		for keywordNode in conf.findall('keyword'):
-			conf.remove(keywordNode)
+	def changeKeywords(self,keywords=[]):
+		if len(keywords) < 1:
+			keywords = promptList('Enter your keywords [keep blank to save]:')
+		conf = self.tree.getroot()
+		if conf.find('keywords') is not None:
+			keywordsNode = conf.find('keywords')
+			for keywordNode in keywordsNode.findall('keyword'):
+				keywordsNode.remove(keywordNode)
+		else:
+			keywordsNode = ET.SubElement(conf, "keywords")
 		for keyword in keywords:
-			keywordNode = ET.SubElement(conf, "keyword")
+			keywordNode = ET.SubElement(keywordsNode, "keyword")
 			keywordNode.text = str(keyword)
 
 	def getKeywords(self):
-		conf = self.tree.getroot()
+		conf = self.tree.getroot().find('keywords')
 		keywords_list = []
-		for keyword in conf.find('keywords').findall('keyword'):
-			keywords_list.append(keyword.text)
+		if conf is not None:
+			for keyword in conf.findall('keyword'):
+				keywords_list.append(keyword.text)
 		return keywords_list
 
 	def getTransmission(self):
 		transmission = self.tree.getroot().find('transmission')
-		return {
-			'server':	transmission.find('server').text,
-			'port':		transmission.find('port').text,
-			'user':		transmission.find('user').text,
-			'password':	transmission.find('password').text,
-			'slotNumber':	transmission.find('slotNumber').text,
-			'folder':	transmission.find('folder').text
-			}
+		if (transmission is not None and (lambda x : all(transmission.find(y) is not None for y in x))(['server','port','user','password','slotNumber'])):
+			return {
+				'server':	transmission.find('server').text,
+				'port':		transmission.find('port').text,
+				'user':		transmission.find('user').text,
+				'password':	transmission.find('password').text,
+				'slotNumber':	transmission.find('slotNumber').text,
+				'folder':	transmission.find('folder').text if transmission.find('folder') is not None else ''
+				}
+		else:
+			return {
+				'server':	'',
+				'port':		'',
+				'user':		'',
+				'password':	'',
+				'slotNumber':	'',
+				'folder':	''
+				}
 
 	def getEmail(self):
 		smtp = self.tree.getroot().find('smtp')
-		if smtp is None:
-			return {}
+		if (smtp is not None and (lambda x : all(smtp.find(y) is not None for y in x))(['server','port','ssltls','emailSender'])):
+			if smtp is None:
+				return {}
+			else:
+				return {
+					'server':	smtp.find('server').text,
+					'port':		int(smtp.find('port').text),
+					'ssltls':	smtp.find('ssltls').text == 'True',
+					'user':		'' if smtp.find('user') is None else smtp.find('user').text,
+					'password':	'' if smtp.find('password') is None else smtp.find('password').text,
+					'emailSender':	smtp.find('emailSender').text
+					}
 		else:
-			return {
-				'server':	smtp.find('server').text,
-				'port':		int(smtp.find('port').text),
-				'ssltls':	smtp.find('ssltls').text == 'True',
-				'user':		'' if smtp.find('user') is None else smtp.find('user').text,
-				'password':	'' if smtp.find('password') is None else smtp.find('password').text,
-				'emailSender':	smtp.find('emailSender').text
-				}
+			return {}
 
 	def select_tracker_id(self):
 		return promptChoice("Please select your tracker:",TRACKER_CONF)

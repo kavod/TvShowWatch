@@ -8,16 +8,31 @@ LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 LIST_VERSION = "1.1"
 
 class SerieList(MyFile):
-	def __init__(self, filename = LIST_FILE):
-		MyFile.__init__(self, filename, 'series', 'Serie list')
+	def __init__(self):
+		MyFile.__init__(self, 'series', 'Serie list')
+
+	def openFile(self,filename = LIST_FILE):
+		return MyFile.openFile(self,filename,True)
+		"""self.filename = filename
+		if not self.testFileExists():
+			logging.info(self.description + " creation")
+			self._create()
+			return True
+		else:
+			self.tree = ET.parse(self.filename)
+			if self.getVersion() != self._version():
+				print("Your {0} file version ({1}) is obsolet (<{2}).".format(self.description,self.getVersion(),self._version()))
+				return False
+			else:
+				return True"""
 
 	def _version(self):
 		return LIST_VERSION
 
-	def _create(self):
+	"""def _create(self):
 		self._create_root()
 		self._save()
-		return True
+		return True"""
 
 	"""
 		The ``addSerie`` method
@@ -122,7 +137,7 @@ class SerieList(MyFile):
 		[542,5428,45758]
 		
 	"""
-	def listSeries(self):
+	def listSeries(self,json_c=False):
 		result = []
 		series = self.tree.getroot()
 		for serie in series.findall('serie'):
@@ -136,7 +151,7 @@ class SerieList(MyFile):
 				'episode': 	int(serie.find('episode').text),
 				'status': 	int(serie.find('status').text),
 				'slot_id': 	int(serie.find('slot_id').text),
-				'expected':	convert_date(serie.find('expected').text),
+				'expected':	serie.find('expected').text if json_c else convert_date(serie.find('expected').text),
 				'emails': 	emails_list
 					})
 		return result

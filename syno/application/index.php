@@ -1,16 +1,151 @@
 <?
 include "inc/rain.tpl.class.php"; //include Rain TPL
 include "functions.php";
+require_once "api/TvShowWatch.php";
+require_once 'api/settings.php';
+require_once 'api/TvDb/CurlException.php';
+require_once 'api/TvDb/Client.php';
+require_once 'api/TvDb/Serie.php';
+require_once 'api/TvDb/Banner.php';
+require_once 'api/TvDb/Episode.php';
+
+use Moinax\TvDb\Client;
 
 define("CONF_VERSION", '1.8');
 define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
+define("SERIES_FILE", '/var/packages/TvShowWatch/etc/series.xml');
+define("API_FILE", '/var/packages/TvShowWatch/target/TSW_api.py');
+define('CMD','PATH=/var/packages/python/target/bin:$PATH ; python /var/packages/TvShowWatch/target/tvShowWatch.py -c"' . CONF_FILE . '"');
 
 raintpl::$tpl_dir = "tpl/"; // template directory
 raintpl::$cache_dir = "tmp/"; // cache directory
 
+$debug = ($_GET['debug']=='1') ? '&debug=1' : '';
+
 switch($_GET['page'])
 {
+case 'serie_edit':
+	try
+	{
+		$tvdb = new Client(TVDB_URL, TVDB_API_KEY);
+
+		$serverTime = $tvdb->getServerTime();
+		// Search for a show
+		$data = $tvdb->getSerie($_GET['id']);
+
+		$tpl = new raintpl(); //include Rain TPL
+	
+		$tpl->assign( "banner", TVDB_URL . '/banners/_cache/' . $data->banner);
+		$tpl->assign( "seriename", $data->name);
+		$tpl->assign( "description", $data->overview);
+		$tpl->assign( "page", 'series');
+		$tpl->assign( "msg", $msg);
+		$tpl->draw( "serie" ); // draw the template
+		break;
+	}
+	catch (Exception $e) {
+		$tpl = new raintpl(); //include Rain TPL
+		$msg = 'TV Show unfounable';
+		$tpl->assign( "msg", $msg);
+		$tpl->assign( "page", 'series');
+		break;
+	}
+
+case 'save_serie':
+	if(isset($_FILES['serieFile']))
+	{ 
+	     if(move_uploaded_file($_FILES['serieFile']['tmp_name'], SERIES_FILE)) //Si la fonction renvoie TRUE, c'est que ça a fonctionné...
+	     {
+		  $msg =  'Upload of TvShow file completed!';
+	     }
+	     else //Sinon (la fonction renvoie FALSE).
+	     {
+		  $msg =  'Failed to upload TvShow file!';
+	     }
+	}
+
 case 'series_list':
+
+	if (file_exists(CONF_FILE))
+	{
+		if (file_exists(SERIES_FILE))
+		{
+			if (!isset($TSW))
+				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+			$conf = $TSW->getSeries();
+			if ($conf['rtn']!='200')
+				$msg = 'Error during SerieList reading: ' . $conf['error'];
+			else
+			{
+				if (isset($conf['result']))
+					$series = $conf['result'];
+				else
+					$series = array();
+			}
+		} else
+		{
+			$series = array();
+			$msg = 'No TV Show scheduled';
+		}
+	} else 
+	{
+		$tpl = new raintpl(); //include Rain TPL
+		$msg = 'Initial configuration must be done before';
+		$tpl->assign( "msg", $msg);
+		$tpl->assign( "page", 'keywords');
+		break;
+	}
+
+	$form = array(
+		'title' 	=> 'TV Shows list',
+		'action'	=> 'index.php?page=save_series'.$debug,
+		'part' 		=> array()
+		);
+
+	$serielist = array();
+	foreach ($series as $serie)
+	{
+		array_push($serielist,array(
+						'id'		=> $serie['id'],
+						'seriename'	=> $serie['name']
+					));
+		$serie = array(
+			'title' => $serie['name'],
+			'champs' => array(
+					array(
+						'field_id'	=> 'serie_id'.$i,
+						'type'		=> 'text',
+						'label'		=> 'ID',
+						'value'		=> $serie['id'],
+						'mandatory'	=> true,
+						'visible'	=> false,
+					),
+					array(
+						'field_id'	=> 'season'.$i,
+						'type'		=> 'text',
+						'label'		=> 'Season',
+						'value'		=> $serie['season'],
+						'mandatory'	=> true
+					),
+					array(
+						'field_id'	=> 'episode'.$i,
+						'type'		=> 'text',
+						'label'		=> 'Episode',
+						'value'		=> $serie['episode'],
+						'mandatory'	=> true
+					),
+					array(
+						'field_id'	=> 'expected'.$i,
+						'type'		=> 'text',
+						'label'		=> 'Expected on ',
+						'value'		=> $serie['expected'],
+						'mandatory'	=> true
+					),
+				)
+			);
+		array_push($form['part'],$serie);
+	}
+
 	$serieFile = array(
 		'title' => 'Import Series file',
 		'champs' => array(
@@ -21,45 +156,70 @@ case 'series_list':
 					)
 				)
 		);
-	$form = array(
+	$form_import = array(
 		'title' 	=> 'Importation',
-		'action'	=> 'index.php?page=save_serieFile',
+		'action'	=> 'index.php?page=save_serie'.$debug,
 		'part' 		=> array($serieFile)
 		);
 
 	$tpl = new raintpl(); //include Rain TPL
-	$tpl->assign( "form", array($form));
-	$tpl->assign( "page", 'series');
 
+	$tpl->assign( "serieList", array('title'=>'TV Shows list','list'=>$serielist));
+	$tpl->assign( "form", array($form,$form_import));
+	$tpl->assign( "page", 'series');
+	$tpl->assign( "msg", $msg);
+	$tpl->draw( "general_conf" ); // draw the template
 	break;
 
 case 'save_keywords':
-	$cmd = 'PATH=/var/packages/python/target/bin:$PATH ; python /volume1/homes/boris/series/tvShowWatch.py -c"' . CONF_FILE . '"';
-	if (file_exists(CONF_FILE))
-	{
-		$doc = new DOMDocument();
-		$doc->load(CONF_FILE);
-		$confVal = getArray($doc);
-	} else die('configuration file unfounable');
-
+	$result = '{"keywords":[';
 	$keywords = array();	
 	for ($i=0;$_POST['keywords_'.$i]!='';$i++)
-		$keywords[] = $_POST['keywords_'.$i];
+		$result .= '"' . str_replace('"','\"',$_POST['keywords_'.$i]) . '",';
 	if ($_POST['keywords_new'] != '')
-		$keywords[] = $_POST['keywords_new'];
-	$arg = implode(",",$keywords);
-	$cmd =  $cmd . ' --action config --arg ' . escapeshellarg('4,' . $arg . ',') . ' >> /tmp/log_tsw 2>&1';
-	exec("echo ".  escapeshellarg($cmd) . ">/tmp/log_tsw 2>&1");                                                             
-        exec($cmd);
-	$msg = 'The keywords have been saved';
+		$result .= '"' . str_replace('"','\"',$_POST['keywords_new']) . '",';
+
+	if ($_POST['keywords_0']!='' or $_POST['keywords_new'] != '')
+		$result = substr($result,0,-1);
+	$result .= ']}';
+
+	if (!isset($TSW))
+		$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$TSW->auth();
+
+	if (file_exists(CONF_FILE))
+	{
+		$conf = $TSW->setConf($result);
+		if ($conf['rtn']=='200')
+			$msg = 'Keywords saved';
+		else
+			$msg = 'Error during keywords save: ' . $conf['error'];
+	} else
+	{
+		$tpl = new raintpl(); //include Rain TPL
+		$msg = 'Initial configuration must be done before';
+		$tpl->assign( "msg", $msg);
+		$tpl->assign( "page", 'keywords');
+		break;
+	}
 
 case 'keywords':
 
 	if (file_exists(CONF_FILE))
 	{
-		$doc = new DOMDocument();
-		$doc->load(CONF_FILE);
-		$confVal = $doc->getElementsByTagName('keywords');
+		if (!isset($TSW))
+			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+		$conf = $TSW->auth();
+		$conf = $TSW->getConf();
+		if ($conf['rtn']!='200')
+			$msg = 'Error during configuration reading: ' . $conf['error'];
+		else
+		{
+			if (isset($conf['result']) && isset($conf['result']['keywords']))
+				$keywords = $conf['result']['keywords'];
+			else
+				$keywords = array();
+		}
 	} else 
 	{
 		$tpl = new raintpl(); //include Rain TPL
@@ -71,15 +231,6 @@ case 'keywords':
 	$keywords_form = array(
 			'title' => 'Keywords',
 			'champs' => array());
-	
-	$keywords = array();
-	foreach ($confVal->item(0)->getElementsByTagName('keyword') as $childNode) 
-	{
-		if ($childNode->nodeType != XML_TEXT_NODE) 
-		{ 
-		    $keywords[] = $childNode->firstChild->nodeValue; 
-		}
-	} 
 
 	for ($i=0;$i<count($keywords);$i++)
 	{
@@ -100,7 +251,7 @@ case 'keywords':
 	array_push($keywords_form['champs'],$new_keywords);
 	$form = array(
 		'title' 	=> 'Keywords configuration',
-		'action'	=> 'index.php?page=save_keywords',
+		'action'	=> 'index.php?page=save_keywords'.$debug,
 		'part' 		=> array()
 		);
 	array_push($form['part'],$keywords_form);
@@ -108,61 +259,54 @@ case 'keywords':
 	$tpl->assign( "form", array($form));
 	$tpl->assign( "page", 'keywords');
 	$tpl->assign( "msg", $msg);
+	$tpl->draw( "general_conf" ); // draw the template
 	break;
 
 case 'save_conf':
+	$result = '{"tracker":' . tracker_api_conf($_POST);
+	$result .= ',"transmission":' . transmission_api_conf($_POST);
+	$result .= ',"smtp":' . email_api_conf($_POST).'}';
+
+	if (!isset($TSW))
+		$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$TSW->auth();
+
 	if (file_exists(CONF_FILE))
 	{
-		$doc = new DOMDocument();
-		$doc->load(CONF_FILE);
-		$confVal = getArray($doc);
-		$tracker_password = ($_POST['tracker_password']=='initial') ? $confVal['conf']['tracker']['password'] : $_POST['tracker_password'];
-		$transmission_password = ($_POST['trans_password']=='initial') ? $confVal['conf']['transmission']['password'] : $_POST['trans_password'];
-		$smtp_password = ($_POST['smtp_password']=='initial') ? $confVal['conf']['smtp']['password'] : $_POST['smtp_password'];
-		$keywordsNode = $doc->getElementsByTagName('keywords');
-		$keywords = array();		
-		foreach ($keywordsNode->item(0)->getElementsByTagName('keyword') as $childNode) 
-		{
-			if ($childNode->nodeType != XML_TEXT_NODE) 
-			{ 
-			    $keywords[] = $childNode->firstChild->nodeValue; 
-			}
-		} 
-		$keywords_conf = keywords_conf($keywords);
+		$conf = $TSW->setConf($result);
+		if ($conf['rtn']=='200')
+			$msg = 'Configuration file saved';
+		else
+			$msg = 'Error during configuration save: ' . $conf['error'];
 	} else
 	{
-		$tracker_password =  $_POST['tracker_password'];
-		$transmission_password = $_POST['transmission_password'];
-		$smtp_password = $_POST['smtp_password'];
-		$keywords_conf = keywords_conf(array());
+		$conf = $TSW->createConf($result);
+		if ($conf['rtn']=='200')
+			$msg = 'Configuration file created';
+		else
+			$msg = 'Error during configuration creation: ' . $conf['error'];
 	}
-
-	$smtp_ssltls = ($_POST['smtp_ssltls'] == '1') ? '1' : '0';
-	$format = "<conf><version>%s</version>%s%s%s%s</conf>";
-	$traker_conf = tracker_conf($_POST['tracker_id'],$_POST['tracker_username'],$tracker_password);
-	$transmission_conf = transmission_conf($_POST['trans_server'],$_POST['trans_port'],$_POST['trans_username'],$transmission_password,$_POST['trans_slotNumber'],$_POST['trans_folder']);
-	$email_conf = email_conf($_POST['smtp_server'],$_POST['smtp_port'],$smtp_ssltls,$_POST['smtp_username'],$smtp_password,$_POST['smtp_emailSender']);
-	$config_out = sprintf($format, CONF_VERSION,$traker_conf, $transmission_conf, $email_conf,$keywords_conf);
-
-	$fp = fopen(CONF_FILE, 'w');
-	fwrite($fp, $config_out);
-	fclose($fp);
-	$msg = 'Configuration file saved';
 
 case 'conf':
 default:
 	if (file_exists(CONF_FILE))
 	{
-		$doc = new DOMDocument();
-		$doc->load(CONF_FILE);
-		$confVal = getArray($doc);
+		if (!isset($TSW))
+			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+		$conf = $TSW->auth();
+		$conf = $TSW->getConf();
+		if ($conf['rtn']!='200')
+			$msg = 'Error during configuration reading: ' . $conf['error'];
+		else
+			$confVal = $conf['result'];
+		
 	} else 
 	{
-		$confVal = Array ('conf' => Array(
-						'tracker' => Array('id'=>'','user'=>''),
-						'transmission' => Array('server'=>'','port'=>'','user'=>'','slotNumber' => 6,'folder'=>''),
-						'smtp' => Array('server','port','ssltls' => 'False','user','password','emailSender')
-							));
+		$confVal = Array(
+				'tracker' => Array('id'=>'','user'=>''),
+				'transmission' => Array('server'=>'','port'=>'','user'=>'','slotNumber' => 6,'folder'=>''),
+				'smtp' => Array('server','port','ssltls' => 'False','user','password','emailSender')
+					);
 	}
 	$tracker = array(
 			'title' => 'Tracker',
@@ -174,14 +318,14 @@ default:
 						'choices'	=> array(
 										array('id' => 't411', 'label' => 'T411')
 									),
-						'value'		=> $confVal['conf']['tracker']['id'],
+						'value'		=> $confVal['tracker']['id'],
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'tracker_username',
 						'type'		=> 'text',
 						'label'		=> 'Tracker username',
-						'value'		=> $confVal['conf']['tracker']['user'],
+						'value'		=> $confVal['tracker']['user'],
 						'mandatory'	=> true
 						),
 					array(
@@ -205,21 +349,21 @@ default:
 						'field_id'	=> 'trans_server',
 						'type'		=> 'text',
 						'label'		=> 'Transmission server',
-						'value'		=> $confVal['conf']['transmission']['server'],
+						'value'		=> $confVal['transmission']['server'],
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_port',
 						'type'		=> 'text',
 						'label'		=> 'Transmission port',
-						'value'		=> $confVal['conf']['transmission']['port'],
+						'value'		=> $confVal['transmission']['port'],
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_username',
 						'type'		=> 'text',
 						'label'		=> 'Transmission Username',
-						'value'		=> $confVal['conf']['transmission']['user'],
+						'value'		=> $confVal['transmission']['user'],
 						'mandatory'	=> true
 						),
 					array(
@@ -234,14 +378,14 @@ default:
 						'type'		=> 'list',
 						'label'		=> 'Transmission maximum slots',
 						'choices'	=> $slot_list,
-						'value'		=> $confVal['conf']['transmission']['slotNumber'],
+						'value'		=> $confVal['transmission']['slotNumber'],
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'trans_folder',
 						'type'		=> 'text',
 						'label'		=> 'Local Transfer directory (keep empty for disable)',
-						'value'		=> $confVal['conf']['transmission']['folder']
+						'value'		=> $confVal['transmission']['folder']
 						)
 					)
 			);
@@ -257,7 +401,7 @@ default:
 										array('id' => '0', 'label' => 'No'),
 										array('id' => '1', 'label' => 'Yes'),
 									),
-						'value'		=> ($confVal['conf']['smtp']['server']=='') ? 0 : 1,
+						'value'		=> ($confVal['smtp']['server']=='') ? 0 : 1,
 						'mandatory'	=> true,
 						'onChange'	=> "(this.value==0)?mode = 'fieldHidden':mode = 'fieldDisplay';visiField(['smtp_server','smtp_port','smtp_ssltls','smtp_emailSender','smtp_username','smtp_password'],mode);(mode=='fieldDisplay')?document.getElementsByName('smtp_ssltls')[0].onchange():true;"
 						),
@@ -265,16 +409,16 @@ default:
 						'field_id'	=> 'smtp_server',
 						'type'		=> 'text',
 						'label'		=> 'SMTP server',
-						'value'		=> $confVal['conf']['smtp']['server'],
-						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'value'		=> $confVal['smtp']['server'],
+						'visible'	=> ($confVal['smtp']['server']!=''),
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_port',
 						'type'		=> 'text',
 						'label'		=> 'SMTP port',
-						'value'		=> $confVal['conf']['smtp']['port'],
-						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'value'		=> $confVal['smtp']['port'],
+						'visible'	=> ($confVal['smtp']['server']!=''),
 						'mandatory'	=> true
 						),
 					array(
@@ -285,24 +429,24 @@ default:
 										array('id' => '0', 'label' => 'No'),
 										array('id' => '1', 'label' => 'Yes'),
 									),
-						'value'		=> ($confVal['conf']['smtp']['ssltls']=='True') ? 1 : 0,
+						'value'		=> ($confVal['smtp']['ssltls']=='True') ? 1 : 0,
 						'onChange'	=> "(this.value==0)?mode = 'fieldHidden':mode = 'fieldDisplay';visiField(['smtp_username','smtp_password'],mode)",
-						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'visible'	=> ($confVal['smtp']['server']!=''),
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_username',
 						'type'		=> 'text',
 						'label'		=> 'Authentification Username',
-						'value'		=> $confVal['conf']['smtp']['user'],
-						'visible'	=> ($confVal['conf']['smtp']['ssltls']!='False'),
+						'value'		=> $confVal['smtp']['user'],
+						'visible'	=> ($confVal['smtp']['ssltls']!='False'),
 						'mandatory'	=> true
 						),
 					array(
 						'field_id'	=> 'smtp_password',
 						'type'		=> 'password',
 						'label'		=> 'Authentification Password',
-						'visible'	=> ($confVal['conf']['smtp']['ssltls']!='False'),
+						'visible'	=> ($confVal['smtp']['ssltls']!='False'),
 						'mandatory'	=> true,
 						'value'		=> 'initial'
 						),
@@ -310,15 +454,15 @@ default:
 						'field_id'	=> 'smtp_emailSender',
 						'type'		=> 'text',
 						'label'		=> 'Sender Email',
-						'value'		=> $confVal['conf']['smtp']['emailSender'],
-						'visible'	=> ($confVal['conf']['smtp']['server']!=''),
+						'value'		=> $confVal['smtp']['emailSender'],
+						'visible'	=> ($confVal['smtp']['server']!=''),
 						'mandatory'	=> true
 						)
 					)
 			);
 	$form = array(
 		'title' 	=> 'Configuration parameters',
-		'action'	=> 'index.php?page=save_conf',
+		'action'	=> 'index.php?page=save_conf'.$debug,
 		'part' 		=> array()
 		);
 	array_push($form['part'],$tracker);
@@ -338,7 +482,7 @@ default:
 
 	$import = array(
 		'title' 	=> 'Configuration importation',
-		'action'	=> 'index.php?page=import_conf',
+		'action'	=> 'index.php?page=import_conf'.$debug,
 		'part' 		=> array($configFile)
 		);
 	
@@ -346,8 +490,8 @@ default:
 	$tpl->assign( "form", array($form,$import));
 	$tpl->assign( "page", 'config');
 	$tpl->assign( "msg", $msg);
-
+	$tpl->draw( "general_conf" ); // draw the template
 	
 }
-$tpl->draw( "general_conf" ); // draw the template
+
 ?>

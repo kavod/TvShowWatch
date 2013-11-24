@@ -14,7 +14,7 @@ import transmissionrpc
 import smtplib
 import unicodedata
 from myDate import *
-from types import *
+#from types import *
 import Prompt
 from ConfFile import ConfFile
 from serieList import SerieList
@@ -24,19 +24,24 @@ from email.mime.text import MIMEText
 
 E_MAIL = 'niouf@niouf.fr'
 PASSWORD = 'niouf'
+global t
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
 
 def last_aired(serie_id):
-	t = tvdb_api.Tvdb()
+	global t
+	if 't' not in globals():
+		t = tvdb_api.Tvdb()
+	else:#ICI
+		print "connection saved"
 	logging.debug('API initiator: %s', t)
 	result = []
 	last_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
 	next_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
 
 	#for serie_id in series:
-	if type(serie_id) is not IntType:
+	if not isinstance(serie_id,int):
 		serie_id = serie_id.find('id').text
 	serie = t[int(serie_id)]
 	# Delete of Special season
@@ -140,7 +145,11 @@ def add_torrent(result, tracker,confTransmission):
 	return new_torrent
 
 def input_serie():
-	t = tvdb_api.Tvdb()
+	global t
+	if 't' not in globals():
+		t = tvdb_api.Tvdb()
+	else:#ICI
+		print "connection saved"
 	logging.debug('API initiator: %s', t)
 	result = []
 	while len(result) < 1:
@@ -199,10 +208,12 @@ def keep_in_progress(tor):
 def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
-def action_run(conffile):
+def action_run(conffile,seriefile):
 	confTracker = conffile.getTracker()
 	tracker = Tracker(confTracker['id'],confTracker['user'],confTracker['password'])
-	series = SerieList(LIST_FILE)	
+	series = SerieList()
+	if (series.openFile(seriefile)['rtn']!='200'):
+		print('Use tvShowWatch --init in order to reset')
 
 	for serie in series.listSeries():
 		if serie['episode'] == 0: # If last episode reached
@@ -251,7 +262,9 @@ def action_run(conffile):
 						content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
 						sendEmail(content,serie,conffile)
 
+					print serie['id']
 					result = last_aired(serie['id'])
+					print result
 					if (result['next']['episode'] > 0):
 						series.updateSerie(serie['id'],{
 									'status':	10,
@@ -284,19 +297,24 @@ def action_run(conffile):
 			print(' => Next broadcast: ' + print_date(serie['expected']))
 
 
-def action_list(conffile):
-	series = SerieList(LIST_FILE)
+def action_list(conffile,seriefile):
+	series = SerieList()
+	if (series.openFile(seriefile)['rtn']!='200'):
+		print('Use tvShowWatch --init in order to reset')
+	pattern = '{0}/{1}/S{2:02}/E{3:02}/{4}/{5}'
 	if len(series.listSeries())>0:	
 		for serie in series.listSeries():
-			print(serie['name'])
+			print(pattern.format(serie['id'],serie['name'],serie['season'],serie['episode'],serie['status'],serie['expected']))
 	else:
 		print("No TV Show scheduled")
 		sys.exit()
 
-def action_add(conffile):
+def action_add(conffile,seriefile):
 
 	result = input_serie()
-	series = SerieList(LIST_FILE)
+	series = SerieList()
+	if (series.openFile(seriefile)['rtn']!='200'):
+		print('Use tvShowWatch --init in order to reset')
 
 	if series.testSerieExists(int(result.data['id'])):
 		print(u'Already scheduled TV Show')
@@ -315,18 +333,23 @@ def action_add(conffile):
 
 	print(result.data['seriesname'] + u" added")
 
-def action_reset(conffile):
+def action_reset(conffilename,seriefilename):
     '''Reset the configuration and/or the series list'''
     logging.debug('Call function action_reset()')
-    series = SerieList(LIST_FILE)
-    conffile.reset()
-    series.reset()
+    conffile = ConfFile()
+    series = SerieList()
+    #if (series.openFile(seriefile)['rtn']!='200'):
+    #    print('Use tvShowWatch --init in order to reset')
+    conffile.reset(conffilename)
+    series.reset(seriefilename)
 
-def action_del(conffile):
+def action_del(conffile,seriefile):
 	'''Delete TV show from configuration file'''
 	logging.debug('Call function action_del()')
 	choix = []
-	series = SerieList(LIST_FILE)
+	series = SerieList()
+        if (series.openFile(seriefile)['rtn']!='200'):
+		print('Use tvShowWatch --init in order to reset')
 	if len(series.listSeries())>0:	
 		for serie in series.listSeries():
 			choix.append([serie['id'],serie['name']])
@@ -336,7 +359,7 @@ def action_del(conffile):
 	s_id = Prompt.promptChoice("Which TV Show do you want to unschedule?",choix)
 	series.delSerie(s_id)
 
-def action_config(conffile):
+def action_config(conffile,seriefile):
     '''Change configuration'''
     logging.debug('Call function action_config()')
     trackerConf = conffile.getTracker()
@@ -344,10 +367,10 @@ def action_config(conffile):
     smtpConf = conffile.getEmail()
     keywordsConf = conffile.getKeywords()
     if (keywordsConf is not None):
-	print keywordsConf
         keywords_default = ' / '.join(keywordsConf)
     else:
         keywords_default = ''
+    email_activated = 'Enabled' if len(smtpConf)>0 else 'Disabled'
     configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
@@ -361,7 +384,7 @@ def action_config(conffile):
                 ['transmission_password','Transmission Password : ******'],
                 ['transmission_slotNumber','Transmission maximum slots : ' + str(transConf['slotNumber'])],
                 ['transmission_folder','Local folder : ' + str(transConf['folder'])],
-                ['smtp','Email Notification: ' + 'Enabled' if len(smtpConf)>0 else 'Disabled']
+                ['smtp','Email Notification: ' + email_activated]
             ])
     if configData == 'smtp':
         configData = Prompt.promptChoice(
@@ -381,6 +404,30 @@ def action_config(conffile):
         conffile.change(configData)
     conffile._save()
 
+def action_getconf(conffile,seriefile):
+    '''Return configuration'''
+    logging.debug('Call function action_getconf()')
+    trackerConf = conffile.getTracker()
+    transConf = conffile.getTransmission()
+    smtpConf = conffile.getEmail()
+    keywordsConf = conffile.getKeywords()
+    result = "'tracker_id':"+trackerConf['id']
+    result += "\n'tracker_user':"+trackerConf['user']
+    result += "\n'transmission_server':" + str(transConf['server'])
+    result += "\n'transmission_port':" + str(transConf['port'])
+    result += "\n'transmission_user':" + str(transConf['user'])
+    result += "\n'transmission_slotNumber':" + str(transConf['slotNumber'])
+    result += "\n'transmission_folder':" + str(transConf['folder'])
+    if len(smtpConf)>0:
+        result += "\n'smtp_server':" + str(smtpConf['server'])
+        result += "\n'smtp_port':" + str(smtpConf['port'])
+        result += "\n'smtp_ssltls':" + str(smtpConf['ssltls'])
+        result += "\n'smtp_user':" + str(smtpConf['user'])
+        result += "\n'smtp_emailSender':" + str(smtpConf['emailSender'])
+    for keyword in keywordsConf:
+        result += "\n'keywords':" + keyword
+
+    print result
 
 def main():
 
@@ -390,7 +437,7 @@ def main():
             "-a",
             "--action",
             default='run',
-            choices=['run', 'list', 'reset', 'add','config','del'],
+            choices=['run', 'list', 'init', 'add','config','getconf','del'],
             help='action triggered by the script'
         )
     parser.add_argument(
@@ -398,6 +445,12 @@ def main():
             "--config",
             default=CONFIG_FILE,
             help='indicates the configuration file location. By default:'+CONFIG_FILE
+        )
+    parser.add_argument(
+            "-s",
+            "--seriefile",
+            default=LIST_FILE,
+            help='indicates the series list file location. By default:'+LIST_FILE
         )
     parser.add_argument(
             "-v",
@@ -422,25 +475,35 @@ def main():
         Prompt.arg = args.arg.split(',')
 
     # Initialize more data
-    conffile = ConfFile(args.config)
-    logging.debug('Loading of conffile: %s', CONFIG_FILE)
-#    t = tvdb_api.Tvdb()
-#    logging.debug('API initiator: %s', t)
+    
+    
+    if args.action != 'init':
+        conffile = ConfFile()
+        logging.debug('Loading of conffile: %s', args.config)
+        opened = conffile.openFile(args.config)
+        if opened['rtn']!='200':
+            print("Please first use tvShowWatch --action init")
+            sys.exit()
+
     action_fct = {
             'list':action_list,
             'run':action_run,
             'add':action_add,
-            'reset':action_reset,
+            'init':action_reset,
             'config':action_config,
-            'del':action_del
+            'del':action_del,
+            'getconf':action_getconf
         }
 
     # Call for action
     logging.debug('Action from the parameter: %s', args.action)
+    
     fct = action_fct[args.action]
     logging.debug('Action function: %s', fct)
-
-    fct(conffile)
+    if args.action == 'init':
+        fct(args.config,args.seriefile)
+    else:
+        fct(conffile,args.seriefile)
 
 if __name__ == '__main__':
     main()
