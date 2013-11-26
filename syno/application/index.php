@@ -21,6 +21,7 @@ raintpl::$tpl_dir = "tpl/"; // template directory
 raintpl::$cache_dir = "tmp/"; // cache directory
 
 $debug = ($_GET['debug']=='1') ? '&debug=1' : '';
+$msg = (isset($_GET['msg'])) ? $_GET['msg'] : '';
 
 switch($_GET['page'])
 {
@@ -91,6 +92,15 @@ case 'serie_edit':
 		$serverTime = $tvdb->getServerTime();
 		// Search for a show
 		$data = $tvdb->getSerie($serie['id']);
+		$episodes = $tvdb->getSerieEpisodes($serie['id']);
+		$episodes = $episodes['episodes'];
+		$episodes = array_filter($episodes,'filter_series');
+		if ($episodes != null)
+		{
+			usort($episodes,'cmp_serie');
+			$next_episode = array('season'=>$episodes[0]->season,'episode'=> $episodes[0]->number);
+		} else
+			$next_episode = array('season'=>'','episode'=> '');
 	}
 	catch (Exception $e) {
 		$tpl = new raintpl(); //include Rain TPL
@@ -147,12 +157,48 @@ case 'serie_edit':
 	$tpl->assign( "label", 'Next episode scheduled');
 	$tpl->assign( "season", sprintf("%02s", $serie['season']));
 	$tpl->assign( "episode", sprintf("%02s", $serie['episode']));
+	$tpl->assign( "l_expected", 'Expected on');
 	$tpl->assign( "expected", $serie['expected']);
+        $tpl->assign( "l_status", 'Status');
+        $tpl->assign( "status", serieStatus($serie['status']));
+	$tpl->assign( "l_last", 'Retrieve next broadcast');
+	$tpl->assign( "last_s", $next_episode['season']);
+	$tpl->assign( "last_e", $next_episode['episode']);
+	$tpl->assign( "l_del", 'Unschedule TV Show download');
+        $tpl->assign( "u_del", 'index.php?page=del_serie&id='.$serie['id'].$debug);
 	$tpl->assign( "page", 'series');
 	$tpl->assign( "msg", $msg);
 	$tpl->draw( "serie" ); // draw the template
 	break;
 
+case 'del_serie':
+
+        if (file_exists(CONF_FILE))
+        {
+                if (file_exists(SERIES_FILE))
+                {
+                        if (!isset($TSW))
+                                $TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+                        $conf = $TSW->delSerie((int)$_GET['id']);
+                        if ($conf['rtn']!='200')
+                                $msg = 'Error during SerieList reading: ' . $conf['error'];
+                        else
+                        {
+				header("Location:index.php?page=series_list&msg=Deletion%20OK".$debug);
+                        }
+                } else
+                {
+                	$tpl->assign( "msg", $msg);
+                }
+        } else
+        {
+                $msg = 'Initial configuration must be done before';
+        }
+	$tpl = new raintpl(); //include Rain TPL
+        $tpl->assign( "msg", $msg);
+        $tpl->assign( "page", 'series');
+        $tpl->draw( "serie" );
+	break;
 case 'save_serie':
 	if(isset($_FILES['serieFile']))
 	{ 
@@ -195,6 +241,7 @@ case 'series_list':
 		$msg = 'Initial configuration must be done before';
 		$tpl->assign( "msg", $msg);
 		$tpl->assign( "page", 'keywords');
+		$tpl->draw( "general_conf" );
 		break;
 	}
 
@@ -356,7 +403,6 @@ case 'save_conf':
 	}
 
 case 'conf':
-default:
 	if (file_exists(CONF_FILE))
 	{
 		if (!isset($TSW))
@@ -559,6 +605,40 @@ default:
 	$tpl->assign( "page", 'config');
 	$tpl->assign( "msg", $msg);
 	$tpl->draw( "general_conf" ); // draw the template
+default:
+        if (file_exists(CONF_FILE))
+        {
+                if (!isset($TSW))
+                        $TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+                $conf = $TSW->auth();
+                $conf = $TSW->getConf();
+                if ($conf['rtn']!='200')
+		{
+                        $conf = '<span class="mandatory">Fail</span>';
+			$run = 'Not configured';
+                }
+		else
+		{
+			$run = $TSW->testRunning();
+                        $conf = '<span class="OK">OK</span>';
+			if ($_GET['action'] == 'run')
+				$TSW->run();
+		}
+
+        }
+	$tpl = new raintpl(); //include Rain TPL
+        $tpl->assign( "conf_status", $conf);
+	$tpl->assign( "welcome", 'Welcome on TvShowWatch');
+        $tpl->assign( "l_conf_status", 'Configuration status');
+        $tpl->assign( "run_status", $run);
+        $tpl->assign( "l_run_status", 'Run status');
+        $tpl->assign( "run_now", 'Run');
+        $tpl->assign( "l_run_now", 'Run now');
+        $tpl->assign( "l_log", 'Last logs');
+	$tpl->assign( "log_page", 'log.php');
+	$tpl->assign( "page", 'home');
+	$tpl->assign( "msg", $msg);
+        $tpl->draw( "home" ); // draw the template
 	
 }
 

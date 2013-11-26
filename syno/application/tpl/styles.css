@@ -96,13 +96,21 @@ body {
 }
 
 .mandatory {
+	font-weight: bold;
 	color:red;
 }
+
+.OK {
+	font-weight: bold;
+        color:green;
+}
+
 .myForm {
 
 }
 
 .label {
+	height: 26px;
 	width: 200px;
 	display: inline-block;
 }
@@ -116,6 +124,7 @@ body {
 }
 
 .champs {
+	height: 26px;
 	width: 250px;
 	display: inline-block;
 }
@@ -132,5 +141,10 @@ body {
 
 .episode {
 	width:20px;
+}
+
+.log {
+	width: 700px;
+	height: 300px;
 }
 

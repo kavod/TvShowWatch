@@ -1,12 +1,14 @@
 #!/bin/sh
-
-
-PATH=/var/packages/python/target/bin:$PATH
+PATH_PYTHON=/var/packages/python/target/bin
+PATH=$PATH_PYTHON:$PATH
 CRONFILE=/etc/crontab
 TMPFILE=/tmp/crontab
 LogFile=/var/log/serie.log
-CRONLINE="21\t*\t*\t*\t*\troot\tpython /var/packages/TvShowWatch/target/tvShowWatch.py -c\"/var/packages/TvShowWatch/etc/config.xml\">>$LogFile"
-CRON_SED_LINE='/^[0-9][0-9]\t\*\t\*\t\*\t\*\t[a-z]\{1,\}\tpython \/var\/packages\/TvShowWatch\/target\/tvShowWatch\.py -c\"\/var\/packages\/TvShowWatch\/etc\/config\.xml\">>\/var\/log\/serie\.log$/'
+MINUTE="21"
+CRONLINE="\t*\t*\t*\t*\troot\t$PATH_PYTHON/python /var/packages/TvShowWatch/target/TSW_api.py -s\"/var/packages/TvShowWatch/etc/config.xml\" -c\"/var/packages/TvShowWatch/etc/config.xml\""
+CRONLINE="$CRONLINE --action run>>$LogFile"
+CRON_SED_LINE='/^[0-9]\{1,2\}'$(echo $CRONLINE | sed -e 's/[]/()$*.^|[]/\\&/g')'$/'
+#CRON_SED_LINE='/^[0-9][0-9]\t\*\t\*\t\*\t\*\t[a-z]\{1,\}\tpython \/var\/packages\/TvShowWatch\/target\/TSW_api\.py -s\"\/var\/packages\/TvShowWatch\/etc\/series\.xml\" -c\"\/var\/packages\/TvShowWatch\/etc\/config\.xml\">>\/var\/log\/serie\.log$/'
 
 ValidateConfFile() {
         retval=""
@@ -38,7 +40,7 @@ StartPackage () {
         # Start Package
         echo "Starting TvShowWatch..."
 #       python /var/packages/TvShowWatch/target/tvShowWatch.py >> $LogFile
-        echo -e $CRONLINE >>$CRONFILE
+        echo -e ${MINUTE}$CRONLINE >>$CRONFILE
         /usr/syno/etc/rc.d/S04crond.sh stop
         sleep 1
         /usr/syno/etc/rc.d/S04crond.sh start
@@ -51,9 +53,9 @@ StartPackage () {
 
 StopPackage () {
         # Unink desktop redirection
-        if [ -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
-                        rm "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
-        fi
+        #if [ -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
+        #                rm "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
+        #fi
         sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
         mv $TMPFILE $CRONFILE
         sleep 1
@@ -85,7 +87,7 @@ case $1 in
                 StartPackage                                              
                 ;;                   
         status)                            
-                if [ "$(ps | grep vShowWatch | grep -vc grep)" -gt "0" ]; then
+                if [ "$(ps | grep "TSW_api" | grep -vc grep)" -gt "0" ]; then
                         echo "tvShowWatch is running..."
                         exit 0
                 fi                                

@@ -5,8 +5,10 @@ import os
 import sys
 import tvdb_api
 import logging
-from datetime import date
 import transmissionrpc
+import smtplib
+from email.mime.text import MIMEText
+from datetime import date
 from tracker import *
 from myDate import *
 from ConfFile import ConfFile

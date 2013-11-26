@@ -3,6 +3,7 @@ define("PY_FILE", '/var/packages/TvShowWatch/target/TSW_api.py');
 define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
 define("LIST_FILE", '/var/packages/TvShowWatch/etc/series.xml');
 define("PYTHON_EXEC", '/var/packages/python/target/bin/python');
+define("LOGFILE", '/var/log/TSW.log');
 
 class TvShowWatch
 {
@@ -108,8 +109,9 @@ class TvShowWatch
 		{
 			$cmd.='"' . $key . '":"' . $value . '",';
 		}
-		if (count($param)>0)
-			$cmd = substr($cmd,0,-1);
+		$cmd .= '"status":10';
+		/*if (count($param)>0)
+			$cmd = substr($cmd,0,-1);*/
 		$cmd .= "}}'";
 		exec($cmd,$result);
 		if ($this->debug)
@@ -118,6 +120,42 @@ class TvShowWatch
 			print_r($result);
 		}
 		return json_decode($result[0],true);
+	}
+
+        function delSerie($id)
+        {
+                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action del --arg '{\"id\":" . $id . "}'";
+                exec($cmd,$result);
+                if ($this->debug)
+                {
+                        echo $cmd.'<br />';
+                        print_r($result);
+                }
+                return json_decode($result[0],true);
+        }
+
+	
+	function testRunning()
+	{
+		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status';
+		exec($cmd,$result);
+		if ($this->debug)
+                {
+                        echo $cmd.'<br />';
+                        print_r($result);
+                }
+		return str_replace('tvShowWatch is ','',$result[0]);
+	}
+
+	function run()
+	{
+		$cmd = "date >> " . LOGFILE . ";".PYTHON_EXEC . " " . $this->cmd." --action run >>".LOGFILE." 2>&1 &";
+		exec($cmd,$result);
+		if ($this->debug)
+                {
+                        echo $cmd.'<br />';
+                }
+		return true;
 	}
 }
 
