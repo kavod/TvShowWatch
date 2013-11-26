@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -83,7 +83,7 @@ def main():
 		sys.exit()
 
 	if args.action == 'run':
-		print(json.dumps(m.run()))
+		m.run()
 		sys.exit()
 
 	if args.action == 'list':
@@ -94,6 +94,12 @@ def main():
 		if 'emails' not in arg.keys():
 			arg['emails'] = []
 		print(json.dumps(m.addSeries(arg['id'],arg['emails'])))
+		sys.exit()
+
+	if args.action == 'update':
+		if 'param' not in arg.keys():
+			arg['param'] = {}
+		print(json.dumps(m.setSerie(arg['id'],arg['param'],json_c=True)))
 		sys.exit()
 
 	if args.action == 'config':
@@ -113,7 +119,7 @@ def main():
 		sys.exit()
 
 	if args.action == 'del':
-		print(json.dumps(m.delSeries(arg['id'])))
+		print(json.dumps(m.delSerie(arg['id'])))
 		sys.exit()
 
 	print(json.dumps({'rtn':'400','error':messages.returnCode['400'].format(args.action)}))

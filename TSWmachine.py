@@ -222,6 +222,38 @@ class TSWmachine:
 		else:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
+	def setSerie(self,s_id,param={},json_c=False):
+		logging.info('getSerie ')
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		if not all(y in ['season','episode','expected','status'] for y in param.keys()):
+			return {'rtn':'400','error':messages.returnCode['400'].format(str(param.keys()))}
+		liste = self.seriefile.listSeries(json_c)
+		if len(liste)>0:
+			if isinstance(s_id,int) or (isinstance(s_id,str) and s_id.isdigit()):
+				result = [x for x in liste if x['id'] == int(s_id)]
+				if len(result)>0:
+					if (self.seriefile.updateSerie(result[0]['id'],param)):
+						return {'rtn':'200','error':messages.returnCode['200']}
+					else:
+						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
+				else:
+					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
+			elif isinstance(s_id,str):
+				result = [x for x in liste if x['name'] == s_id]
+				if len(result)>0:
+					if (self.seriefile.updateSerie(result[0]['id'],param)):
+						return {'rtn':'200','error':messages.returnCode['200']}
+					else:
+						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
+				else:
+					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
+			else:
+				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
+		else:
+			return {'rtn':'300','error:':messages.returnCode['300']}
+
 	def delSerie(self,s_id):
 		logging.info('delSerie ')
 		opened = self.openedFiles()
@@ -250,7 +282,7 @@ class TSWmachine:
 			else:
 				s_ids = [x['id'] for x in series['result']]
 		if isinstance(s_ids,int):
-			return self.addSerie(s_ids,emails)
+			return self.delSerie(s_ids)
 		elif isinstance(s_ids,list):
 			result = []
 			for s_id in s_ids:

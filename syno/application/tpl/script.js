@@ -24,4 +24,11 @@ function validateForm(form)
 		}
 	}
 }
+
+function set_last(eleSeason,eleEpisode,valSeason,valEpisode)
+{
+	eleSeason.value=valSeason;
+	eleEpisode.value=valEpisode;
+	return false;
+}
 // -->

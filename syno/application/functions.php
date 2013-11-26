@@ -1,7 +1,35 @@
 <? 
 function cmp($a, $b)
 {
-    return strcmp($a["name"], $b["name"]);
+    return strcmp($a["seriename"], $b["seriename"]);
+}
+
+function cmp_serie($a, $b)
+{
+    return ($a->firstAired < $b->firstAired) ? -1 : 1;
+}
+
+function filter_series($a)
+{
+	$today = getdate();
+	if ($a->firstAired == null)
+		return false;
+	return ($a->firstAired->getTimestamp() > mktime(12,0,0,$today['mon'],$today['mday']+1));
+}
+
+function serieStatus($status_id)
+{
+	switch($status_id)
+	{
+		case '10':
+			return 'Waiting for broadcast';
+		case '20':
+			return 'Waiting for torrent availability';
+		case '30':
+			return 'Download in progress';
+		default:
+			return 'Unknown status';
+	}
 }
 
 function tracker_conf($tracker_id,$username,$password)
