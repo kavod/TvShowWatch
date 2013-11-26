@@ -3,9 +3,12 @@
 {if="isset($msg)"}
 <div class="message">{$msg}</div>
 {/if}
-<div class="banner"><img src="{$banner}#" /></div>
 <h1>{$seriename}</h1>
+<div class="banner"><img src="{$banner}#" /></div>
 <p>{$description}</p>
-<p>{$current}</p>
-</div>
+<form method="POST" action="{$action}" enctype="multipart/form-data" class="myForm" onSubmit="return validateForm(this)">
+	<div class="label">{$label}:</div>
+	<div class="champs">S<input type="text" name="season" value="{$season}" class="episode" />E<input type="text" name="episode" value="{$episode}" class="episode" /><input type="submit" name="envoyer" value="Change" /> {$expected}</div>
+	
+</form>
 {include="footer" cache="3600"}
