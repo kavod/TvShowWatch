@@ -1,4 +1,9 @@
 <? 
+function cmp($a, $b)
+{
+    return strcmp($a["name"], $b["name"]);
+}
+
 function tracker_conf($tracker_id,$username,$password)
 {
 	$config_out = "<tracker><id>";

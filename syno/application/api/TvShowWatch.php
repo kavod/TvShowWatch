@@ -100,6 +100,25 @@ class TvShowWatch
 		}
 		return json_decode($result[0],true);
 	}
+
+	function setSerie($id,$param)
+	{
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action update --arg '{\"id\":" . $id . ",\"param\":{";
+		foreach($param as $key => $value)
+		{
+			$cmd.='"' . $key . '":"' . $value . '",';
+		}
+		if (count($param)>0)
+			$cmd = substr($cmd,0,-1);
+		$cmd .= "}}'";
+		exec($cmd,$result);
+		if ($this->debug)
+		{
+			echo $cmd.'<br />';
+			print_r($result);
+		}
+		return json_decode($result[0],true);
+	}
 }
 
 ?>

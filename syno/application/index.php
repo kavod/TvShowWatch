@@ -25,23 +25,72 @@ $debug = ($_GET['debug']=='1') ? '&debug=1' : '';
 switch($_GET['page'])
 {
 case 'serie_edit':
+	if (file_exists(CONF_FILE))
+	{
+		if (file_exists(SERIES_FILE))
+		{
+			if (!isset($TSW))
+				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+			$conf = $TSW->getSeries();
+			if ($conf['rtn']!='200')
+				$msg = 'Error during SerieList reading: ' . $conf['error'];
+			else
+			{
+				if (isset($conf['result']))
+				{
+					$found = false;
+					foreach($conf['result'] as $serie)
+					{
+						if ($serie['id'] == $_GET['id'])
+						{
+							$found = true;
+							break;
+						}
+					}
+					if (!$found)
+					{
+						$tpl = new raintpl(); //include Rain TPL
+						$msg = 'TV Show not scheduled';
+						$tpl->assign( "msg", $msg);
+						$tpl->assign( "page", 'series');
+						$tpl->draw( "serie" ); // draw the template
+						break;
+					}
+				} 
+				else
+				{
+					$tpl = new raintpl(); //include Rain TPL
+					$msg = 'Error while reading TV Show schedule';
+					$tpl->assign( "msg", $msg);
+					$tpl->assign( "page", 'series');
+					$tpl->draw( "serie" ); // draw the template
+					break;
+				}
+			}
+		} else
+		{
+			$tpl = new raintpl(); //include Rain TPL
+			$msg = 'No TV Show scheduled';
+			$tpl->assign( "msg", $msg);
+			$tpl->assign( "page", 'series');
+			$tpl->draw( "serie" ); // draw the template
+			break;
+		}
+	} else 
+	{
+		$tpl = new raintpl(); //include Rain TPL
+		$msg = 'Initial configuration must be done before';
+		$tpl->assign( "msg", $msg);
+		$tpl->assign( "page", 'series');
+		$tpl->draw( "serie" ); // draw the template
+		break;
+	}
 	try
 	{
 		$tvdb = new Client(TVDB_URL, TVDB_API_KEY);
-
 		$serverTime = $tvdb->getServerTime();
 		// Search for a show
-		$data = $tvdb->getSerie($_GET['id']);
-
-		$tpl = new raintpl(); //include Rain TPL
-	
-		$tpl->assign( "banner", TVDB_URL . '/banners/_cache/' . $data->banner);
-		$tpl->assign( "seriename", $data->name);
-		$tpl->assign( "description", $data->overview);
-		$tpl->assign( "page", 'series');
-		$tpl->assign( "msg", $msg);
-		$tpl->draw( "serie" ); // draw the template
-		break;
+		$data = $tvdb->getSerie($serie['id']);
 	}
 	catch (Exception $e) {
 		$tpl = new raintpl(); //include Rain TPL
@@ -50,6 +99,59 @@ case 'serie_edit':
 		$tpl->assign( "page", 'series');
 		break;
 	}
+	if (isset($_POST['season']) or isset($_POST['episode']))
+	{
+		if ((int)$_POST['season'] * (int)$_POST['episode'] != 0)
+		{
+			try
+			{
+				$episode = $tvdb->getEpisode($serie['id'], (int)$_POST['season'], (int)$_POST['episode'], 'en');
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+				$update = $TSW->setSerie($serie['id'],array('season'=>(int)$_POST['season'],'episode'=>(int)$_POST['episode'],'expected'=>$episode->firstAired->format('Y-m-d')));
+				if ($update['rtn'] != '200')
+					$msg = 'Error during TV Show update<br />'.$update['error'];
+				else
+				{
+					$conf = $TSW->getSeries();
+					$found = false;
+					foreach($conf['result'] as $serie)
+					{
+						if ($serie['id'] == $_GET['id'])
+						{
+							$found = true;
+							break;
+						}
+					}
+					$msg = 'TV Show updated';
+				}
+			}
+			catch (Exception $e)
+			{
+				$msg = 'Episode S' . sprintf("%02s", $_POST['season']) . 'E'. sprintf("%02s", $_POST['episode']) . ' does not exist';
+			}
+
+		} else
+		{
+			$msg='You must indicate both of Season and Episode numbers';
+		}
+	}
+
+
+	$tpl = new raintpl(); //include Rain TPL
+
+	$tpl->assign( "banner", TVDB_URL . '/banners/_cache/' . $data->banner);
+	$tpl->assign( "seriename", $data->name);
+	$tpl->assign( "description", $data->overview);
+	$tpl->assign( "action", 'index.php?page=serie_edit&id='.$serie['id'].$debug);
+	$tpl->assign( "label", 'Next episode scheduled');
+	$tpl->assign( "season", sprintf("%02s", $serie['season']));
+	$tpl->assign( "episode", sprintf("%02s", $serie['episode']));
+	$tpl->assign( "expected", $serie['expected']);
+	$tpl->assign( "page", 'series');
+	$tpl->assign( "msg", $msg);
+	$tpl->draw( "serie" ); // draw the template
+	break;
 
 case 'save_serie':
 	if(isset($_FILES['serieFile']))
@@ -109,42 +211,8 @@ case 'series_list':
 						'id'		=> $serie['id'],
 						'seriename'	=> $serie['name']
 					));
-		$serie = array(
-			'title' => $serie['name'],
-			'champs' => array(
-					array(
-						'field_id'	=> 'serie_id'.$i,
-						'type'		=> 'text',
-						'label'		=> 'ID',
-						'value'		=> $serie['id'],
-						'mandatory'	=> true,
-						'visible'	=> false,
-					),
-					array(
-						'field_id'	=> 'season'.$i,
-						'type'		=> 'text',
-						'label'		=> 'Season',
-						'value'		=> $serie['season'],
-						'mandatory'	=> true
-					),
-					array(
-						'field_id'	=> 'episode'.$i,
-						'type'		=> 'text',
-						'label'		=> 'Episode',
-						'value'		=> $serie['episode'],
-						'mandatory'	=> true
-					),
-					array(
-						'field_id'	=> 'expected'.$i,
-						'type'		=> 'text',
-						'label'		=> 'Expected on ',
-						'value'		=> $serie['expected'],
-						'mandatory'	=> true
-					),
-				)
-			);
-		array_push($form['part'],$serie);
 	}
+	usort($serielist, "cmp");
 
 	$serieFile = array(
 		'title' => 'Import Series file',
@@ -165,7 +233,7 @@ case 'series_list':
 	$tpl = new raintpl(); //include Rain TPL
 
 	$tpl->assign( "serieList", array('title'=>'TV Shows list','list'=>$serielist));
-	$tpl->assign( "form", array($form,$form_import));
+	$tpl->assign( "form", array(/*$form,*/$form_import));
 	$tpl->assign( "page", 'series');
 	$tpl->assign( "msg", $msg);
 	$tpl->draw( "general_conf" ); // draw the template
