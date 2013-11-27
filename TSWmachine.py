@@ -392,11 +392,12 @@ class TSWmachine:
 				self.seriefile.updateSerie(serie['id'],{'status':20})
 				for search in str_search_list:
 					result = tracker.search(search)
-					nb_result = int(result.json()['total'])
+					#nb_result = int(result.json()['total'])
+					nb_result = len(result)
 					logging.debug(str(nb_result) + ' result(s)')
 
 					if nb_result > 0: # If at least 1 relevant torrent is found
-						new_torrent = add_torrent(result.json()['torrents'], tc, tracker,self.conffile.getTransmission())
+						new_torrent = add_torrent(result, tc, tracker,self.conffile.getTransmission())
 						self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 						print("{0}:{1}:{2}".format('230',str(serie['id']),messages.returnCode['230']))
 					elif (nb_result < 1):

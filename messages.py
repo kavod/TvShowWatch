@@ -29,5 +29,6 @@ returnCode = {
 	'413': 'Error during deleting {0}',
 	'414': 'Incomplete TV Show deletion',
 	'415': 'Unable to parse arguments',
-	'416': 'You must provide ID of TV Show you want to delete or \'all\' for global reset'
+	'416': 'You must provide ID of TV Show you want to delete or \'all\' for global reset',
+	'417': 'Error during updating {0}'
 	}
