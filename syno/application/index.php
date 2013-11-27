@@ -605,6 +605,7 @@ case 'conf':
 	$tpl->assign( "page", 'config');
 	$tpl->assign( "msg", $msg);
 	$tpl->draw( "general_conf" ); // draw the template
+	break;
 default:
         if (file_exists(CONF_FILE))
         {
