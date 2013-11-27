@@ -66,7 +66,13 @@ class Tracker:
 	def search_t411(self, search):
 		if not self.test():
 			self.connect(self.username, self.password)
-		return requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token})
+		result = requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token}).json()
+                if 'torrents' in result.keys():
+                        result = result['torrents']
+                        result = filter(self.filter_t411,result)
+                        return result
+                else:
+                        return []
 
 	def search(self,search):
 		search = str(''.join(c for c in unicodedata.normalize('NFKD', unicode(search, 'utf-8')) if unicodedata.category(c) != 'Mn'))
@@ -98,7 +104,7 @@ class Tracker:
 
 	def select_t411(self,result):
 		logging.debug(result)
-		filter(self.filter_torrent,result)
+		#filter(self.filter_torrent,result)
 		return sorted(result, key=lambda tor: int(tor[u'times_completed']), reverse=True)[0]
 
 
