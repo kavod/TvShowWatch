@@ -10,7 +10,7 @@ function validateForm(form)
 {
 	for(var i=0;i<form.childNodes.length;i++)
 	{
-		if (form.childNodes[i].className=='fieldDisplay')
+		if (form.childNodes[i].nodeName=='div' && form.childNodes[i].className=='fieldDisplay')
 		{
 			if (form.childNodes[i].getElementsByTagName('input').length>0)
 			{
