@@ -22,7 +22,7 @@ S<input type="text" name="{$col.s_name}" id="{$col.s_id}" value="{$col.season}" 
 <select name="{$col.name}"{if="$col.onchange != ''"} onchange="{$col.onchange}"{/if}>
 {$selected = $col.value}
 {loop="col.choices"}
-<option value="{$col.value}"{if="$col.value == $selected"} selected{/if}>{$col.text}</option>
+<option value="{$value.value}"{if="$value.value == $selected"} selected{/if}>{$value.text}</option>
 {/loop}
 </select>
 {/if}
