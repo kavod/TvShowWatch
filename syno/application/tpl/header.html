@@ -18,3 +18,7 @@
 		<li{if="$page == 'series'"} class="actif"{/if}><a href="index.php?page=series_list">Series List</a></li>
 	</ul>
 </div>
+<div class="contenu">
+{if="$msg!=''"}
+<div class="message">{$msg}</div>
+{/if}
