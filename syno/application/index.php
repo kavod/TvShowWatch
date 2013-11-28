@@ -26,65 +26,34 @@ $msg = (isset($_GET['msg'])) ? $_GET['msg'] : '';
 switch($_GET['page'])
 {
 case 'serie_edit':
-	if (file_exists(CONF_FILE))
+	$page = 'series';
+	check_conf(CONF_FILE,$page);
+	check_series(SERIES_FILE,$page);
+	if (!isset($TSW))
+		$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$conf = $TSW->getSeries();
+	check_result($conf,'Error while reading TV Show schedule',$page);
+	
+	$found = false;
+	foreach($conf['result'] as $serie)
 	{
-		if (file_exists(SERIES_FILE))
+		if ($serie['id'] == $_GET['id'])
 		{
-			if (!isset($TSW))
-				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-			$conf = $TSW->getSeries();
-			if ($conf['rtn']!='200')
-				$msg = 'Error during SerieList reading: ' . $conf['error'];
-			else
-			{
-				if (isset($conf['result']))
-				{
-					$found = false;
-					foreach($conf['result'] as $serie)
-					{
-						if ($serie['id'] == $_GET['id'])
-						{
-							$found = true;
-							break;
-						}
-					}
-					if (!$found)
-					{
-						$tpl = new raintpl(); //include Rain TPL
-						$msg = 'TV Show not scheduled';
-						$tpl->assign( "msg", $msg);
-						$tpl->assign( "page", 'series');
-						$tpl->draw( "serie" ); // draw the template
-						break;
-					}
-				} 
-				else
-				{
-					$tpl = new raintpl(); //include Rain TPL
-					$msg = 'Error while reading TV Show schedule';
-					$tpl->assign( "msg", $msg);
-					$tpl->assign( "page", 'series');
-					$tpl->draw( "serie" ); // draw the template
-					break;
-				}
-			}
-		} else
-		{
-			$tpl = new raintpl(); //include Rain TPL
-			$msg = 'No TV Show scheduled';
-			$tpl->assign( "msg", $msg);
-			$tpl->assign( "page", 'series');
-			$tpl->draw( "serie" ); // draw the template
+			$found = true;
 			break;
 		}
-	} else 
+	}
+	if (!$found)
 	{
-		$tpl = new raintpl(); //include Rain TPL
-		$msg = 'Initial configuration must be done before';
-		$tpl->assign( "msg", $msg);
-		$tpl->assign( "page", 'series');
-		$tpl->draw( "serie" ); // draw the template
+		$msg = 'TV Show not scheduled';
+		display_error($page,$msg);
 		break;
+	} else
+	{
+		for ($i=0;$i<count($serie['emails']);$i++)
+		{
+			$emails[]= array('i'=>$i,'email'=>$serie['emails'][$i],'u_del'=>'index.php?page=del_email&mail_id='.$i.'&id='.$serie['id'].$debug);
+		}
 	}
 	try
 	{
@@ -103,10 +72,8 @@ case 'serie_edit':
 			$next_episode = array('season'=>'','episode'=> '');
 	}
 	catch (Exception $e) {
-		$tpl = new raintpl(); //include Rain TPL
 		$msg = 'TV Show unfounable';
-		$tpl->assign( "msg", $msg);
-		$tpl->assign( "page", 'series');
+		display_error($page,$msg);
 		break;
 	}
 	if (isset($_POST['season']) or isset($_POST['episode']))
@@ -146,60 +113,157 @@ case 'serie_edit':
 			$msg='You must indicate both of Season and Episode numbers';
 		}
 	}
-
-
+	$content = array();
+	$content[] = array(
+				'type' => 'h1',
+				'title' => $data->name
+			);
+	$content[] = array(
+				'type' => 'banner',
+				'u_banner' => TVDB_URL . '/banners/_cache/' . $data->banner
+			);
+	$content[] = array(
+				'type' => 'longtext',
+				'text' => $data->overview
+			);
+	$content[] = array(
+				'type' => 'form',
+				'action' => 'index.php?page=serie_edit&id='.$serie['id'].$debug,
+				'class' => 'myForm',
+				'content' => array(
+								array(
+								'type' => 'line',
+								'visible' => true,
+								'col1' => array(
+									'type' => 	'text',
+									'label' => 	'Next scheduled episode:',
+									'sublabel'=>'Retrieve next broadcast',
+									'subonclick'=>"return set_last(document.getElementById('season'),document.getElementById('episode'),'".$next_episode['season']."','".$next_episode['episode']."')",
+									'subhref'=>	"http://github.com/kavod/TvShowWatch",
+									'subclass'=>"sublabel"
+												),
+								'col2' => array(
+									'type' => 'episodechoice',
+									's_name' => 'season', 
+									's_id'=>'season', 
+									'season'=>sprintf("%02s", $serie['season']),
+									'e_name' => 'episode', 
+									'e_id'=>'episode', 
+									'episode'=>sprintf("%02s", $serie['episode']),
+												),
+								'col3' => array('type' => 'submit', 'label' => 'Change')
+									)
+								)
+					);
+	$content[] = array(
+						'type' => 'line',
+						'visible' => true,
+						'col1' => array('type' => 'text','label' => 'Expected on:'),
+						'col2' => array('type' => 'text','label' => $serie['expected'])
+							);
+	$content[] = array(
+						'type' => 'line',
+						'visible' => true,
+						'col1' => array('type' => 'text','label' => 'Status:'),
+						'col2' => array('type' => 'text','label' => serieStatus($serie['status']))
+							);
+	foreach($emails as $email)
+	{
+		$content[] = array(
+						'type' => 'line',
+						'visible' => true,
+						'col1' => array('type' => 'text','label' => 'Email '.($email['i']+1)),
+						'col2' => array('type' => 'text','label' => $email['email']),
+						'col3' => array('type' => 'input_button', 'name' => 'mail'.$email['i'],'value'=>'Delete','onclick'=>"location.href='".$email['u_del']."'")
+							);
+	}
+	
+	$content[] = array(
+				'type' => 'form',
+				'action' => 'index.php?page=email_add&id='.$serie['id'].$debug,
+				'class' => 'myForm',
+				'content' => array(
+								array(
+									'type' => 'line',
+									'visible' => true,
+									'col1' => array('type' => 'text', 'label' => 'Add an email:'),
+									'col2' => array('type' => 'input_text', 'name' => 'addmail'),
+									'col3' => array('type' => 'submit', 'label' => 'Add email')
+									)
+								)
+			);
+	$content[] = array(
+						'type' => 'line',
+						'visible' => true,
+						'col1' => array('type' => 'text','label' => 'Unschedule TV Show download:'),
+						'col2' => array('type' => 'input_button','name' => 'del', 'value'=>'Unschedule!', 'onclick'=>"location.href='".'index.php?page=del_serie&id='.$serie['id'].$debug."'")
+							);
 	$tpl = new raintpl(); //include Rain TPL
-
-	$tpl->assign( "banner", TVDB_URL . '/banners/_cache/' . $data->banner);
-	$tpl->assign( "seriename", $data->name);
-	$tpl->assign( "description", $data->overview);
-	$tpl->assign( "action", 'index.php?page=serie_edit&id='.$serie['id'].$debug);
-	$tpl->assign( "label", 'Next episode scheduled');
-	$tpl->assign( "season", sprintf("%02s", $serie['season']));
-	$tpl->assign( "episode", sprintf("%02s", $serie['episode']));
-	$tpl->assign( "l_expected", 'Expected on');
-	$tpl->assign( "expected", $serie['expected']);
-        $tpl->assign( "l_status", 'Status');
-        $tpl->assign( "status", serieStatus($serie['status']));
-	$tpl->assign( "l_last", 'Retrieve next broadcast');
-	$tpl->assign( "last_s", $next_episode['season']);
-	$tpl->assign( "last_e", $next_episode['episode']);
-	$tpl->assign( "l_del", 'Unschedule TV Show download');
-        $tpl->assign( "u_del", 'index.php?page=del_serie&id='.$serie['id'].$debug);
+	$tpl->assign( "content", $content);
 	$tpl->assign( "page", 'series');
 	$tpl->assign( "msg", $msg);
-	$tpl->draw( "serie" ); // draw the template
+	$tpl->draw( "home" ); // draw the template
 	break;
 
 case 'del_serie':
-
-        if (file_exists(CONF_FILE))
-        {
-                if (file_exists(SERIES_FILE))
-                {
-                        if (!isset($TSW))
-                                $TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-                        $conf = $TSW->delSerie((int)$_GET['id']);
-                        if ($conf['rtn']!='200')
-                                $msg = 'Error during SerieList reading: ' . $conf['error'];
-                        else
-                        {
-				header("Location:index.php?page=series_list&msg=Deletion%20OK".$debug);
-                        }
-                } else
-                {
-                	$tpl->assign( "msg", $msg);
-                }
-        } else
-        {
-                $msg = 'Initial configuration must be done before';
-        }
-	$tpl = new raintpl(); //include Rain TPL
-        $tpl->assign( "msg", $msg);
-        $tpl->assign( "page", 'series');
-        $tpl->draw( "serie" );
-	break;
+	$page = 'series';
+	check_conf(CONF_FILE,$page);
+	check_series(SERIES_FILE,$page);
+	if (!isset($TSW))
+			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$conf = $TSW->delSerie((int)$_GET['id']);
+	if ($conf['rtn']!='200')
+			$msg = 'Error during SerieList reading: ' . $conf['error'];
+	else
+	{
+	header("Location:index.php?page=series_list&msg=Deletion%20OK".$debug);
+	}
+	display_error($page,$msg);
+	
+case 'del_email':
+	$page = 'series';
+	check_conf(CONF_FILE,$page);
+	check_series(SERIES_FILE,$page);
+	if (!isset($TSW))
+			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$conf = $TSW->getSeries();
+	check_result($conf,'Error while reading TV Show schedule',$page);
+	
+	$found = false;
+	foreach($conf['result'] as $serie)
+	{
+		if ($serie['id'] == $_GET['id'])
+		{
+			$found = true;
+			break;
+		}
+	}
+	if (!$found)
+	{
+		$msg = 'TV Show not scheduled';
+		display_error($page,$msg);
+		break;
+	} else
+	{
+		$nb = (int)$_GET['mail_id'];
+		unset($serie['emails'][$i]);
+		if (count($serie['emails'])>0)
+			$result = $TSW->setSerie($serie['id'],array('emails'=>'["'.implode('","',$serie['emails']).'"]'));
+		else
+			$result = $TSW->setSerie($serie['id'],array('emails'=>'[]'));
+		if ($result['rtn']!='200')
+			$msg = 'Error during deletion<br />'.$result['error'];
+		else
+			$msg = 'Deletion OK';
+		header("Location:index.php?page=serie_edit&id=" . $serie['id'] . "&msg=".htmlentities($msg).$debug);
+	}
+		
+	display_error($page,$msg);
+break;
+	
 case 'save_serie':
+	$page = 'series';
+	check_conf(CONF_FILE,$page);
 	if(isset($_FILES['serieFile']))
 	{ 
 	     if(move_uploaded_file($_FILES['serieFile']['tmp_name'], SERIES_FILE)) //Si la fonction renvoie TRUE, c'est que ça a fonctionné...
@@ -213,80 +277,77 @@ case 'save_serie':
 	}
 
 case 'series_list':
-
-	if (file_exists(CONF_FILE))
+	$page = 'series';
+	check_conf(CONF_FILE,$page);
+	if (file_exists(SERIES_FILE))
 	{
-		if (file_exists(SERIES_FILE))
+		if (!isset($TSW))
+			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+		$conf = $TSW->getSeries();
+		if ($conf['rtn']!='200')
+			$msg = 'Error during SerieList reading: ' . $conf['error'];
+		else
 		{
-			if (!isset($TSW))
-				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-			$conf = $TSW->getSeries();
-			if ($conf['rtn']!='200')
-				$msg = 'Error during SerieList reading: ' . $conf['error'];
+			if (isset($conf['result']))
+				$series = $conf['result'];
 			else
-			{
-				if (isset($conf['result']))
-					$series = $conf['result'];
-				else
-					$series = array();
-			}
-		} else
-		{
-			$series = array();
-			$msg = 'No TV Show scheduled';
+				$series = array();
 		}
-	} else 
+	} else
 	{
-		$tpl = new raintpl(); //include Rain TPL
-		$msg = 'Initial configuration must be done before';
-		$tpl->assign( "msg", $msg);
-		$tpl->assign( "page", 'keywords');
-		$tpl->draw( "general_conf" );
-		break;
+		$series = array();
+		$msg = 'No TV Show scheduled';
 	}
-
-	$form = array(
-		'title' 	=> 'TV Shows list',
-		'action'	=> 'index.php?page=save_series'.$debug,
-		'part' 		=> array()
-		);
-
 	$serielist = array();
 	foreach ($series as $serie)
 	{
 		array_push($serielist,array(
-						'id'		=> $serie['id'],
-						'seriename'	=> $serie['name']
-					));
+						'type' => 'line',
+						'visible' => true,
+						'col1' => array('type' => 'text','label' => $serie['name'],'href'=> 'index.php?page=serie_edit&id='.$serie['id'].$debug),
+						'col2' => array('type' => 'text','label' => serieStatus($serie['status'])),
+						'col3' => array('type' => 'text','label' => $serie['expected'])
+							));
 	}
 	usort($serielist, "cmp");
 
-	$serieFile = array(
-		'title' => 'Import Series file',
-		'champs' => array(
-				array(
-					'field_id'	=> 'serieFile',
-					'type'		=> 'file',
-					'label'		=> 'Import file (*.xml)'
-					)
-				)
-		);
-	$form_import = array(
-		'title' 	=> 'Importation',
-		'action'	=> 'index.php?page=save_serie'.$debug,
-		'part' 		=> array($serieFile)
-		);
+
+	$content = array();
+	$content[] = array(
+				'type' => 'h1',
+				'title' => 'TV Shows list'
+			);
+	$content = array_merge($content,$serielist);
+	$content[] = array(
+				'type' => 'form',
+				'action' => 'index.php?page=save_serie'.$debug,
+				'enctype' => 'file',
+				'class' => 'myForm',
+				'onsubmit' => 'return validateForm(this)',
+				'content' => array(
+							array('type' => 'h2', 'title' => 'TV Shows list file importation'),
+							array(
+								'type' => 'line',
+								'visible' => true,
+								'col1' => array('type' => 'text', 'label' => 'Import file (*.xml):'),
+								'col2' => array('type' => 'input_file', 'name' => 'serieFile'),
+								'col3' => array('type' => 'submit', 'label' => 'Import')
+								)
+						)
+
+			);
+
 
 	$tpl = new raintpl(); //include Rain TPL
-
-	$tpl->assign( "serieList", array('title'=>'TV Shows list','list'=>$serielist));
-	$tpl->assign( "form", array(/*$form,*/$form_import));
+	$tpl->assign( "content", $content);
 	$tpl->assign( "page", 'series');
 	$tpl->assign( "msg", $msg);
-	$tpl->draw( "general_conf" ); // draw the template
+	$tpl->draw( "home" ); // draw the template
 	break;
 
 case 'save_keywords':
+	$page = 'keywords';
+	check_conf(CONF_FILE,$page);
 	$result = '{"keywords":[';
 	$keywords = array();	
 	for ($i=0;$_POST['keywords_'.$i]!='';$i++)
@@ -301,83 +362,60 @@ case 'save_keywords':
 	if (!isset($TSW))
 		$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
 	$TSW->auth();
-
-	if (file_exists(CONF_FILE))
-	{
-		$conf = $TSW->setConf($result);
-		if ($conf['rtn']=='200')
-			$msg = 'Keywords saved';
-		else
-			$msg = 'Error during keywords save: ' . $conf['error'];
-	} else
-	{
-		$tpl = new raintpl(); //include Rain TPL
-		$msg = 'Initial configuration must be done before';
-		$tpl->assign( "msg", $msg);
-		$tpl->assign( "page", 'keywords');
-		break;
-	}
+	$res = $TSW->setConf($result);
+	if ($res['rtn']!='200')
+		$msg = 'Error while updating keywords<br />'.$res['error'];
 
 case 'keywords':
+	$page = 'keywords';
+	check_conf(CONF_FILE,$page);
+	if (!isset($TSW))
+		$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
+	$conf = $TSW->auth();
+	$conf = $TSW->getConf();
+	check_result($conf,'Error while reading configuration',$page);
+	
+	if (isset($conf['result']['keywords']))
+		$keywords = $conf['result']['keywords'];
+	else
+		$keywords = array();
 
-	if (file_exists(CONF_FILE))
-	{
-		if (!isset($TSW))
-			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-		$conf = $TSW->auth();
-		$conf = $TSW->getConf();
-		if ($conf['rtn']!='200')
-			$msg = 'Error during configuration reading: ' . $conf['error'];
-		else
-		{
-			if (isset($conf['result']) && isset($conf['result']['keywords']))
-				$keywords = $conf['result']['keywords'];
-			else
-				$keywords = array();
-		}
-	} else 
-	{
-		$tpl = new raintpl(); //include Rain TPL
-		$msg = 'Initial configuration must be done before';
-		$tpl->assign( "msg", $msg);
-		$tpl->assign( "page", 'keywords');
-		break;
-	}
-	$keywords_form = array(
-			'title' => 'Keywords',
-			'champs' => array());
+	$keywords_form = array();
 
 	for ($i=0;$i<count($keywords);$i++)
 	{
-		array_push($keywords_form['champs'],array(
-				'field_id'	=> 'keywords_'.$i,
-				'type'		=> 'text',
-				'label'		=> 'Keywords '.($i+1),
-				'value'		=> $keywords[$i]
-				));
+		$keywords_form[] = array(
+								'type' 		=> 'line',
+								'visible'	=> true,
+								'col1' => array('type' => 'text', 'label' => 'Keywords '.($i+1)),
+								'col2' => array('type' => 'input_text', 'name' => 'keywords_'.$i, 'value' => $keywords[$i])
+								);
 	}
-
-	$new_keywords = array(
-				'field_id'	=> 'keywords_new',
-				'type'		=> 'text',
-				'label'		=> 'New keywords',
-				'value'		=> ''
-				);
-	array_push($keywords_form['champs'],$new_keywords);
-	$form = array(
-		'title' 	=> 'Keywords configuration',
-		'action'	=> 'index.php?page=save_keywords'.$debug,
-		'part' 		=> array()
-		);
-	array_push($form['part'],$keywords_form);
+	$keywords_form[] = array(
+							'type' 		=> 'line',
+							'visible'	=> true,
+							'col1' => array('type' => 'text', 'label' => 'New keywords'),
+							'col2' => array('type' => 'input_text', 'name' => 'keywords_new', 'value' => '')
+							);
+	$content = array();
+	$content[] = array('type' => 'h1', 'title' => 'Keywords configuration Management');
+	$content[] = array(
+				'type' => 'form',
+				'action' => 'index.php?page=save_keywords'.$debug,
+				'class' => 'myForm',
+				'submit' => 'Submit',
+				'content' => $keywords_form
+						);
+		
 	$tpl = new raintpl(); //include Rain TPL
-	$tpl->assign( "form", array($form));
+	$tpl->assign( "content", $content);
 	$tpl->assign( "page", 'keywords');
 	$tpl->assign( "msg", $msg);
-	$tpl->draw( "general_conf" ); // draw the template
+	$tpl->draw( "home" ); // draw the template
 	break;
 
 case 'save_conf':
+	$page = 'config';
 	$result = '{"tracker":' . tracker_api_conf($_POST);
 	$result .= ',"transmission":' . transmission_api_conf($_POST);
 	$result .= ',"smtp":' . email_api_conf($_POST).'}';
@@ -403,6 +441,7 @@ case 'save_conf':
 	}
 
 case 'conf':
+	$page = 'config';
 	if (file_exists(CONF_FILE))
 	{
 		if (!isset($TSW))
@@ -607,6 +646,7 @@ case 'conf':
 	$tpl->draw( "general_conf" ); // draw the template
 	break;
 default:
+	$page = 'home';
         if (file_exists(CONF_FILE))
         {
                 if (!isset($TSW))
@@ -627,16 +667,41 @@ default:
 		}
 
         }
+	$content = array();
+	$content[] = array(
+				'type' => 'h1',
+				'title' => 'Welcome on TvShowWatch'
+			);
+	$content[] = array(
+				'type' => 'line',
+				'visible' => true,
+				'col1' => array('type' => 'text','label' => 'Configuration status:'),
+				'col2' => array('type' => 'text','label' => $conf)
+			);
+	$content[] = array(
+				'type' => 'line',
+				'visible' => true,
+				'col1' => array('type' => 'text','label' => 'Run status:'),
+				'col2' => array('type' => 'text','label' => $run)
+			);
+	$content[] = array(
+				'type' => 'line',
+				'visible' => true,
+				'col1' => array('type' => 'text','label' => 'Run now:'),
+				'col2' => array('type' => 'input_button','value' => 'Run', 'name'=> 'run', 'onclick'=> "window.location.href='index.php?action=run".$debug."'")
+			);
+	$content[] = array(
+				'type' => 'h2',
+				'title' => 'Last logs'
+			);
+	$content[] = array(
+				'type' => 'iframe',
+				'class' => 'log',
+				'src' => 'log.php'
+			);
+
 	$tpl = new raintpl(); //include Rain TPL
-        $tpl->assign( "conf_status", $conf);
-	$tpl->assign( "welcome", 'Welcome on TvShowWatch');
-        $tpl->assign( "l_conf_status", 'Configuration status');
-        $tpl->assign( "run_status", $run);
-        $tpl->assign( "l_run_status", 'Run status');
-        $tpl->assign( "run_now", 'Run');
-        $tpl->assign( "l_run_now", 'Run now');
-        $tpl->assign( "l_log", 'Last logs');
-	$tpl->assign( "log_page", 'log.php');
+	$tpl->assign( "content", $content);
 	$tpl->assign( "page", 'home');
 	$tpl->assign( "msg", $msg);
         $tpl->draw( "home" ); // draw the template

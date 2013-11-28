@@ -1,7 +1,7 @@
 <? 
 function cmp($a, $b)
 {
-    return strcmp($a["seriename"], $b["seriename"]);
+    return strcmp($a['col1']["label"], $b['col1']["label"]);
 }
 
 function cmp_serie($a, $b)
@@ -32,17 +32,13 @@ function serieStatus($status_id)
 	}
 }
 
-function tracker_conf($tracker_id,$username,$password)
+function display_error($page='home',$msg='')
 {
-	$config_out = "<tracker><id>";
-	$config_out .= $tracker_id;
-	$config_out .= "</id><user>";
-	$config_out .= $username;
-	$config_out .= "</user><password>";
-	$config_out .= $password;
-	$config_out .= "</password>";
-	$config_out .= "</tracker>";
-	return $config_out;
+	$tpl = new raintpl(); //include Rain TPL
+	$tpl->assign( "page", $page);
+	$tpl->assign( "msg", $msg);
+	$tpl->draw( "general_conf" );
+	die();
 }
 
 function tracker_api_conf($post)
@@ -101,6 +97,19 @@ function transmission_conf($server,$port,$username,$password,$slotNumber,$folder
 	return $config_out;
 }
 
+/*function tracker_conf($tracker_id,$username,$password)
+{
+	$config_out = "<tracker><id>";
+	$config_out .= $tracker_id;
+	$config_out .= "</id><user>";
+	$config_out .= $username;
+	$config_out .= "</user><password>";
+	$config_out .= $password;
+	$config_out .= "</password>";
+	$config_out .= "</tracker>";
+	return $config_out;
+}
+
 function email_conf($server,$port,$ssltls,$username,$password,$emailSender)
 {
 	$config_out = "<smtp><server>";
@@ -136,6 +145,37 @@ function keywords_conf($keywords)
 	}
 	$config_out .= "</keywords>";
 	return $config_out;
+}*/
+$tab_msg = array(
+	'conf' => 	'Initial configuration must be done before',
+	'series' =>	'No TV Show scheduled'
+);
+	
+function check_file($file,$type='conf',$page='home')
+{
+	global $tab_msg;
+	if (!file_exists($file))
+	{
+		$msg = $tab_msg[$type];
+		display_error($page,$msg);
+		die();
+	}
+	return true;
+}
+
+function check_conf($conffile,$page='home') { check_file($conffile,'conf',$page);}
+function check_series($seriefile,$page='home') { check_file($seriefile,'series',$page);}
+function check_result($result,$msg='General error',$page='home',$result_expected=true)
+{
+	if ($result['rtn']!='200')
+		$msg .= '<br>\n' . $result['error'];
+	else
+	{
+		if (!$result_expected || isset($result['result']))
+			return true;
+	}
+	display_error($page,$msg);
+	die();
 }
 
 function getArray($node) 
