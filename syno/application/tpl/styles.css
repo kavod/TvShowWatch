@@ -56,6 +56,14 @@ body {
 	color: #ff9900;
 }
 
+.subclass {
+	font-size: 10px;
+}
+
+.subclass a {
+	text-decoration: none;
+}
+
 /*.rubs a {
 	font-size: 18px;
 	font-weight: bold;
@@ -72,23 +80,35 @@ body {
 	background-color: #ff9900;
 }
 
-.serielist a {
+
+.button {
+        height: 26px;
+        width: 100px;
+        display: inline-block;
+}
+
+.emaillist a, .serielist a {
 	color: blue;
 	text-decoration: none;
 	padding: 4px;
 }
 
-.serielist a:hover {
+.emaillist a:hover, .serielist a:hover {
 	background: white;
 	color: #ff9900;
 }
 
-.serielist li {
+.emaillist li , .serielist li {
 	margin: 10px 2px 0 2px;
 	border: 0px;
 	list-style-type:none;
-	font-size: 14px;
+	font-size: 12px;
 }
+
+.emaillist , .serielist  {
+        padding-left: 5px;
+}
+
 
 .contenu {
 	margin-left: 50px;
@@ -109,11 +129,6 @@ body {
 
 }
 
-.label {
-	height: 26px;
-	width: 200px;
-	display: inline-block;
-}
 
 .fieldDisplay {
 	display: inline-block;
@@ -121,6 +136,30 @@ body {
 
 .fieldHidden {
 	display: none;
+}
+/* colonnes */
+.col {
+	height: 26px;
+	display: inline-block;
+}
+
+.col1 {
+	width: 200px;
+}
+
+.col2 {
+	width: 260px;
+}
+
+.col3 {
+        width: 100px;
+}
+
+/* End Colonnes */
+.label {
+	height: 26px;
+	width: 200px;
+	display: inline-block;
 }
 
 .champs {

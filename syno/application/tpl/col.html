@@ -1,0 +1,28 @@
+{if condition="$col.type=='text'"}
+{if condition="$col.class!=''"}<span class="{$col.class}">{/if}
+{if condition="$col.href!=''"}<a href="{$col.href}">{/if}
+{$col.label}
+{if condition="$col.href!=''"}</a>{/if}
+{if condition="$col.mandatory==true"}<span class="mandatory"> *</span>{/if}
+{if condition="$col.class!=''"}</span>{/if}
+{if condition="$col.sublabel!=''"}<br />
+{if condition="$col.subclass!=''"}<span class="{$col.subclass}">{/if}
+{if condition="$col.subhref!=''"}<a href="{$col.subhref}"{if condition="$col.onclick!=''"} onclick="{$col.onclick}"{/if}>{/if}
+{$col.sublabel}
+{if condition="$col.subhref!=''"}</a>{/if}
+{if condition="$col.subclass!=''"}</span>{/if}
+{/if}
+{elseif condition="$col.type == 'episodechoice'"}
+S<input type="text" name="{$col.s_name}" id="{$col.s_id}" value="{$col.season}" class="episode" />E<input type="text" name="{$col.e_name}" id="{$col.e_id}" value="{$col.episode}" class="episode" />
+{elseif condition="$col.type == 'submit'"}
+<input type="submit" name="envoyer" value="{$col.label}" />
+{elseif condition="substr($col.type,0,6)=='input_'"}
+<input type="{$col.type|substr:6}"{if condition="$col.value!=''"} value="{$col.value}"{/if} name="{$col.name}"{if condition="$col.onclick!=''"} onclick="{$col.onclick}"{/if} />
+{elseif condition="$col.type == 'select'"}
+<select name="{$col.name}"{if="$col.onchange != ''"} onchange="{$col.onchange}"{/if}>
+{$selected = $col.value}
+{loop="col.choices"}
+<option value="{$col.value}"{if="$col.value == $selected"} selected{/if}>{$col.text}</option>
+{/loop}
+</select>
+{/if}

@@ -1,0 +1,20 @@
+<div class="{if="$value.visible === false"}fieldHidden{else}fieldDisplay{/if}"{if="$value.id != ''"} id="{$value.id}"{/if}>
+{if="isset($value.col1)"}
+<div class="col col1">
+{$col=$value.col1}
+{include="col"}
+</div>
+{/if}
+{if="isset($value.col2)"}
+{$col=$value.col2}
+<div class="col col2">
+{include="col"}
+</div>
+{/if}
+{if="isset($value.col3)"}
+{$col=$value.col3}
+<div class="col col3">
+{include="col"}
+</div>
+{/if}
+</div>

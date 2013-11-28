@@ -1,12 +1,3 @@
 {include="header"}
-<div class="contenu">
-{if="$msg!=''"}
-<div class="message">{$msg}</div>
-{/if}
-<h1>{$welcome}</h1>
-	<div class="label">{$l_conf_status}:</div><div class="champs">{$conf_status}</div>
-        <div class="label">{$l_run_status}:</div><div class="champs">{$run_status}</div>
-	<div class="label">{$l_run_now}:</div><div class="champs"><input type="button" value="{$run_now}" name="run" onclick="window.location.href='index.php?action=run'" /></div>
-<div class="label">{$l_log}:</div>
-<iframe class="log" src="{$log_page}"></iframe>
+{include="content"}
 {include="footer" cache="3600"}

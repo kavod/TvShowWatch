@@ -1,19 +1,18 @@
 {include="header"}
-<div class="contenu">
-{if="$msg!=''"}
-<div class="message">{$msg}</div>
-{/if}
 {if="isset($serieList)"}
 <h1>{$serieList.title}</h1>
 <ul class="serielist">
 {loop="serieList.list"}
-<li><a href="index.php?page=serie_edit&id={$value.id}">{$value.seriename}</a></li>
+<li>
+	<div class="label"><a href="index.php?page=serie_edit&id={$value.id}">{$value.seriename}</a></div>
+	<div class="champs">{$value.status}</div>
+</li>
 {/loop}
 </ul>
 {/if}
 {loop="form"}
+	<h1>{$value.title}</h1>
 	<form method="POST" action="{$value.action}" enctype="multipart/form-data" class="myForm" onSubmit="return validateForm(this)">
-		<h1>{$value.title}</h1>
 {loop="value.part"}
 		<h2>{$value.title}</h2>
 {loop="value.champs"}
