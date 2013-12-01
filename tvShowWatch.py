@@ -22,8 +22,6 @@ from tracker import *
 from ftplib import FTP
 from email.mime.text import MIMEText
 
-E_MAIL = 'niouf@niouf.fr'
-PASSWORD = 'niouf'
 global t
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'

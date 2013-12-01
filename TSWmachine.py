@@ -227,15 +227,25 @@ class TSWmachine:
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		if not all(y in ['season','episode','expected','status'] for y in param.keys()):
+		if not all(y in ['emails','season','episode','expected','status'] for y in param.keys()):
 			return {'rtn':'400','error':messages.returnCode['400'].format(str(param.keys()))}
+		if 'emails' in param.keys():
+			emails = param.pop('emails')
+		else:
+			emails = None
 		liste = self.seriefile.listSeries(json_c)
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,str) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
 				if len(result)>0:
 					if (self.seriefile.updateSerie(result[0]['id'],param)):
-						return {'rtn':'200','error':messages.returnCode['200']}
+						if emails is not None:
+							if(self.seriefile.changeEmails(result[0]['id'],emails)):
+								return {'rtn':'200','error':messages.returnCode['200']}
+							else:
+								return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
+						else:
+							return {'rtn':'200','error':messages.returnCode['200']}
 					else:
 						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
 				else:
@@ -244,7 +254,13 @@ class TSWmachine:
 				result = [x for x in liste if x['name'] == s_id]
 				if len(result)>0:
 					if (self.seriefile.updateSerie(result[0]['id'],param)):
-						return {'rtn':'200','error':messages.returnCode['200']}
+						if emails is not None:
+							if(self.seriefile.changeEmails(result[0]['id'],emails)):
+								return {'rtn':'200','error':messages.returnCode['200']}
+							else:
+								return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
+						else:
+							return {'rtn':'200','error':messages.returnCode['200']}
 					else:
 						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
 				else:
