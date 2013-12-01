@@ -9,13 +9,13 @@ if (!TSW)
 			$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
 	$conf = $TSW->delSerie((int)$_GET['id']);
 	if ($conf['rtn']!='200')
+	{
 		$msg = 'Error during SerieList reading: ' . $conf['error'];
 		display_error($page,$msg);
+	}
 	else
 	{
 		$msg = 'Deletion OK';
-		
-	//header("Location:index.php?page=series_list&msg=Deletion%20OK".$debug);
 	}
 	include('series_list.php');
 ?>
