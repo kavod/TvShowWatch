@@ -107,7 +107,12 @@ class TvShowWatch
 		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action update --arg '{\"id\":" . $id . ",\"param\":{";
 		foreach($param as $key => $value)
 		{
-			$cmd.='"' . $key . '":"' . $value . '",';
+			if ($key == 'emails' && count($value)>0)
+				$cmd .= '"emails":["' . implode('","',$value) . '"],';
+			elseif ($key == 'emails' && count($value)<1)
+				$cmd .= '"emails":[],';
+			else
+				$cmd.='"' . $key . '":"' . $value . '",';
 		}
 		$cmd .= '"status":10';
 		/*if (count($param)>0)
