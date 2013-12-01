@@ -167,3 +167,17 @@ class SerieList(MyFile):
 		self._save()
 		return result
 
+	def changeEmails(self,s_id,emails):
+		result = False
+		series = self.tree.getroot()
+		for serie in series.findall('serie'):
+			if serie.find('id').text == str(s_id):
+				for emailNode in serie.findall('email'):
+					serie.remove(emailNode)
+				for email in emails:
+					emailNode = ET.SubElement(serie, "email")
+					emailNode.text = str(email)
+				result = True
+		self._save()
+		return result
+
