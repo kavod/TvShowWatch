@@ -30,6 +30,10 @@ case 'serie_edit':
 	include('serie_edit.php');
 	break;
 
+case 'add_serie':
+	include('add_serie.php');
+	break;
+
 case 'del_serie':
 	include('del_serie.php');
 	break;

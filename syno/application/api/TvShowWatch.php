@@ -139,6 +139,17 @@ class TvShowWatch
                 return json_decode($result[0],true);
         }
 
+        function addSerie($id)
+        {
+                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
+                exec($cmd,$result);
+                if ($this->debug)
+                {
+                        echo $cmd.'<br />';
+                        print_r($result);
+                }
+                return json_decode($result[0],true);
+        }
 	
 	function testRunning()
 	{

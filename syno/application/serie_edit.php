@@ -28,6 +28,7 @@ use Moinax\TvDb\Client;
 		break;
 	} else
 	{
+		$emails = array();
 		for ($i=0;$i<count($serie['emails']);$i++)
 		{
 			$emails[]= array('i'=>$i,'email'=>$serie['emails'][$i],'u_del'=>'index.php?page=del_email&mail_id='.$i.'&id='.$serie['id'].$debug);

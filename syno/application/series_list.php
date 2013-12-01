@@ -48,6 +48,24 @@ if (!TSW)
 				'title' => 'TV Shows list'
 			);
 	$content = array_merge($content,$serielist);
+
+	$content[] = array(
+				'type' => 'form',
+				'action' => 'index.php?page=add_serie'.$debug,
+				'class' => 'myForm',
+				'onsubmit' => 'return validateForm(this)',
+				'content' => array(
+							array('type' => 'h2', 'title' => 'Add TV Show'),
+							array(
+								'type' => 'line',
+								'visible' => true,
+								'col1' => array('type' => 'text', 'label' => 'TvDB show ID'),
+								'col2' => array('type' => 'input_text', 'name' => 'serie_id'),
+								'col3' => array('type' => 'submit', 'label' => 'Add')
+								)
+						)
+
+			);
 	$content[] = array(
 				'type' => 'form',
 				'action' => 'index.php?page=save_serie'.$debug,
