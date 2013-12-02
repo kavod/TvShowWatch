@@ -111,7 +111,7 @@ class ConfFile(MyFile):
 		self._save()
 		return {
 			'id': 		tracker_id, 
-			'username': 	username,
+			'user': 	username,
 			'password':	password
 			}
 
