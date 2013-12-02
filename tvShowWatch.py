@@ -16,6 +16,7 @@ import unicodedata
 from myDate import *
 #from types import *
 import Prompt
+from TSWmachine import *
 from ConfFile import ConfFile
 from serieList import SerieList
 from tracker import *
@@ -147,7 +148,7 @@ def input_serie():
 	if 't' not in globals():
 		t = tvdb_api.Tvdb()
 	else:#ICI
-		print "connection saved"
+		logging.debug('connection saved')
 	logging.debug('API initiator: %s', t)
 	result = []
 	while len(result) < 1:
@@ -295,136 +296,181 @@ def action_run(conffile,seriefile):
 			print(' => Next broadcast: ' + print_date(serie['expected']))
 
 
-def action_list(conffile,seriefile):
-	series = SerieList()
-	if (series.openFile(seriefile)['rtn']!='200'):
-		print('Use tvShowWatch --init in order to reset')
-	pattern = '{0}/{1}/S{2:02}/E{3:02}/{4}/{5}'
-	if len(series.listSeries())>0:	
-		for serie in series.listSeries():
-			print(pattern.format(serie['id'],serie['name'],serie['season'],serie['episode'],serie['status'],serie['expected']))
-	else:
+def action_list(m):
+	logging.debug('Call function action_list()')
+	result = m.getSeries()
+	logging.debug('result => '+str(result))
+	if result['rtn']!='200' and result['rtn']!='300':
+		print('Error during TV Shows reading: '+result['error'])
+		sys.exit()
+	if result['rtn'] == '300':
 		print("No TV Show scheduled")
 		sys.exit()
+	pattern = '{0}:{1} - S{2:02}E{3:02} - expected on {4} (status: {5})'
+	for serie in result['result']:
+		print(pattern.format(serie['id'],serie['name'],serie['season'],serie['episode'],serie['expected'],serie['status']))
+	sys.exit()
 
-def action_add(conffile,seriefile):
+def action_add(m):
 
 	result = input_serie()
-	series = SerieList()
-	if (series.openFile(seriefile)['rtn']!='200'):
-		print('Use tvShowWatch --init in order to reset')
-
-	if series.testSerieExists(int(result.data['id'])):
-		print(u'Already scheduled TV Show')
-		sys.exit()
-
 	serie = last_aired(int(result.data['id']))
-
 	next = last_or_next(serie)
-
-	if len(conffile.getEmail())>0 and Prompt.promptYN('Voulez-vous rajouter des emails de notification ?'):
+	if m.testConf(False)['rtn']=='200' and Prompt.promptYN('Voulez-vous rajouter des emails de notification ?'):
 		emails = input_emails()
 	else:
 		emails = []
 
-	series.addSerie(result.data['id'],result.data['seriesname'],next,emails)
+	result = m.addSerie(result.data['id'],emails,next['season'],next['episode'])
 
+	if result['rtn']!='200':
+		print('Error during TV Show add: '+result['error'])
+		sys.exit()
 	print(result.data['seriesname'] + u" added")
+	sys.exit()
 
-def action_reset(conffilename,seriefilename):
+def action_reset(m):
     '''Reset the configuration and/or the series list'''
     logging.debug('Call function action_reset()')
-    conffile = ConfFile()
-    series = SerieList()
-    #if (series.openFile(seriefile)['rtn']!='200'):
-    #    print('Use tvShowWatch --init in order to reset')
-    conffile.reset(conffilename)
-    series.reset(seriefilename)
+    result = {'rtn': '999'}
+    while result['rtn'] != '200' and result['rtn'] != '302':
+        conf = [
+		'tracker_id', 
+		'tracker_user',
+		'tracker_password',
+		'transmission_server',
+		'transmission_port',
+		'transmission_user',
+		'transmission_password',
+		'transmission_slotNumber',
+		'transmission_folder'
+		]
+        for param in conf:
+            result = m.setConf({param:'None'},False)
+        if result['rtn'] == '200':
+            result = m.testConf(False)
+        if result['rtn'] != '200' and result['rtn'] != '302':
+            print('Error during configuration: '+result['error'])
 
-def action_del(conffile,seriefile):
+    if (Prompt.promptYN("Do you want to activate Email notification?",'N')):
+        while result['rtn'] != '200':
+            conf = [
+		'smtp_server',
+		'smtp_port',
+		'smtp_ssltls',
+		'smtp_user',
+		'smtp_password',
+		'smtp_emailSender',
+		]
+            for param in conf:
+                result = m.setConf({param:'None'},False)
+            if result['rtn'] == '200':
+                result = m.testConf(True)
+            if result['rtn'] != '200':
+                print('Error during SMTP configuration: '+result['error'])
+
+    result = m.setConf({},True)
+    print('Configuration completed')
+
+def action_del(m):
 	'''Delete TV show from configuration file'''
 	logging.debug('Call function action_del()')
+	series = m.getSeries()
+	if series['rtn'] == '300':
+		print("No TV Show scheduled")
+		sys.exit()
+	if series['rtn'] != '200':
+		print('Error during TV Show listing'+series['error'])
+		sys.exit()
 	choix = []
-	series = SerieList()
-        if (series.openFile(seriefile)['rtn']!='200'):
-		print('Use tvShowWatch --init in order to reset')
-	if len(series.listSeries())>0:	
-		for serie in series.listSeries():
+	if len(series['result'])>0:	
+		for serie in series['result']:
 			choix.append([serie['id'],serie['name']])
 	else:
 		print("No TV Show scheduled")
 		sys.exit()
 	s_id = Prompt.promptChoice("Which TV Show do you want to unschedule?",choix)
-	series.delSerie(s_id)
+	result = m.delSerie(s_id)
+	if result['rtn'] != '200':
+		print('Error during Tv Show deletion'+result['error'])
+	else:
+		print('TV Show ' + str(s_id) + ' unscheduled')
 
-def action_config(conffile,seriefile):
+def action_config(m):
     '''Change configuration'''
     logging.debug('Call function action_config()')
-    trackerConf = conffile.getTracker()
-    transConf = conffile.getTransmission()
-    smtpConf = conffile.getEmail()
-    keywordsConf = conffile.getKeywords()
-    if (keywordsConf is not None):
-        keywords_default = ' / '.join(keywordsConf)
+    conf = m.getConf()
+    if (conf['rtn']!='200'):
+        print "Error during configuration reading"
+	sys.exit()
+    conf = conf['result']
+    if (conf['keywords'] is not None):
+        keywords_default = ' / '.join(conf['keywords'])
     else:
         keywords_default = ''
-    email_activated = 'Enabled' if len(smtpConf)>0 else 'Disabled'
+    email_activated = 'Enabled' if len(conf['smtp'])>0 else 'Disabled'
+    if ('folder' in conf['transmission'].keys()):
+        folder = conf['transmission']['folder']
+    else:
+        folder = 'No transfer'
     configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
-                ['tracker_id','Tracker : '+trackerConf['id']],
-                ['tracker_user','Tracker Username : '+trackerConf['user']],
+                ['tracker_id','Tracker : '+conf['tracker']['id']],
+                ['tracker_user','Tracker Username : '+conf['tracker']['user']],
                 ['tracker_password','Tracker Password : ******'],
                 ['keywords','Torrent search keywords : '+keywords_default],
-                ['transmission_server','Transmission Server : ' + str(transConf['server'])],
-                ['transmission_port','Transmission Port : ' + str(transConf['port'])],
-                ['transmission_user','Transmission User : ' + str(transConf['user'])],
+                ['transmission_server','Transmission Server : ' + str(conf['transmission']['server'])],
+                ['transmission_port','Transmission Port : ' + str(conf['transmission']['port'])],
+                ['transmission_user','Transmission User : ' + str(conf['transmission']['user'])],
                 ['transmission_password','Transmission Password : ******'],
-                ['transmission_slotNumber','Transmission maximum slots : ' + str(transConf['slotNumber'])],
-                ['transmission_folder','Local folder : ' + str(transConf['folder'])],
+                ['transmission_slotNumber','Transmission maximum slots : ' + str(conf['transmission']['slotNumber'])],
+                ['transmission_folder','Local folder : ' + str(conf['transmission']['folder'])],
                 ['smtp','Email Notification: ' + email_activated]
             ])
     if configData == 'smtp':
         configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
-                ['smtp_server','SMTP Server : ' + str(smtpConf['server'])],
-                ['smtp_port','SMTP Port : ' + str(smtpConf['port'])],
-                ['smtp_ssltls','Secure connection : ' + str(smtpConf['ssltls'])],
-                ['smtp_user','SMTP User : ' + str(smtpConf['user'])],
+                ['smtp_server','SMTP Server : ' + str(conf['smtp']['server'])],
+                ['smtp_port','SMTP Port : ' + str(conf['smtp']['port'])],
+                ['smtp_ssltls','Secure connection : ' + str(conf['smtp']['ssltls'])],
+                ['smtp_user','SMTP User : ' + str(conf['smtp']['user'])],
                 ['smtp_password','SMTP Password : ******'],
-                ['smtp_emailSender','Sender Email : ' + str(smtpConf['emailSender'])]
+                ['smtp_emailSender','Sender Email : ' + str(conf['smtp']['emailSender'])]
             ])
-        conffile.change(configData)
-    elif configData == 'keywords':
-	conffile.changeKeywords()
+        result = m.setConf({configData:'None'})
     else:
-        conffile.change(configData)
-    conffile._save()
+        result = m.setConf({configData:'None'})
+    if result['rtn'] == '200':
+        print('Configuration change completed !')
+    else:
+        print('Error during configuration change: '+result['error'])
 
-def action_getconf(conffile,seriefile):
+def action_getconf(m):
     '''Return configuration'''
     logging.debug('Call function action_getconf()')
-    trackerConf = conffile.getTracker()
-    transConf = conffile.getTransmission()
-    smtpConf = conffile.getEmail()
-    keywordsConf = conffile.getKeywords()
-    result = "'tracker_id':"+trackerConf['id']
-    result += "\n'tracker_user':"+trackerConf['user']
-    result += "\n'transmission_server':" + str(transConf['server'])
-    result += "\n'transmission_port':" + str(transConf['port'])
-    result += "\n'transmission_user':" + str(transConf['user'])
-    result += "\n'transmission_slotNumber':" + str(transConf['slotNumber'])
-    result += "\n'transmission_folder':" + str(transConf['folder'])
-    if len(smtpConf)>0:
-        result += "\n'smtp_server':" + str(smtpConf['server'])
-        result += "\n'smtp_port':" + str(smtpConf['port'])
-        result += "\n'smtp_ssltls':" + str(smtpConf['ssltls'])
-        result += "\n'smtp_user':" + str(smtpConf['user'])
-        result += "\n'smtp_emailSender':" + str(smtpConf['emailSender'])
-    for keyword in keywordsConf:
+    conf = m.getConf()
+    if (conf['rtn']!='200'):
+        print "Error during configuration reading"
+	sys.exit()
+    conf = conf['result']
+    result = "'tracker_id':"+conf['tracker']['id']
+    result += "\n'tracker_user':"+conf['tracker']['user']
+    result += "\n'transmission_server':" + str(conf['transmission']['server'])
+    result += "\n'transmission_port':" + str(conf['transmission']['port'])
+    result += "\n'transmission_user':" + str(conf['transmission']['user'])
+    result += "\n'transmission_slotNumber':" + str(conf['transmission']['slotNumber'])
+    if 'folder' in conf['transmission'].keys():
+        result += "\n'transmission_folder':" + str(conf['transmission']['folder'])
+    if len(conf['smtp'])>0:
+        result += "\n'smtp_server':" + str(conf['smtp']['server'])
+        result += "\n'smtp_port':" + str(conf['smtp']['port'])
+        result += "\n'smtp_ssltls':" + str(conf['smtp']['ssltls'])
+        result += "\n'smtp_user':" + str(conf['smtp']['user'])
+        result += "\n'smtp_emailSender':" + str(conf['smtp']['emailSender'])
+    for keyword in conf['keywords']:
         result += "\n'keywords':" + keyword
-
     print result
 
 def main():
@@ -473,14 +519,18 @@ def main():
         Prompt.arg = args.arg.split(',')
 
     # Initialize more data
-    
-    
+    m = TSWmachine(True,args.verbosity)
     if args.action != 'init':
-        conffile = ConfFile()
-        logging.debug('Loading of conffile: %s', args.config)
-        opened = conffile.openFile(args.config)
-        if opened['rtn']!='200':
-            print("Please first use tvShowWatch --action init")
+	logging.debug('Loading of conffile: %s', args.config)
+	logging.debug('Loading of seriefile: %s', args.seriefile)
+	result = m.openFiles(args.config, args.seriefile)
+	if result['rtn']!='200':
+		print("Please first use tvShowWatch --action init")
+		sys.exit()
+    else:
+        result = m.createConf(args.config)
+        if result['rtn']!='200':
+            print('Error during creation of the configuration file: '+result['error'])
             sys.exit()
 
     action_fct = {
@@ -498,10 +548,7 @@ def main():
     
     fct = action_fct[args.action]
     logging.debug('Action function: %s', fct)
-    if args.action == 'init':
-        fct(args.config,args.seriefile)
-    else:
-        fct(conffile,args.seriefile)
+    fct(m)
 
 if __name__ == '__main__':
     main()

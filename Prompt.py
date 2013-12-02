@@ -134,7 +134,10 @@ def promptChoice(question,choix,default = 0):
 		if reponse == "0":
 			sys.exit()
 
-		reponse = str(choix[default][0]) if reponse == '' else reponse
+		if reponse != '' and not reponse.isdigit():
+			reponse = 9999
+
+		reponse = default+1 if reponse == '' else int(reponse)
 
 		if int(reponse) < len(choix)+1 and int(reponse) > 0:
 			return choix[int(reponse)-1][0]

@@ -49,14 +49,17 @@ class TSWmachine:
 			return self.seriefile.openedFile()
 		return {'rtn':'200','error':messages.returnCode['200']}
 
-	def createConf(self,filename,conf):
+	def createConf(self,filename,conf={}):
 		logging.info('CreateConf ' + str(filename) + ' with '+ str(conf))
 		if (not self.getAuth()):
 			return {'rtn':'406','error':messages.returnCode['406']}
 		self.conffile.createBlankFile(filename)
 		#result = convert_conf(conf)
 		#return self.setConf(result)
-		return self.setConf(conf)
+		if len(conf.keys())>0:
+			return self.setConf(conf)
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
 
 	def getConf(self,conf='all'):
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
@@ -84,13 +87,16 @@ class TSWmachine:
 				if parameter.split('_')[0] == 'smtp':
 					if ('smtp' not in result.keys()):
 						result['email']={}
-					result['smtp'][parameter.split('_')[1]] = email[parameter.split('_')[1]]
+					if parameter.split('_')[1] in email.keys():
+						result['smtp'][parameter.split('_')[1]] = email[parameter.split('_')[1]]
+					else:
+						result['smtp'][parameter.split('_')[1]] = ''
 				if parameter == 'keywords':
 					result['keywords'] = keywords
 					
 		return {'rtn':'200','result':result}
 
-	def setConf(self,conf):
+	def setConf(self,conf={},save=True):
 		if (not self.getAuth()):
 			return {'rtn':'406','error':messages.returnCode['406']}
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
@@ -109,9 +115,11 @@ class TSWmachine:
 					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 			else:
 				return {'rtn':'400','error':messages.returnCode['400'].format(key)}
-		self.conffile._save()
-		return self.testConf(send)		
-		#return {'rtn':'200','error':messages.returnCode['200']}
+		if save:
+			self.conffile._save()
+			return self.testConf(send)
+		else:	
+			return {'rtn':'200','error':messages.returnCode['200']}
 
 	def testConf(self,send=False):
 		logging.info('testConf ')
@@ -186,7 +194,7 @@ class TSWmachine:
 			return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):
-		logging.info('addSerie')
+		logging.info('addSerie ' + s_id + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
