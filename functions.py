@@ -106,25 +106,30 @@ def sendEmail(content,serie,conffile):
 		s.quit()
 
 def transferFile(fichiers,serie,conf):
-	ftp = FTP(conf['server'])
-	ftp.login(conf['user'],conf['password']) 
-	for fichier in fichiers.values():
-		pattern = '{0}/season {1}/{2}'
-		chemin_cible = pattern.format(
-				str(serie['name']),
-				str(serie['season']),
-				"/".join(fichier['name'].split('/')[0:-1])
-						)
-		chemin = conf['folder'] + '/'
-		for folder in chemin_cible.split('/'):
-			if not os.path.isdir(chemin + folder):
-				os.mkdir(chemin + folder)
-			chemin += folder + '/'
-		ftp.retrbinary(
-			'RETR ' + str(fichier['name']), 
-			open(conf['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
-	ftp.quit()
-	print(' => File download is completed!')
+	try:
+		ftp = FTP(conf['server'])
+		ftp.login(conf['user'],conf['password']) 
+		for fichier in fichiers.values():
+			pattern = '{0}/season {1}/{2}'
+			chemin_cible = pattern.format(
+					str(serie['name']),
+					str(serie['season']),
+					"/".join(fichier['name'].split('/')[0:-1])
+							)
+			chemin = conf['folder'] + '/'
+			for folder in chemin_cible.split('/'):
+				if not os.path.isdir(chemin + folder):
+					os.mkdir(chemin + folder)
+				chemin += folder + '/'
+			ftp.retrbinary(
+				'RETR ' + str(fichier['name']), 
+				open(conf['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
+		ftp.quit()
+		print(' => File download is completed!')
+		return True
+	except:
+		print('Error during transfer :'+sys.exc_info()[1].strerror)
+		return False
 
 def add_torrent(result, tc, tracker,confTransmission):
 	result = tracker.select_torrent(result)

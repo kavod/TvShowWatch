@@ -386,9 +386,11 @@ class TSWmachine:
 					torrent = tc.get_torrent(serie['slot_id'])
 					if torrent.status == 'seeding':
 						if(confTransmission['folder'] is not None):
-							transferFile(torrent.files(),serie,confTransmission)
-							content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
-							sendEmail(content,serie,self.conffile)
+							if (transferFile(torrent.files(),serie,confTransmission)):
+								content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
+								sendEmail(content,serie,self.conffile)
+							else:
+								continue
 
 						result = last_aired(serie['id'])
 

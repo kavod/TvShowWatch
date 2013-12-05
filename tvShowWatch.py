@@ -250,10 +250,10 @@ def action_add(m):
 	else:
 		emails = []
 
-	result = m.addSerie(result.data['id'],emails,next['season'],next['episode'])
+	res = m.addSerie(result.data['id'],emails,next['season'],next['episode'])
 
-	if result['rtn']!='200':
-		print('Error during TV Show add: '+result['error'])
+	if res['rtn']!='200':
+		print('Error during TV Show add: '+res['error'])
 		sys.exit()
 	print(result.data['seriesname'] + u" added")
 	sys.exit()
