@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 #encoding:utf-8
 
+from __future__ import print_function
+from select import select
+from subprocess import Popen, PIPE
+
 import sys
 import os
 import tvdb_api
@@ -25,15 +29,15 @@ from email.mime.text import MIMEText
 
 global t
 
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
+CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
+LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 
 def last_aired(serie_id):
 	global t
 	if 't' not in globals():
 		t = tvdb_api.Tvdb()
-	else:#ICI
-		print "connection saved"
+	else:
+		print("connection saved")
 	logging.debug('API initiator: %s', t)
 	result = []
 	last_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
@@ -207,94 +211,19 @@ def keep_in_progress(tor):
 def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
-def action_run(conffile,seriefile):
-	confTracker = conffile.getTracker()
-	tracker = Tracker(confTracker['id'],confTracker['user'],confTracker['password'])
-	series = SerieList()
-	if (series.openFile(seriefile)['rtn']!='200'):
-		print('Use tvShowWatch --init in order to reset')
-
-	for serie in series.listSeries():
-		if serie['episode'] == 0: # If last episode reached
-			print(serie['name'])
-			print(' => broadcast achieved - No more episode - Removing from list')
-			series.delSerie(serie['id'])
-			continue
-
-		str_search = '{0} S{1:02}E{2:02} {3}'
-		str_search_list = []
-		for keyword in conffile.getKeywords():
-			str_search_list.append(str_search.format(
-					serie['name'],
-					int(serie['season']),
-					int(serie['episode']),
-					keyword
-						))
-		print(str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']))
-
-		if serie['status'] == 30: # Torrent already active
-			confTransmission = conffile.getTransmission()
-			if 'tc' not in locals():
-				tc = transmissionrpc.Client(
-					confTransmission['server'],
-					confTransmission['port'],
-					confTransmission['user'],
-					confTransmission['password']
-			
-				)
-
-			tor_found = False
-			for tor in tc.get_torrents(): # Check if torrent still there!
-				if tor.id == serie['slot_id']:
-					tor_found = True
-					break
-			if not tor_found:
-				print(' => Torrent unfoundable. Relaunch required')
-				series.updateSerie(serie['id'],{'status':10,'slot_id':0})
-			else:
-				torrent = tc.get_torrent(serie['slot_id'])
-				if torrent.status == 'seeding':
-					print(' => Torrent download is completed!')
-
-					if(confTransmission['folder'] is not None):
-						transferFile(torrent.files(),serie,confTransmission)
-						content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
-						sendEmail(content,serie,conffile)
-
-					print serie['id']
-					result = last_aired(serie['id'])
-					print result
-					if (result['next']['episode'] > 0):
-						series.updateSerie(serie['id'],{
-									'status':	10,
-									'season':	result['next']['season'],
-									'episode':	result['next']['episode'],
-									'slot_id':	0,
-									'expected':	result['next']['aired']
-									})
-					else:
-						print('It was episode final! Removing from serie list')
-						series.delSerie(serie['id'])
-
-				else:
-					print(' => Torrent download in progress')
-				continue
-
-		if serie['expected'] < date.today(): # If episode broadcast is in the past
-			series.updateSerie(serie['id'],{'status':20})
-			for search in str_search_list:
-				result = tracker.search(search)
-				nb_result = int(result.json()['total'])
-				logging.debug(str(nb_result) + ' result(s)')
-
-				if nb_result > 0: # If at least 1 relevant torrent is found
-					new_torrent = add_torrent(result.json()['torrents'], tracker,conffile.getTransmission())
-					series.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
-			if (nb_result < 1):
-				print(" => No available torrent")
-		else:
-			print(' => Next broadcast: ' + print_date(serie['expected']))
-
+def action_run(m):
+	processes = [Popen(['./TSW_api.py','--action','run'],stdout=PIPE,bufsize=1, close_fds=True, universal_newlines=True)]
+	
+	while processes:
+	        for p in processes[:]:
+	                if p.poll() is not None:
+	                        print(p.stdout.read(), end='')
+	                        p.stdout.close()
+	                        processes.remove(p)
+	        rlist = select([p.stdout for p in processes],[],[],0.1)[0]
+	        for f in rlist:
+        	        print(f.readline(),end='')
+	sys.exit()
 
 def action_list(m):
 	logging.debug('Call function action_list()')
@@ -401,7 +330,7 @@ def action_config(m):
     logging.debug('Call function action_config()')
     conf = m.getConf()
     if (conf['rtn']!='200'):
-        print "Error during configuration reading"
+        print("Error during configuration reading")
 	sys.exit()
     conf = conf['result']
     if (conf['keywords'] is not None):
@@ -452,7 +381,7 @@ def action_getconf(m):
     logging.debug('Call function action_getconf()')
     conf = m.getConf()
     if (conf['rtn']!='200'):
-        print "Error during configuration reading"
+        print("Error during configuration reading")
 	sys.exit()
     conf = conf['result']
     result = "'tracker_id':"+conf['tracker']['id']
@@ -471,7 +400,7 @@ def action_getconf(m):
         result += "\n'smtp_emailSender':" + str(conf['smtp']['emailSender'])
     for keyword in conf['keywords']:
         result += "\n'keywords':" + keyword
-    print result
+    print(result)
 
 def main():
 

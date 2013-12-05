@@ -356,6 +356,13 @@ class TSWmachine:
 						int(serie['episode']),
 						keyword
 							))
+			if (len(str_search_list)<1):
+				str_search_list.append(str_search.format(
+                                                serie['name'],
+                                                int(serie['season']),
+                                                int(serie['episode']),
+                                                ''
+                                                        ))
 			confTransmission = self.conffile.getTransmission()
 			if int(serie['status']) == 30: # Torrent already active
 				if 'tc' not in locals():
