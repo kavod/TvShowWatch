@@ -323,11 +323,11 @@ class TSWmachine:
 		logging.info('Run !!! ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
-			print("{0}:{1]".format(opened['rtn'],opened['error']))
+			print("{0}|{1}".format(opened['rtn'],opened['error']))
 			return
 		testconf = self.testConf()
 		if testconf['rtn'] != '200' and testconf['rtn'] != '302':
-			print("{0}:{1]".format(testconf['rtn'],testconf['error']))
+			print("{0}|{1}".format(testconf['rtn'],testconf['error']))
 			return
 		conf = self.conffile.getTracker()
 		tracker = Tracker(conf['id'],conf['user'],conf['password'])
@@ -335,16 +335,17 @@ class TSWmachine:
 		series = self.seriefile
 
 		str_search = '{0} S{1:02}E{2:02} {3}'
+		str_result = "{0}|{1}|{2}"
 
 		if (len(series.listSeries())<1):
-			print("{0}:{1}".format('300',messages.returnCode['300']))
+			print("{0}|{1}".format('300',messages.returnCode['300']))
 			return
 
 		for serie in series.listSeries():
 			if serie['episode'] == 0: # If last episode reached
 				result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
 				self.delSerie(serie['id'])
-				print("{0}:{1}:{2}".format('301',str(serie['id']),messages.returnCode['301']))
+				print(str_result.format('301',str(serie['id']),messages.returnCode['301']))
 				continue
 
 			
@@ -390,6 +391,7 @@ class TSWmachine:
 								content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
 								sendEmail(content,serie,self.conffile)
 							else:
+								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
 
 						result = last_aired(serie['id'])
@@ -402,13 +404,13 @@ class TSWmachine:
 										'slot_id':	0,
 										'expected':	result['next']['aired']
 										})
-							print("{0}:{1}:{2}".format('250',str(serie['id']),messages.returnCode['250']))
+							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
 						else:
-							print("{0}:{1}:{2}".format('260',str(serie['id']),messages.returnCode['260']))
+							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
 							self.seriefile.delSerie(serie['id'])
 
 					else:
-						print("{0}:{1}:{2}".format('240',str(serie['id']),messages.returnCode['240']))
+						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
 			if int(serie['status']) in [10,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
@@ -432,10 +434,10 @@ class TSWmachine:
 					if nb_result > 0: # If at least 1 relevant torrent is found
 						new_torrent = add_torrent(result, tc, tracker,self.conffile.getTransmission())
 						self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
-						print("{0}:{1}:{2}".format('230',str(serie['id']),messages.returnCode['230']))
+						print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
 					elif (nb_result < 1):
-						print("{0}:{1}:{2}".format('220',str(serie['id']),messages.returnCode['220']))
+						print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
-				print("{0}:{1}:{2}".format('210',str(serie['id']),messages.returnCode['210']))
+				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 
 

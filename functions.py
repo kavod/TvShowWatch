@@ -125,10 +125,10 @@ def transferFile(fichiers,serie,conf):
 				'RETR ' + str(fichier['name']), 
 				open(conf['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
 		ftp.quit()
-		print(' => File download is completed!')
+		#print(' => File download is completed!')
 		return True
 	except:
-		print('Error during transfer :'+sys.exc_info()[1].strerror)
+		#print('Error during transfer :'+sys.exc_info()[1].strerror)
 		return False
 
 def add_torrent(result, tc, tracker,confTransmission):

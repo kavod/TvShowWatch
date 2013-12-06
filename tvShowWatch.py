@@ -2,23 +2,19 @@
 #encoding:utf-8
 
 from __future__ import print_function
-from select import select
-from subprocess import Popen, PIPE
-
 import sys
 import os
 import tvdb_api
-#import time
 from datetime import date
 import string
 import logging
 import argparse
-#import xml.etree.ElementTree as ET
 import transmissionrpc
 import smtplib
 import unicodedata
+from select import select
+from subprocess import Popen, PIPE
 from myDate import *
-#from types import *
 import Prompt
 from TSWmachine import *
 from ConfFile import ConfFile
@@ -31,6 +27,7 @@ global t
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
+API_FILE= os.path.dirname(os.path.realpath(__file__)) + '/TSW_api.py'
 
 def last_aired(serie_id):
 	global t
@@ -78,7 +75,7 @@ def last_aired(serie_id):
 				'aired':	next_episode['firstaired']
 				}
 		}
-
+"""
 def sendEmail(content,serie,conffile):
 	confEmail = conffile.getEmail()
 	if len(confEmail)>0:
@@ -146,12 +143,12 @@ def add_torrent(result, tracker,confTransmission):
 	os.remove('file.torrent')
 	tc.start_torrent(new_torrent.id)
 	return new_torrent
-
+"""
 def input_serie():
 	global t
 	if 't' not in globals():
 		t = tvdb_api.Tvdb()
-	else:#ICI
+	else:
 		logging.debug('connection saved')
 	logging.debug('API initiator: %s', t)
 	result = []
@@ -212,17 +209,42 @@ def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
 def action_run(m):
-	processes = [Popen(['./TSW_api.py','--action','run'],stdout=PIPE,bufsize=1, close_fds=True, universal_newlines=True)]
+	result = m.getSeries()
+	if result['rtn']=='300':
+		print("No TV Show scheduled")
+		sys.exit()
+	if result['rtn']!='200':
+		print('Error during TV Shows reading: '+result['error'])
+		sys.exit()
+
+	liste = result['result']
+	processes = [Popen([
+			sys.executable,	API_FILE,
+			'-c',m.conffile.filename,
+			'-s',m.seriefile.filename,
+			'--action','run'
+			],stdout=PIPE,bufsize=1, close_fds=True, universal_newlines=True)]
 	
 	while processes:
 	        for p in processes[:]:
 	                if p.poll() is not None:
-	                        print(p.stdout.read(), end='')
-	                        p.stdout.close()
+				result = p.stdout.read()
+				fresult = result.split('|')
+				if len(fresult)>2:
+					print(str(next(x['name'] for x in liste if str(x['id'])==str(fresult[1])))+' : '+str(fresult[2]), end='')
+	                        else:
+					print(result, end='')
+				p.stdout.close()
 	                        processes.remove(p)
 	        rlist = select([p.stdout for p in processes],[],[],0.1)[0]
 	        for f in rlist:
-        	        print(f.readline(),end='')
+			result = f.readline()
+			fresult = result.split('|')
+			if len(fresult)>2:
+				print(str(next(x['name'] for x in liste if str(x['id'])==str(fresult[1])))+' : ' + str(fresult[2]), end='')
+			else:
+				print(result,end='')
+        	        #print(f.readline(),end='')
 	sys.exit()
 
 def action_list(m):
