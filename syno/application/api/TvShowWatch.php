@@ -1,5 +1,6 @@
 <?
 define("PY_FILE", '/var/packages/TvShowWatch/target/TSW_api.py');
+define("RUN_FILE", '/var/packages/TvShowWatch/target/tvShowWatch.py');
 define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
 define("LIST_FILE", '/var/packages/TvShowWatch/etc/series.xml');
 define("PYTHON_EXEC", '/var/packages/python/target/bin/python');
@@ -12,7 +13,7 @@ class TvShowWatch
 	var $auth;
 	var $cmd;
 
-	function TvShowWatch($py_file = PY_FILE, $conffile = CONF_FILE, $serielist = LIST_FILE, $debug = False)
+	function TvShowWatch($py_file = PY_FILE, $conffile = CONF_FILE, $serielist = LIST_FILE, $debug = False, $run_file = RUN_FILE)
 	{
 		$this->debug = ($debug != False);
 		$this->auth = false;
@@ -34,7 +35,14 @@ class TvShowWatch
 			return false;
 		}
 		$this->py_file = $py_file;
+		if (!file_exists($run_file))
+		{
+			trigger_error("Python run file $run_file does not exist");
+			return false;
+		}
+		$this->run_file = $run_file;
 		$this->cmd = $this->py_file . ' -c "'.str_replace('"','\"',$this->conffile) . '" -s "'.str_replace('"','\"',$this->serielist).'" ';
+		$this->run_cmd = $this->run_file . ' -c "'.str_replace('"','\"',$this->conffile) . '" -s "'.str_replace('"','\"',$this->serielist).'" ';
 	}
 
 	function auth($auth=true)
@@ -165,7 +173,7 @@ class TvShowWatch
 
 	function run()
 	{
-		$cmd = "date >> " . LOGFILE . ";".PYTHON_EXEC . " " . $this->cmd." --action run >>".LOGFILE." 2>&1 &";
+		$cmd = "date >> " . LOGFILE . ";".PYTHON_EXEC . " " . $this->run_cmd." --action run >>".LOGFILE." 2>&1 &";
 		exec($cmd,$result);
 		if ($this->debug)
                 {

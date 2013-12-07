@@ -4,24 +4,16 @@
 from __future__ import print_function
 import sys
 import os
-#import tvdb_api
 from datetime import date
 import string
 import logging
 import argparse
-#import transmissionrpc
-#import smtplib
 import unicodedata
 from select import select
 from subprocess import Popen, PIPE
 from myDate import *
 import Prompt
 from TSWmachine import *
-#from ConfFile import ConfFile
-#from serieList import SerieList
-#from tracker import *
-#from ftplib import FTP
-#from email.mime.text import MIMEText
 from myTvDB import *
 
 global t

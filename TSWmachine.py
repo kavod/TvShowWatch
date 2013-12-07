@@ -433,9 +433,11 @@ class TSWmachine:
 					if nb_result > 0: # If at least 1 relevant torrent is found
 						new_torrent = add_torrent(result, tc, tracker,self.conffile.getTransmission())
 						self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
-						print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
-					elif (nb_result < 1):
-						print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
+						break
+				if nb_result > 0:
+					print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
+				else:
+					print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 
