@@ -3,7 +3,6 @@
 
 import os
 import sys
-import tvdb_api
 import logging
 import transmissionrpc
 import smtplib
@@ -11,6 +10,7 @@ from email.mime.text import MIMEText
 from datetime import date
 from tracker import *
 from myDate import *
+from myTvDB import *
 from ConfFile import ConfFile
 from ftplib import FTP
 
@@ -30,14 +30,11 @@ def convert_conf(conf,root=''):
 def last_aired(serie_id,s_season=0,s_episode=0):
 	global t
 	if 't' not in globals():
-		t = tvdb_api.Tvdb()
-	else:#ICI
+		t = myTvDB()
+	else:
 		logging.info('Connection saved')
 
 	logging.debug('API initiator: %s', t)
-	result = []
-	last_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
-	next_episode = {'seasonnumber': 0, 'episodenumber': 0, 'firstaired': datetime.date(1900,1,1) }
 
 	try:
 		#for serie_id in series:
@@ -46,46 +43,19 @@ def last_aired(serie_id,s_season=0,s_episode=0):
 		serie = t[int(serie_id)]
 	except Exception,e:
 		return {}
-	# Delete of Special season
-	if 0 in serie.keys():
-		del serie[0]
 
-	nb_seasons = len(serie)
 	if int(s_season)*int(s_episode)>0:
 		return	{
 			'id':		int(serie_id),
 			'seriesname':	serie.data['seriesname'],
-			'next':	{
-				'season':	int(s_season),
-				'episode':	int(s_episode),
-				'aired':	convert_date(serie[int(s_season)][int(s_episode)]['firstaired'])
-				}
+			'next':	t[int(serie_id)][int(s_season)][int(s_episode)]
 			}
-	for episode in serie[nb_seasons].values():
-	 
-	 if episode['firstaired'] is not None:
-	  date_firstaired = convert_date(episode['firstaired'])
-	  if date_firstaired >= datetime.date.today():
-		next_episode = episode
-	  	next_episode['firstaired'] = date_firstaired
-	  	break
-	  else:
-	   last_episode = episode
-	   last_episode['firstaired'] = date_firstaired
 
 	return	{
 			'id':		int(serie_id),
 			'seriesname':	serie.data['seriesname'],
-			'last':	{
-				'season':	int(last_episode['seasonnumber']),
-				'episode':	int(last_episode['episodenumber']),
-				'aired':	last_episode['firstaired']
-				},
-			'next':	{
-				'season':	int(next_episode['seasonnumber']),
-				'episode':	int(next_episode['episodenumber']),
-				'aired':	next_episode['firstaired']
-				}
+			'last':	t[int(serie_id)].lastAired(),
+			'next': t[int(serie_id)].nextAired()
 		}
 
 def sendEmail(content,serie,conffile):
@@ -143,7 +113,7 @@ def add_torrent(result, tc, tracker,confTransmission):
 	while len(torrents) >= int(confTransmission['slotNumber']):
 		# If there is not slot available, close the older one
 		torrents = filter(keep_in_progress,torrents)
-		torrent = sorted(torrents, key=lambda tor: tor.id, reverse=True)[0]
+		torrent = sorted(torrents, key=lambda tor: tor.date_added)[0]
 		tc.remove_torrent(torrent.id, delete_data=True)
 		logging.info("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
 		torrents = tc.stop_torrent(torrent.id)

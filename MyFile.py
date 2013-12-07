@@ -51,7 +51,7 @@ class MyFile:
 		self.pushOpened(True)
 
 	def openedFile(self):
-		logging.info("Opened file " + str(self.filename) + " : " + str(self.opened))
+		logging.info("Opened file : " + str(self.opened))
 		if(self.opened):
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:

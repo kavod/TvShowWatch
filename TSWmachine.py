@@ -13,8 +13,8 @@ from ConfFile import ConfFile
 from serieList import SerieList
 from functions import *
 
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
+CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
+LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 
 global t
 
@@ -54,8 +54,6 @@ class TSWmachine:
 		if (not self.getAuth()):
 			return {'rtn':'406','error':messages.returnCode['406']}
 		self.conffile.createBlankFile(filename)
-		#result = convert_conf(conf)
-		#return self.setConf(result)
 		if len(conf.keys())>0:
 			return self.setConf(conf)
 		else:
@@ -151,13 +149,13 @@ class TSWmachine:
 			return opened
 		liste = self.seriefile.listSeries(json_c)
 		if len(liste)>0:
-			if isinstance(s_id,int) or (isinstance(s_id,str) and s_id.isdigit()):
+			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
 				if len(result)>0:
 					return {'rtn':'200','result':result[0]}
 				else:
 					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
-			elif isinstance(s_id,str):
+			elif isinstance(s_id,basestring):
 				result = [x for x in liste if x['name'] == s_id]
 				if len(result)>0:
 					return {'rtn':'200','result':result[0]}
@@ -179,7 +177,7 @@ class TSWmachine:
 				return {'rtn':'200','result':[x for x in serielist]}
 			else:
 				return {'rtn':'300','error:':messages.returnCode['300']}
-		elif isinstance(s_ids,int) or (isinstance(s_ids,str) and s_ids.isdigit()):
+		elif isinstance(s_ids,int) or (isinstance(s_ids,basestring) and s_ids.isdigit()):
 			return self.getSerie(s_ids)
 		elif isinstance(s_ids,list):
 			result = []
@@ -194,18 +192,20 @@ class TSWmachine:
 			return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):
-		logging.info('addSerie ' + s_id + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
+		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
 		if self.getSerie(s_id)['rtn']=='200':
 			return {'rtn':'409','error:':messages.returnCode['409']}
+
 		serie = last_aired(int(s_id),int(season),int(episode))
 		if len(serie.keys())<1:
 			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 		episode = serie['next']
-		if episode['episode'] == 0:
+		if episode is None:
 			return {'rtn':'410','error:':messages.returnCode['410']}
+		episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
 		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails):
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
@@ -243,7 +243,7 @@ class TSWmachine:
 			emails = None
 		liste = self.seriefile.listSeries(json_c)
 		if len(liste)>0:
-			if isinstance(s_id,int) or (isinstance(s_id,str) and s_id.isdigit()):
+			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
 				if len(result)>0:
 					if (self.seriefile.updateSerie(result[0]['id'],param)):
@@ -258,7 +258,7 @@ class TSWmachine:
 						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
 				else:
 					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
-			elif isinstance(s_id,str):
+			elif isinstance(s_id,basestring):
 				result = [x for x in liste if x['name'] == s_id]
 				if len(result)>0:
 					if (self.seriefile.updateSerie(result[0]['id'],param)):
@@ -396,13 +396,13 @@ class TSWmachine:
 
 						result = last_aired(serie['id'])
 
-						if (result['next']['episode'] > 0):
+						if (result['next'] is not None):
 							self.seriefile.updateSerie(serie['id'],{
 										'status':	10,
-										'season':	result['next']['season'],
-										'episode':	result['next']['episode'],
+										'season':	result['next']['seasonnumber'],
+										'episode':	result['next']['episodenumber'],
 										'slot_id':	0,
-										'expected':	result['next']['aired']
+										'expected':	result['next']['firstaired']
 										})
 							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
 						else:
@@ -427,7 +427,6 @@ class TSWmachine:
 				self.seriefile.updateSerie(serie['id'],{'status':20})
 				for search in str_search_list:
 					result = tracker.search(search)
-					#nb_result = int(result.json()['total'])
 					nb_result = len(result)
 					logging.debug(str(nb_result) + ' result(s)')
 
