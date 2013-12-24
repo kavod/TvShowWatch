@@ -24,15 +24,20 @@ class MyFile:
 				logging.info(self.description + " creation")
 				self.createBlankFile(filename)
 				return self._create()
-				#return {'rtn':'200','error':messages.returnCode['200']}
 			else:
 				self.pushOpened(False)
 				return {'rtn':'401','error':messages.returnCode['401'].format(self.description)}
 		else:
 			self.tree = ET.parse(self.filename)
 			if self.getVersion() != self._version():
-				self.pushOpened(False)
-				return {'rtn':'402','error':messages.returnCode['402'].format(self.description,self.getVersion(),self._version())}
+				mig_meth = "migration_" + str(self.getVersion()) + "_to_" + str(self._version())
+				if mig_meth in dir(self):
+					migration_res = getattr(self,mig_meth)()
+					self.pushOpened(True)
+					return {'rtn':'200','error':messages.returnCode['200']}
+				else: 
+					self.pushOpened(False)
+					return {'rtn':'402','error':messages.returnCode['402'].format(self.description,self.getVersion(),self._version())}
 			else:
 				self.pushOpened(True)
 				return {'rtn':'200','error':messages.returnCode['200']}

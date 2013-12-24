@@ -8,8 +8,8 @@ import argparse
 import json
 from TSWmachine import *
 
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else '/config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else '/series.xml'
+CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
+LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 
 def main():
 	# Get input parameters

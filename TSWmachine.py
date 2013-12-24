@@ -206,7 +206,7 @@ class TSWmachine:
 		if episode is None:
 			return {'rtn':'410','error:':messages.returnCode['410']}
 		episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
-		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails):
+		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
@@ -230,49 +230,48 @@ class TSWmachine:
 		else:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
+	def _setSerie(self,s_id,result,emails,keywords,param={}):
+		error = False
+		if len(result)>0:
+			if (self.seriefile.updateSerie(result['id'],param)):
+				if emails is not None:
+					if(not self.seriefile.changeEmails(result['id'],emails)):
+						error = True
+				if keywords is not None:
+					if(not self.seriefile.changeKeywords(result['id'],keywords)):
+						error = True
+				if error:
+					return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
+				else:
+					return {'rtn':'200','error':messages.returnCode['200']}
+			else:
+				return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
+		else:
+			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))} #Unfoundable
+
 	def setSerie(self,s_id,param={},json_c=False):
 		logging.info('getSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		if not all(y in ['emails','season','episode','expected','status'] for y in param.keys()):
+		if not all(y in ['emails','season','episode','expected','status','keywords'] for y in param.keys()):
 			return {'rtn':'400','error':messages.returnCode['400'].format(str(param.keys()))}
 		if 'emails' in param.keys():
 			emails = param.pop('emails')
 		else:
 			emails = None
+		if 'keywords' in param.keys():
+			keywords = param.pop('keywords')
+		else:
+			keywords = None
 		liste = self.seriefile.listSeries(json_c)
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
-				if len(result)>0:
-					if (self.seriefile.updateSerie(result[0]['id'],param)):
-						if emails is not None:
-							if(self.seriefile.changeEmails(result[0]['id'],emails)):
-								return {'rtn':'200','error':messages.returnCode['200']}
-							else:
-								return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
-						else:
-							return {'rtn':'200','error':messages.returnCode['200']}
-					else:
-						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
-				else:
-					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
+				return self._setSerie(s_id,result[0],emails,keywords,param)
 			elif isinstance(s_id,basestring):
 				result = [x for x in liste if x['name'] == s_id]
-				if len(result)>0:
-					if (self.seriefile.updateSerie(result[0]['id'],param)):
-						if emails is not None:
-							if(self.seriefile.changeEmails(result[0]['id'],emails)):
-								return {'rtn':'200','error':messages.returnCode['200']}
-							else:
-								return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
-						else:
-							return {'rtn':'200','error':messages.returnCode['200']}
-					else:
-						return {'rtn':'417','error':messages.returnCode['408'].format(result[0]['name'])}
-				else:
-					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
+				return self._setSerie(s_id,result[0],emails,keywords,param)
 			else:
 				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
 		else:
@@ -350,7 +349,14 @@ class TSWmachine:
 
 			
 			str_search_list = []
-			for keyword in self.conffile.getKeywords():
+			"""for keyword in self.conffile.getKeywords():
+				str_search_list.append(str_search.format(
+						serie['name'],
+						int(serie['season']),
+						int(serie['episode']),
+						keyword
+							))"""
+			for keyword in serie['keywords']:
 				str_search_list.append(str_search.format(
 						serie['name'],
 						int(serie['season']),
@@ -428,7 +434,7 @@ class TSWmachine:
 				for search in str_search_list:
 					result = tracker.search(search)
 					nb_result = len(result)
-					logging.debug(str(nb_result) + ' result(s)')
+					logging.debug(search + ":" + str(nb_result) + ' result(s)')
 
 					if nb_result > 0: # If at least 1 relevant torrent is found
 						new_torrent = add_torrent(result, tc, tracker,self.conffile.getTransmission())

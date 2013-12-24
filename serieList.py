@@ -5,7 +5,7 @@ from MyFile import *
 from myDate import *
 
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-LIST_VERSION = "1.1"
+LIST_VERSION = "1.2"
 
 class SerieList(MyFile):
 	def __init__(self):
@@ -13,26 +13,9 @@ class SerieList(MyFile):
 
 	def openFile(self,filename = LIST_FILE):
 		return MyFile.openFile(self,filename,True)
-		"""self.filename = filename
-		if not self.testFileExists():
-			logging.info(self.description + " creation")
-			self._create()
-			return True
-		else:
-			self.tree = ET.parse(self.filename)
-			if self.getVersion() != self._version():
-				print("Your {0} file version ({1}) is obsolet (<{2}).".format(self.description,self.getVersion(),self._version()))
-				return False
-			else:
-				return True"""
 
 	def _version(self):
 		return LIST_VERSION
-
-	"""def _create(self):
-		self._create_root()
-		self._save()
-		return True"""
 
 	"""
 		The ``addSerie`` method
@@ -58,7 +41,7 @@ class SerieList(MyFile):
 		True
 		
 	"""
-	def addSerie(self, s_id, seriesname, s_episode, emails):
+	def addSerie(self, s_id, seriesname, s_episode, emails, keywords = []):
 
 		if self.testSerieExists(s_id):
 			print('TV Show already scheduled')
@@ -84,6 +67,10 @@ class SerieList(MyFile):
 		for email in emails:
 			node = ET.SubElement(serie, "email")
 			node.text = email
+
+		for keyword in keywords:
+			keywordNode = ET.SubElement(serie, "keyword")
+			keywordNode.text = str(keyword)
 
 		self._save()
 		return True
@@ -144,6 +131,9 @@ class SerieList(MyFile):
 			emails_list = []
 			for email in serie.findall('email'):
 				emails_list.append(email.text)
+			keywords_list = []
+			for keyword in serie.findall('keyword'):
+				keywords_list.append(keyword.text)
 			result.append({
 				'id': 		int(serie.find('id').text),
 				'name':		str(serie.find('name').text),
@@ -152,7 +142,8 @@ class SerieList(MyFile):
 				'status': 	int(serie.find('status').text),
 				'slot_id': 	int(serie.find('slot_id').text),
 				'expected':	serie.find('expected').text if json_c else convert_date(serie.find('expected').text),
-				'emails': 	emails_list
+				'emails': 	emails_list,
+				'keywords':	keywords_list
 					})
 		return result
 
@@ -167,17 +158,25 @@ class SerieList(MyFile):
 		self._save()
 		return result
 
-	def changeEmails(self,s_id,emails):
+	def changeEmails(self,s_id,emails=[]):
+		return self.changeList('email',s_id,emails)
+
+	def changeKeywords(self,s_id,keywords=[]):
+		return self.changeList('keyword',s_id,keywords)
+
+	def changeList(self,listtype,s_id,values=[]):
 		result = False
 		series = self.tree.getroot()
 		for serie in series.findall('serie'):
 			if serie.find('id').text == str(s_id):
-				for emailNode in serie.findall('email'):
-					serie.remove(emailNode)
-				for email in emails:
-					emailNode = ET.SubElement(serie, "email")
-					emailNode.text = str(email)
+				for node in serie.findall(listtype):
+					serie.remove(node)
+				for value in values:
+					node = ET.SubElement(serie, listtype)
+					node.text = str(value)
 				result = True
-		self._save()
+		if result:		
+			self._save()
 		return result
+
 
