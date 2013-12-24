@@ -19,25 +19,25 @@ class TvShowWatch
 		$this->auth = false;
 		if (!file_exists($conffile))
 		{
-			trigger_error("Configuration file $conffile does not exist");
+			trigger_error("Configuration file $conffile does not exist",E_ERROR);
 			return false;
 		}
 		$this->conffile = $conffile;
-		if (!file_exists($serielist))
+		/*if (!file_exists($serielist))
 		{
-			trigger_error("Serie list file $serielist does not exist");
+			trigger_error("Serie list file $serielist does not exist",E_ERROR);
 			return false;
-		}
+		}*/
 		$this->serielist = $serielist;
 		if (!file_exists($py_file))
 		{
-			trigger_error("Python file $py_file does not exist");
+			trigger_error("Python file $py_file does not exist",E_ERROR);
 			return false;
 		}
 		$this->py_file = $py_file;
 		if (!file_exists($run_file))
 		{
-			trigger_error("Python run file $run_file does not exist");
+			trigger_error("Python run file $run_file does not exist",E_ERROR);
 			return false;
 		}
 		$this->run_file = $run_file;
