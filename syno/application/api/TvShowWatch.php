@@ -3,7 +3,7 @@ define("PY_FILE", '/var/packages/TvShowWatch/target/TSW_api.py');
 define("RUN_FILE", '/var/packages/TvShowWatch/target/tvShowWatch.py');
 define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
 define("LIST_FILE", '/var/packages/TvShowWatch/etc/series.xml');
-define("PYTHON_EXEC", '/var/packages/python/target/bin/python');
+define("PYTHON_EXEC", 'PATH=/var/packages/python/target/bin:$PATH ; python');
 define("LOGFILE", '/var/log/TSW.log');
 
 class TvShowWatch
@@ -23,7 +23,7 @@ class TvShowWatch
 			return false;
 		}
 		$this->conffile = $conffile;
-		if (!file_exists($conffile))
+		if (!file_exists($serielist))
 		{
 			trigger_error("Serie list file $serielist does not exist");
 			return false;

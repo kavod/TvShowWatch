@@ -4,17 +4,23 @@ function cmp($a, $b)
     return strcmp($a['col1']["label"], $b['col1']["label"]);
 }
 
+date_default_timezone_set('America/New_York'); 
 function cmp_serie($a, $b)
 {
-    return ($a->firstAired < $b->firstAired) ? -1 : 1;
+	$a['firstaired'] = (string)$a['firstaired'] !== '' ? new DateTime((string)$a['firstaired']) : null;
+	$b['firstaired'] = (string)$b['firstaired'] !== '' ? new DateTime((string)$b['firstaired']) : null;
+    return ($a['firstaired'] < $b['firstaired']) ? -1 : 1;
 }
 
 function filter_series($a)
 {
+	$a['firstaired'] = (string)$a['firstaired'] !== '' ? new DateTime((string)$a['firstaired']) : null;
+
 	$today = getdate();
-	if ($a->firstAired == null)
+	if ($a['firstaired'] == null)
 		return false;
-	return ($a->firstAired->getTimestamp() > mktime(12,0,0,$today['mon'],$today['mday']+1));
+
+	return ($a['firstaired']->getTimestamp() > mktime(12,0,0,$today['mon'],$today['mday']+1));
 }
 
 function serieStatus($status_id)
@@ -71,81 +77,6 @@ function email_api_conf($post)
 	return $conf_out;
 }
 
-function transmission_conf($server,$port,$username,$password,$slotNumber,$folder)
-{
-	$config_out = "<transmission><server>";
-	$config_out .= $server;
-	$config_out .= "</server><port>";
-	$config_out .= $port;
-	$config_out .= "</port><user>";
-	$config_out .= $username;
-	$config_out .= "</user><password>";
-	$config_out .= $password;
-	$config_out .= "</password><slotNumber>";
-	$config_out .= $slotNumber;
-	$config_out .= "</slotNumber>";
-	if ($folder != "")
-	{
-		$config_out .= "<folder>";
-		$config_out .= $folder;
-		$config_out .= "</folder>";
-	} else
-	{
-		$config_out .= "<folder />";
-	}
-	$config_out .= "</transmission>";
-	return $config_out;
-}
-
-/*function tracker_conf($tracker_id,$username,$password)
-{
-	$config_out = "<tracker><id>";
-	$config_out .= $tracker_id;
-	$config_out .= "</id><user>";
-	$config_out .= $username;
-	$config_out .= "</user><password>";
-	$config_out .= $password;
-	$config_out .= "</password>";
-	$config_out .= "</tracker>";
-	return $config_out;
-}
-
-function email_conf($server,$port,$ssltls,$username,$password,$emailSender)
-{
-	$config_out = "<smtp><server>";
-	$config_out .= $server;
-	$config_out .= "</server><port>";
-	$config_out .= $port;
-	$config_out .= "</port><ssltls>";
-	$config_out .= ($ssltls=='1') ? 'True' : 'False';
-	$config_out .= "</ssltls>";
-	if ($username != "")
-	{
-		$config_out .= "<user>";
-		$config_out .= $username;
-		$config_out .= "</user><password>";
-		$config_out .= $password;
-		$config_out .= "</password>";
-	}
-	$config_out .= "<emailSender>";
-	$config_out .= $emailSender;
-	$config_out .= "</emailSender>";
-	$config_out .= "</smtp>";
-	return $config_out;
-}
-
-function keywords_conf($keywords)
-{
-	$config_out = "<keywords>";
-	foreach ($keywords as $keyword)
-	{
-		$config_out .= "<keyword>";
-		$config_out .= $keyword;
-		$config_out .= "</keyword>";
-	}
-	$config_out .= "</keywords>";
-	return $config_out;
-}*/
 $tab_msg = array(
 	'conf' => 	'Initial configuration must be done before',
 	'series' =>	'No TV Show scheduled'
