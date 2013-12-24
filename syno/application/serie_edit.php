@@ -2,8 +2,6 @@
 if (!TSW)
 	die('Not in TSW');
 
-use Moinax\TvDb\Client;
-
 	$page = 'series';
 	check_conf(CONF_FILE,$page);
 	check_series(SERIES_FILE,$page);
@@ -36,17 +34,15 @@ use Moinax\TvDb\Client;
 	}
 	try
 	{
-		$tvdb = new Client(TVDB_URL, TVDB_API_KEY);
-		$serverTime = $tvdb->getServerTime();
-		// Search for a show
+		$tvdb = new TvDB(($debug != ''));
 		$data = $tvdb->getSerie($serie['id']);
-		$episodes = $tvdb->getSerieEpisodes($serie['id']);
+		$episodes = $tvdb->getEpisodes($serie['id']);
 		$episodes = $episodes['episodes'];
 		$episodes = array_filter($episodes,'filter_series');
 		if ($episodes != null)
 		{
 			usort($episodes,'cmp_serie');
-			$next_episode = array('season'=>$episodes[0]->season,'episode'=> $episodes[0]->number);
+			$next_episode = array('season'=>$episodes[0]['seasonnumber'],'episode'=> $episodes[0]['episodenumber']);
 		} else
 			$next_episode = array('season'=>'','episode'=> '');
 	}
@@ -64,7 +60,7 @@ use Moinax\TvDb\Client;
 				$episode = $tvdb->getEpisode($serie['id'], (int)$_POST['season'], (int)$_POST['episode'], 'en');
 				if (!isset($TSW))
 					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-				$update = $TSW->setSerie($serie['id'],array('season'=>(int)$_POST['season'],'episode'=>(int)$_POST['episode'],'expected'=>$episode->firstAired->format('Y-m-d')));
+				$update = $TSW->setSerie($serie['id'],array('season'=>(int)$_POST['season'],'episode'=>(int)$_POST['episode'],'expected'=>$episode['firstaired']));
 				if ($update['rtn'] != '200')
 					$msg = 'Error during TV Show update<br />'.$update['error'];
 				else
@@ -95,15 +91,15 @@ use Moinax\TvDb\Client;
 	$content = array();
 	$content[] = array(
 				'type' => 'h1',
-				'title' => $data->name
+				'title' => $data['seriesname']
 			);
 	$content[] = array(
 				'type' => 'banner',
-				'u_banner' => TVDB_URL . '/banners/_cache/' . $data->banner
+				'u_banner' => str_replace("banners/graphical","banners/_cache/graphical",$data['banner'])
 			);
 	$content[] = array(
 				'type' => 'longtext',
-				'text' => $data->overview
+				'text' => $data['overview']
 			);
 	$content[] = array(
 				'type' => 'form',

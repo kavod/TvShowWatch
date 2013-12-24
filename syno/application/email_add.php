@@ -34,7 +34,7 @@ if (!TSW)
 		if ($result['rtn']!='200')
 			$msg = 'Error during email insertion<br />'.$result['error'];
 		else
-			$msg = 'Deletion OK';
+			$msg = 'Email add OK';
 		include('serie_edit.php');
 		/*if ($_GET['debug'] != '1')
 			header("Location:index.php?page=serie_edit&id=" . $serie['id'] . "&msg=".htmlentities($msg).$debug);*/

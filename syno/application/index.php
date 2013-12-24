@@ -1,15 +1,12 @@
 <?
+error_reporting(E_ERROR | E_STRICT);  
+ini_set('display_startup_errors',1);  
+ini_set('display_errors',1);
+
 include "inc/rain.tpl.class.php"; //include Rain TPL
 include "functions.php";
 require_once "api/TvShowWatch.php";
-require_once 'api/settings.php';
-require_once 'api/TvDb/CurlException.php';
-require_once 'api/TvDb/Client.php';
-require_once 'api/TvDb/Serie.php';
-require_once 'api/TvDb/Banner.php';
-require_once 'api/TvDb/Episode.php';
-
-use Moinax\TvDb\Client;
+require_once("api/tvdb.php");
 
 define('TSW',true);
 define("CONF_VERSION", '1.8');
