@@ -200,6 +200,12 @@ if (isset($_GET['action']))
 	$debug = (isset($_GET['debug'])) ? $_GET['debug'] : false;
 	switch ($_GET['action'])
 	{
+		case "run":
+			if (!isset($TSW))
+				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			$TSW->auth();
+			$TSW-run();
+			break;
 		case 'save_conf':
 			$result = '{"tracker":' . tracker_api_conf($_POST);
 			$result .= ',"transmission":' . transmission_api_conf($_POST);

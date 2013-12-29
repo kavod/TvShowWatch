@@ -286,6 +286,7 @@ function email_activation() {
 							$(season_selector).change(proxy);
 							$(episode_selector).change(proxy);
 							$('#s' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
+							$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
 						}
 					}
 				}
@@ -337,4 +338,15 @@ function email_activation() {
 			result = JSON.parse(data);
 			show_info(result.error);
 		});
+	}
+
+
+	function retrieve_episode(sid,seasonnumber,episodenumber)
+	{
+		season_selector = '#s' + sid + '>.episode_form>input[name="season"]';
+		episode_selector = '#s' + sid + '>.episode_form>input[name="episode"]';
+		$(season_selector).val(seasonnumber);
+		$(episode_selector).val(episodenumber);
+		format_2digits(season_selector);
+		format_2digits(episode_selector);
 	}
