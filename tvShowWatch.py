@@ -307,7 +307,6 @@ def action_getconf(m):
     print(result)
 
 def main():
-
     # Get input parameters
     parser = argparse.ArgumentParser()
     parser.add_argument(

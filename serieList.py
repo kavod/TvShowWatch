@@ -3,6 +3,7 @@
 
 from MyFile import *
 from myDate import *
+from myTvDB import *
 
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 LIST_VERSION = "1.2"
@@ -125,6 +126,7 @@ class SerieList(MyFile):
 		
 	"""
 	def listSeries(self,json_c=False):
+		t = myTvDB()
 		result = []
 		series = self.tree.getroot()
 		for serie in series.findall('serie'):
@@ -133,7 +135,8 @@ class SerieList(MyFile):
 				emails_list.append(email.text)
 			keywords_list = []
 			for keyword in serie.findall('keyword'):
-				keywords_list.append(keyword.text)
+				keywords_list.append(keyword.text)			
+			tvdb_data = t[int(serie.find('id').text)]
 			result.append({
 				'id': 		int(serie.find('id').text),
 				'name':		str(serie.find('name').text),
@@ -143,7 +146,10 @@ class SerieList(MyFile):
 				'slot_id': 	int(serie.find('slot_id').text),
 				'expected':	serie.find('expected').text if json_c else convert_date(serie.find('expected').text),
 				'emails': 	emails_list,
-				'keywords':	keywords_list
+				'keywords':	keywords_list,
+				'tvdb':		tvdb_data.data,
+				'lastEpisode': tvdb_data.lastAired(),
+				'nextEpisode': tvdb_data.nextAired()
 					})
 		return result
 

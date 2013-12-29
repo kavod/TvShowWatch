@@ -4,6 +4,11 @@ function cmp($a, $b)
     return strcmp($a['col1']["label"], $b['col1']["label"]);
 }
 
+function cmp_serie_az($a, $b)
+{
+    return strcmp($a["serie_name"], $b['serie_name']);
+}
+
 date_default_timezone_set('America/New_York'); 
 function cmp_serie($a, $b)
 {

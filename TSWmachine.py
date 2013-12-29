@@ -12,6 +12,7 @@ from myDate import *
 from ConfFile import ConfFile
 from serieList import SerieList
 from functions import *
+from myTvDB import *
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
@@ -446,5 +447,12 @@ class TSWmachine:
 					print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
-
+	def getEpisode(self,serieID,season,episode):
+		t = myTvDB()
+		try:
+			result = t[serieID][season][episode]
+			return {'rtn':'200','result':result}
+		except Exception,e:
+			return {'rtn':'419','error':messages.returnCode['419']}
+		
 

@@ -1,0 +1,176 @@
+{include="header2"}
+	<section id="home">
+		<h1>{$l_home_welcome}</h1>
+		<div>
+			<label>{$l_home_conf_status}</label>
+			{$home_conf_status}
+		</div>
+		<div>
+			<label>{$l_home_run_status}</label>
+			{$home_run_status}
+		</div>
+		<div>
+			<label>{$l_home_run_now}</label>
+			<button type="button" id="run">{$l_home_run}</button>
+		</div>
+		<h2>{$l_home_last_logs}</h2>
+		<iframe class="log" src="{$u_home_logs}"></iframe>
+	</section>
+	<section id="conf">
+		<h1>{$l_conf_title}</h1>
+		<form id="param">
+			<fieldset>
+				<legend>{$l_conf_tracker}</legend>
+				<div>
+					<label for="tracker_id">{$l_conf_tracker_provider}</label>
+					<select name="tracker_id" id="tracker_id" required>
+{loop="conf_tracker_id"}
+						<option value="{$value.value}"{if="$value.selected == true"} selected{/if}>{$value.text}</option>
+{/loop}
+					</select>
+				</div>
+				<div>
+					<label for="tracker_username">{$l_conf_tracker_username}</label>
+					<input type="text" name="tracker_username" id="tracker_username" placeholder="{$l_conf_username_here}" required />
+				</div>
+				<div>
+					<label for="tracker_password">{$l_conf_tracker_password}</label>
+					<input type="password" name="tracker_password" id="tracker_password" placeholder="{$l_conf_password_here}" required />
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>{$l_conf_transmission}</legend>
+				<div>
+					<label for="trans_server">{$l_conf_transmission_server}</label>
+					<input type="text" name="trans_server" id="trans_server" placeholder="{$l_conf_server_here}" required />
+				</div>
+				<div>
+					<label for="trans_port">{$l_conf_transmission_port}</label>
+					<input type="number" name="trans_port" id="trans_port" placeholder="{$l_conf_port_here}" min="1" max="99999" required />
+				</div>
+				<div>
+					<label for="trans_username">{$l_conf_transmission_username}</label>
+					<input type="text" name="trans_username" id="trans_username" placeholder="{$l_conf_username_here}" required />
+				</div>
+				<div>
+					<label for="trans_password">{$l_conf_transmission_password}</label>
+					<input type="password" name="trans_password" id="trans_password" placeholder="{$l_conf_password_here}" required />
+				</div>
+				<div>
+					<label for="trans_slotNumber">{$l_conf_transmission_slot}</label>
+					<input type="number" name="trans_slotNumber" id="trans_slotNumber" placeholder="{$l_conf_slot_here}" min="1" max="50" required />
+				</div>
+				<div>
+					<label for="trans_folder">{$l_conf_transmission_folder}</label>
+					<input type="text" name="trans_folder" id="trans_folder" placeholder="{$l_conf_keep_blank}" />
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>{$l_conf_email}</legend>
+				<div>
+					<label for="smtp_enable">{$l_conf_enable}</label>
+					<select name="smtp_enable" id="smtp_enable" required>
+						<option value="1">{$l_yes}</option>
+						<option value="0">{$l_no}</option>
+					</select>
+				</div>
+				<div class="smtp_required">
+					<div>
+						<label for="smtp_server">{$l_conf_email_server}</label>
+						<input type="text" name="smtp_server" id="smtp_server" placeholder="{$l_conf_server_here}" required />
+					</div>
+					<div>
+						<label for="smtp_port">{$l_conf_email_port}</label>
+						<input type="number" name="smtp_port" id="smtp_port" placeholder="{$l_conf_port_here}" min="1" max="99999" required />
+					</div>
+					<div>
+						<label>{$l_conf_email_ssltls}</label>
+						<select name="smtp_ssltls" id="smtp_ssltls" required>
+						<option value="1">{$l_yes}</option>
+						<option value="0">{$l_no}</option>
+						</select>
+					</div>
+					<div>
+						<label for="smtp_username">{$l_conf_email_username}</label>
+						<input type="text" name="smtp_username" id="smtp_username" placeholder="{$l_conf_keep_blank_noauth}" />
+					</div>
+					<div>
+						<label for="smtp_password">{$l_conf_email_password}</label>
+						<input type="password" name="smtp_password" id="smtp_password" placeholder="{$l_conf_keep_blank_noauth}" />
+					</div>
+					<div>
+						<label for="smtp_emailSender">{$l_conf_email_sender}</label>
+						<input type="email" name="smtp_emailSender" id="smtp_emailSender" placeholder="{$l_conf_keep_test_email}" required />
+					</div>
+				</div>
+			</fieldset>
+			<input type="submit" value="{$l_submit}" />
+		</form>
+		<form enctype="multipart/form-data" id="import_conf">
+			<fieldset>
+				<legend>{$l_conf_import}</legend>
+				<div>
+					<label for="configFile">{$l_conf_import_file}</label>
+					<input type="file" name="configFile" id="configFile" accept=".xml" />
+				</div>
+			</fieldset>
+			<input type="submit" value="{$l_send}" />
+		</form>
+	</section>
+	<section id="keywords">
+		<h1>{$l_keywords_title}</h1>
+		<form>
+			<fieldset>
+				<ul id="keywords_list" class="sortable">
+{loop="keywords"}
+					<li class="ui-state-default" title="{$value.value}" id="keyword-{$value.key}">{$value.value}</li>
+{/loop}
+					<li class="ui-state-default ui-state-disabled">
+						<input type="text" name="keywords_new" placeholder="Add a new keyword" />
+						<input type="submit" id="add_keyword" value="Add" />
+					</li>
+					<li class="ui-state-default ui-state-disabled" id="trash"><span class="ui-icon ui-icon-trash" style="float: left; margin-right: .3em;"></span></li>
+				</ul>
+			</fieldset>
+		</form>
+	</section>
+	<section id="series">
+		<h1>TV Shows list</h1>
+		<table>
+			<tr>
+				<th class="td_tvshow">TV Show</th>
+				<th class="td_episode">Watched episode</th>
+				<th class="td_status">Status</th>
+				<th class="td_expected">Expected on</th>
+			</tr>
+{loop="series"}
+			<tr>
+				<td class="td_tvshow"><a id="serie_{$value.series_id}" href="#">{$value.series_name}</a></td>
+				<td class="td_episode">{$value.series_episode}</td>
+				<td class="td_status">{$value.series_status}</td>
+				<td class="td_expected">{$value.series_expected}</td>
+			</tr>
+{/loop}
+		</table>
+		<form>
+			<fieldset>
+				<legend>Add TV Show</legend>
+				<label for="serie_id">TvDB show ID</label>
+				<input type="number" min="0" max="999999" name="serie_id" id="serie_id" placeholder="TheTvDB ID of required TV Show" required />
+				<input type="submit" value="Add" />
+			</fieldset>
+		</form>
+		<form enctype="multipart/form-data">
+			<fieldset>
+				<legend>TV Shows list file importation</legend>
+				<div>
+					<label for="serieFile">Import file (*.xml):</label>
+					<input type="file" name="serieFile" id="serieFile" accept=".xml" />
+					<input type="submit" value="Send" />
+				</div>
+			</fieldset>
+		</form>
+	</section>
+</div>
+<button id="conf_ok">Conf OK</button><button id="conf_ko">Conf KO</button><button id="apply_jcss">Apply JCSS</button><button class="getlast" formnovalidate>Retrieve next broadcast</button>
+{include="footer" cache="3600"}

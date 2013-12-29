@@ -21,7 +21,7 @@ returnCode = {
 	'405': 'No configuration for {0}',
 	'406': 'Admin authentification required',
 	'407': 'Incorrect parameter: {0}',
-	'408': 'Unfoundable TV Show: {0}',
+	'408': 'TV Show not found: {0}',
 	'409': 'Already scheduled TV Show',
 	'410': 'Next episode not scheduled',
 	'411': 'Error during adding {0}',
@@ -31,5 +31,7 @@ returnCode = {
 	'415': 'Unable to parse arguments',
 	'416': 'You must provide ID of TV Show you want to delete or \'all\' for global reset',
 	'417': 'Error during updating {0}',
-	'418': 'Error during transfer'
+	'418': 'Error during transfer',
+	'419': 'Unknow episode reference',
+	'499': 'General Error'
 	}

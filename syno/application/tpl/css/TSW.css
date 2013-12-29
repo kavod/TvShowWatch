@@ -1,0 +1,95 @@
+body{
+	font: 62.5% "Trebuchet MS", sans-serif;
+	margin: 0px;
+	background-color: #fff9e5;
+}
+
+body header {
+	font: 300% "Trebuchet MS", sans-serif;
+	margin: 5px;
+	font-weight: bold;
+}
+
+#tabs {
+	margin:5px;
+	width: 800px;
+}
+
+
+label {
+	display: inline-block; 
+	width: 200px;
+}
+
+.log {
+	width: 700px;
+	height: 300px;
+}
+
+legend {
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+th {
+	text-align:left;
+}
+
+table, form {
+	margin-bottom: 20px;
+}
+
+p {
+	
+}
+
+.sortable { list-style-type: none; margin: 0; padding: 0; width: 270px;}
+.sortable li { margin: 3px 6px 3px 6px; padding: 4px; font-size: 1.2em; height: 2.3em; line-height:2.3em; text-overflow:ellipsis;white-space: nowrap; overflow: hidden;}
+/*.ui-state-highlight { height: 2.3em; line-height: 1.2em; }*/
+
+.td_tvshow { width: 150px; }
+.td_episode { width: 110px; }
+.td_status { width: 200px; }
+.td_expected { width: 100px; }
+
+.episode {
+	width:30px;
+}
+
+.mandatory {
+	font-weight: bold;
+	color:red;
+}
+
+.OK {
+	font-weight: bold;
+        color:green;
+}
+
+#loading {
+	background: #000 url(../../tpl/images/ajax-loader.gif) no-repeat center center;
+	height: 80px;
+	width: 80px;
+	position: fixed;
+	left: 400px;
+	top: 50%;
+	margin: -25px 0 0 -25px;
+	z-index: 1000;
+}
+
+.ui-loader-background {
+    width:100%;
+    height:100%;
+    top:0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display:none;
+    position: fixed;
+    z-index:100;
+	display: block;
+}
+
+.info_box {
+	margin-top: 20px; 
+	padding: 0 .7em;
+}

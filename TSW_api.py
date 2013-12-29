@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -120,6 +120,10 @@ def main():
 
 	if args.action == 'del':
 		print(json.dumps(m.delSerie(arg['id'])))
+		sys.exit()
+
+	if args.action == 'getEpisode':
+		print(json.dumps(m.getEpisode(arg['id'],arg['season'],arg['episode'])))
 		sys.exit()
 
 	print(json.dumps({'rtn':'400','error':messages.returnCode['400'].format(args.action)}))
