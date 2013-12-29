@@ -149,6 +149,8 @@ class TSWmachine:
 		if opened['rtn'] != '200':
 			return opened
 		liste = self.seriefile.listSeries(json_c)
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
@@ -174,6 +176,8 @@ class TSWmachine:
 			return opened
 		if s_ids == 'all':
 			serielist = self.seriefile.listSeries(json_c)
+			if serielist == False:
+				return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 			if len(serielist)>0:
 				return {'rtn':'200','result':[x for x in serielist]}
 			else:
@@ -248,7 +252,7 @@ class TSWmachine:
 			else:
 				return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
 		else:
-			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))} #Unfoundable
+			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))} #Not found
 
 	def setSerie(self,s_id,param={},json_c=False):
 		logging.info('getSerie ')
@@ -266,6 +270,8 @@ class TSWmachine:
 		else:
 			keywords = None
 		liste = self.seriefile.listSeries(json_c)
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
@@ -336,12 +342,16 @@ class TSWmachine:
 
 		str_search = '{0} S{1:02}E{2:02} {3}'
 		str_result = "{0}|{1}|{2}"
+		
+		liste = series.listSeries()
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 
-		if (len(series.listSeries())<1):
+		if (len(liste)<1):
 			print("{0}|{1}".format('300',messages.returnCode['300']))
 			return
 
-		for serie in series.listSeries():
+		for serie in liste:
 			if serie['episode'] == 0: # If last episode reached
 				result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
 				self.delSerie(serie['id'])

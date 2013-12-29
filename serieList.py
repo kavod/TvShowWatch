@@ -135,8 +135,11 @@ class SerieList(MyFile):
 				emails_list.append(email.text)
 			keywords_list = []
 			for keyword in serie.findall('keyword'):
-				keywords_list.append(keyword.text)			
-			tvdb_data = t[int(serie.find('id').text)]
+				keywords_list.append(keyword.text)
+			try:			
+				tvdb_data = t[int(serie.find('id').text)]
+			except:
+				return False
 			result.append({
 				'id': 		int(serie.find('id').text),
 				'name':		str(serie.find('name').text),
