@@ -1,5 +1,5 @@
 body{
-	font: 62.5% "Trebuchet MS", sans-serif;
+	font: 70.5% "Trebuchet MS", sans-serif;
 	margin: 0px;
 	background-color: #fff9e5;
 }
@@ -92,4 +92,17 @@ p {
 .info_box {
 	margin-top: 20px; 
 	padding: 0 .7em;
+}
+
+.box {
+	position: absolute;
+	width: 600px;
+	left: 100px;
+	opacity: 0.8;
+}
+
+.emails {
+	list-style-type: none; 
+	margin: 0;
+	padding: 0;	
 }

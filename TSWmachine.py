@@ -165,9 +165,9 @@ class TSWmachine:
 				else:
 					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 			else:
-				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
+				return {'rtn':'407','error':messages.returnCode['407'].format(str(s_id))}
 		else:
-			return {'rtn':'300','error:':messages.returnCode['300']}
+			return {'rtn':'300','error':messages.returnCode['300']}
 
 	def getSeries(self,s_ids='all',json_c=False):
 		logging.info('getSeries ')
@@ -181,7 +181,7 @@ class TSWmachine:
 			if len(serielist)>0:
 				return {'rtn':'200','result':[x for x in serielist]}
 			else:
-				return {'rtn':'300','error:':messages.returnCode['300']}
+				return {'rtn':'300','error':messages.returnCode['300']}
 		elif isinstance(s_ids,int) or (isinstance(s_ids,basestring) and s_ids.isdigit()):
 			return self.getSerie(s_ids)
 		elif isinstance(s_ids,list):
@@ -194,7 +194,7 @@ class TSWmachine:
 					return res_serie
 			return {'rtn':'200','result':result}
 		else:
-			return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_ids))}
+			return {'rtn':'407','error':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):
 		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
@@ -202,14 +202,14 @@ class TSWmachine:
 		if opened['rtn'] != '200':
 			return opened
 		if self.getSerie(s_id)['rtn']=='200':
-			return {'rtn':'409','error:':messages.returnCode['409']}
+			return {'rtn':'409','error':messages.returnCode['409']}
 
 		serie = last_aired(int(s_id),int(season),int(episode))
 		if len(serie.keys())<1:
 			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 		episode = serie['next']
 		if episode is None:
-			return {'rtn':'410','error:':messages.returnCode['410']}
+			return {'rtn':'410','error':messages.returnCode['410']}
 		episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
 		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
 			return {'rtn':'200','error':messages.returnCode['200']}
@@ -280,9 +280,9 @@ class TSWmachine:
 				result = [x for x in liste if x['name'] == s_id]
 				return self._setSerie(s_id,result[0],emails,keywords,param)
 			else:
-				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
+				return {'rtn':'407','error':messages.returnCode['407'].format(str(s_id))}
 		else:
-			return {'rtn':'300','error:':messages.returnCode['300']}
+			return {'rtn':'300','error':messages.returnCode['300']}
 
 	def delSerie(self,s_id):
 		logging.info('delSerie ')

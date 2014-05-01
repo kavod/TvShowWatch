@@ -8,7 +8,6 @@ $.ajaxSetup({
 		track: true
 		});
 	
-	apply_jcss();
 	$('#apply_jcss').click(apply_jcss);
 	$("#smtp_enable").blur(email_activation);
 	$('input').attr("autocomplete", "off");
@@ -18,6 +17,7 @@ $.ajaxSetup({
 	$( "#conf_ko" ).click(conf_ko);
 	$( "#param" ).submit(event,save_conf);
 	$( "#import_conf" ).submit(event,import_conf);
+	$( "#addSerie" ).submit(event,addSerie);
 
 	$( "#keywords_list" ).sortable({
 		placeholder: "ui-state-highlight",
@@ -42,8 +42,9 @@ $.ajaxSetup({
 
 	$(document).ready(function(){
 		get_conf();
+		apply_jcss();
 		stop_loading();
-		});
+	});
 
 
 	var tabTitle; // = $( "#tab_title" ),
@@ -56,20 +57,13 @@ $.ajaxSetup({
     // close icon: removing the tab on click
     tabs.delegate( "span.ui-icon-close", "click", function() {
 		element = $( this ).closest( "li" );
-		closeTab();
+		closeTab(element);
 	} );
  
     tabs.bind( "keyup", function( event ) {
       if ( event.altKey && event.keyCode === $.ui.keyCode.BACKSPACE ) {
 	element = tabs.find( ".ui-tabs-active" );
-	closeTab();
+	closeTab(element);
       }
     });
-	$("a[id^='serie_']").click(function() {
-		tabTitle = $(this).text();
-		//tabContent = "1234";
-		id = /*"s" + */ $(this).attr('id').substring(6);
-		addTab(tabTitle,id);
-		return false;
-	});
 });

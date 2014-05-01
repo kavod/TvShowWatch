@@ -6,7 +6,7 @@ function cmp($a, $b)
 
 function cmp_serie_az($a, $b)
 {
-    return strcmp($a["serie_name"], $b['serie_name']);
+    return strcmp($a["series_name"], $b['series_name']);
 }
 
 date_default_timezone_set('America/New_York'); 

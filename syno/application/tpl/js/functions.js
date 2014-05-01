@@ -1,14 +1,31 @@
+function serieStatus(status_id)
+{
+	switch(parseInt(status_id))
+	{
+		case 10:
+			return 'Waiting for broadcast';
+		case 20:
+			return 'Waiting for torrent availability';
+		case 30:
+			return 'Download in progress';
+		default:
+			return 'Unknown status';
+	}
+}
+	var apply_jcss = function() 
+	{
+		// Serie List content
+		get_serielist();
 
-	var apply_jcss = function() {
-			$( "button" ).button();
-			$( 'input[type="submit"]' ).button();
-			$( "#tabs" ).tabs( "refresh" );
-			load_serieData();
-			$('.getlast').click(function() {
-				$( this ).parent().find('input[name="season"]').val("04");
-				$( this ).parent().find('input[name="episode"]').val("12");
-				return false;
-			});
+		// Serie detail content
+		load_serieData();
+
+		// Tab management
+		$( "#tabs" ).tabs( "refresh" );
+
+		// General design
+		$( "button" ).button();
+		$( 'input[type="submit"]' ).button();
 	}
 
 	var conf_ok = function() {
@@ -51,6 +68,11 @@
 			$('#s' + id).load('serie.html', function() 
 			{
 				$('#s' + id).html($('#s' + id).html().replace("###",id));
+				$.post( "email_list2.php", {"id":id})
+				.done(function( data ) 
+				{
+					$('#s' + id +' .emails').html(data);
+				});
 				apply_jcss();
 				$( "#tabs" ).tabs("option", "active", tabCounter);
 				tabCounter++;
@@ -65,7 +87,7 @@
 			//alert( "success" );
 		});
 	}
-	function closeTab() 
+	function closeTab(element) 
 	{
 		var tabs = $('#tabs');
 		var panelId = element.remove().attr( "aria-controls" );
@@ -206,6 +228,7 @@ function email_activation() {
 		$( "#info_box" ).show( 'fold', 500 );
 		$( "#info_content" ).text(msg);
 		setTimeout(function(){
+			
 			$( "#info_box" ).hide( 'fold', 500 );
 		},10000);
 	}
@@ -273,13 +296,14 @@ function email_activation() {
 					{
 						if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
 						{
-							$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name)
-							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"))
-							$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview)
+							$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
+							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
+							$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview);
+							$('#s' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
 							season_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
 							episode_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
-							$(season_selector).val(result[serie].season)
-							$(episode_selector).val(result[serie].episode)
+							$(season_selector).val(result[serie].season);
+							$(episode_selector).val(result[serie].episode);
 							format_2digits(season_selector);
 							format_2digits(episode_selector);
 							var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
@@ -287,6 +311,7 @@ function email_activation() {
 							$(episode_selector).change(proxy);
 							$('#s' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
 							$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
+							$('#s' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
 						}
 					}
 				}
@@ -349,4 +374,66 @@ function email_activation() {
 		$(episode_selector).val(episodenumber);
 		format_2digits(season_selector);
 		format_2digits(episode_selector);
+	}
+
+	function addSerie()
+	{
+		event.preventDefault();
+		var data = $('#addSerie').serialize();
+		var serie_id = $('#addSerie input[name="serie_id"]').val();
+		$.post( "api/TvShowWatch.php?action=addSerie", data)
+		.done(function( data )  
+		{
+			result = JSON.parse(data);
+			if (result.rtn != 200)
+			{
+				show_error(result.error);
+			}
+			else
+			{
+				serie_id = $('#addSerie input[name="serie_id"]').val();
+				$('#addSerie input[name="serie_id"]').val('');
+				data = {
+						"page":"serie_line",
+						"data":JSON.stringify({'series':[{
+								'series_id': serie_id,
+								}]})
+						};
+				get_serielist(serie_id);
+				//addTab(tabTitle,id);
+				show_info(result.error);
+			}
+		});
+	}
+
+	function get_serielist(sid)
+	{
+		$("#serielist").load('series_list2.php', sid, function(){
+			$("a[id^='serie_']").click(function() {
+				tabTitle = $(this).text();
+				id = $(this).attr('id').substring(6);
+				addTab(tabTitle,id);
+				return false;
+			});
+			if (typeof sid !== 'undefined')
+			{
+				$("#serie_"+sid).click();
+			}
+		});
+	}
+
+	function unschedule(sid)
+	{
+		event.preventDefault();
+		var data = {"serie_id": sid};
+		
+		$.post( "api/TvShowWatch.php?action=delSerie", data)
+		.done(function( data )  
+		{
+			get_serielist();			
+			element = $( "#tabs>nav" ).find( ".ui-tabs-active" );
+			closeTab(element);
+			result = JSON.parse(data);
+			show_info(result.error);
+		});
 	}

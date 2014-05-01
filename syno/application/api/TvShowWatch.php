@@ -147,33 +147,33 @@ class TvShowWatch
 		return json_decode($result[0],true);
 	}
 
-        function delSerie($id)
-        {
-                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action del --arg '{\"id\":" . $id . "}'";
-                exec($cmd,$result);
-                if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                        print_r($result);
-                }
-                return json_decode($result[0],true);
-        }
+    function delSerie($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action del --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
 
-        function addSerie($id)
-        {
-                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
-                exec($cmd,$result);
-                if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                        print_r($result);
-                }
-                return json_decode($result[0],true);
-        }
+    function addSerie($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
 	
 	function testRunning()
 	{
-		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status';
+		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status 2>&1';
 		exec($cmd,$result);
 		if ($this->debug)
         {
@@ -284,6 +284,7 @@ if (isset($_GET['action']))
 				$msg =  'Failed to upload configuration file due to missing file';
 			die($msg);
 			break;
+
 		case "getSeries":
 			try {
 				if (!isset($TSW))
@@ -295,6 +296,31 @@ if (isset($_GET['action']))
 			$TSW->auth();
 			die(json_encode($TSW->getSeries()));
 			break;
+
+		case "delSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->delSerie((int)$_POST['serie_id'])));
+			break;
+
+		case "addSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->addSerie((int)$_POST['serie_id'])));
+			break;
+
 		case "getEpisode":
 			try {
 				if (!isset($TSW))

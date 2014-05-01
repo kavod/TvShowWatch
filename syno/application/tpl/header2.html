@@ -29,20 +29,17 @@ TvShowWatch
 			<li><a href="#series" id="tab_series">TV Shows</a></li>
 		</ul>
 	</nav>
-	<div class="ui-widget" style="display:none" id="info_box">
+	<div class="ui-widget box" style="display:none" id="info_box">
 		<div class="ui-state-highlight ui-corner-all info_box">
 			<p>
 				<span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span><span id="info_content"></span>
 			</p>
 		</div>
 	</div>
-	<div class="ui-widget" style="display:none" id="error_box">
+	<div class="ui-widget box" style="display:none" id="error_box">
 		<div class="ui-state-error ui-corner-all info_box">
 			<p>
 				<span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span><span id="error_content"></span>
 			</p>
 		</div>
 	</div>
-{if="$msg!=''"}
-<div class="message">{$msg}</div>
-{/if}

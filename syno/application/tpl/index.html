@@ -136,27 +136,19 @@
 	</section>
 	<section id="series">
 		<h1>TV Shows list</h1>
-		<table>
+		<table id="serielist">
 			<tr>
 				<th class="td_tvshow">TV Show</th>
 				<th class="td_episode">Watched episode</th>
 				<th class="td_status">Status</th>
 				<th class="td_expected">Expected on</th>
 			</tr>
-{loop="series"}
-			<tr>
-				<td class="td_tvshow"><a id="serie_{$value.series_id}" href="#">{$value.series_name}</a></td>
-				<td class="td_episode">{$value.series_episode}</td>
-				<td class="td_status">{$value.series_status}</td>
-				<td class="td_expected">{$value.series_expected}</td>
-			</tr>
-{/loop}
 		</table>
-		<form>
+		<form id="addSerie">
 			<fieldset>
 				<legend>Add TV Show</legend>
 				<label for="serie_id">TvDB show ID</label>
-				<input type="number" min="0" max="999999" name="serie_id" id="serie_id" placeholder="TheTvDB ID of required TV Show" required />
+				<input type="number" min="0" max="999999" name="serie_id" placeholder="TheTvDB ID of required TV Show" required />
 				<input type="submit" value="Add" />
 			</fieldset>
 		</form>
