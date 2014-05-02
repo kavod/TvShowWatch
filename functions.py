@@ -27,6 +27,73 @@ def convert_conf(conf,root=''):
 			return {}
 	return result
 
+def next_aired(serie_id,s_season=0,s_episode=0):
+	global t
+	if 't' not in globals():
+		t = myTvDB()
+	else:
+		logging.info('Connection saved')
+
+	logging.debug('API initiator: %s', t)
+
+	try:
+		#for serie_id in series:
+		if not isinstance(serie_id,int):
+			serie_id = serie_id.find('id').text
+		serie = t[int(serie_id)]
+	except Exception,e:
+		return {}
+
+	if int(s_season)*int(s_episode)>0:
+
+		# Check if next episode exists in season
+		if s_episode+1 in serie[s_season].keys():
+			status = 10 if convert_date(serie[s_season][s_episode+1]['firstaired']) >= date.today() else 15
+			return {
+				'status':	status,
+				'season':	s_season,
+				'episode':	s_episode+1,
+				'slot_id':	0,
+				'expected':	serie[s_season][s_episode+1]['firstaired']
+				}
+		else:
+			# Check if next season exists
+			if s_season+1 in serie.keys():
+				status = 10 if convert_date(serie[s_season+1][1]['firstaired']) >= date.today() else 15
+				return {
+					'status':	status,
+					'season':	s_season+1,
+					'episode':	1,
+					'slot_id':	0,
+					'expected':	serie[s_season][s_episode+1]['firstaired']
+					}
+			else:
+				# TV show achieved
+				return {
+						'status':	90,
+						'season':	0,
+						'episode':	0,
+						'slot_id':	0,
+						'expected':	'2100-12-31'
+					}
+	else:
+		# Retrieve last aired episode
+		if serie.nextAired() is not None:
+			return {
+					'status':	10,
+					'season':	result['next']['seasonnumber'],
+					'episode':	result['next']['episodenumber'],
+					'slot_id':	0,
+					'expected':	result['next']['firstaired']
+					}
+		return	{
+					'status':	90,
+					'season':	0,
+					'episode':	0,
+					'slot_id':	0,
+					'expected':	'2100-12-31'
+				}
+
 def last_aired(serie_id,s_season=0,s_episode=0):
 	global t
 	if 't' not in globals():

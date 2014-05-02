@@ -4,10 +4,14 @@ function serieStatus(status_id)
 	{
 		case 10:
 			return 'Waiting for broadcast';
+		case 15:
+			return 'Torrent search scheduled';
 		case 20:
 			return 'Waiting for torrent availability';
 		case 30:
 			return 'Download in progress';
+		case 90:
+			return 'Broadcast achieved';
 		default:
 			return 'Unknown status';
 	}

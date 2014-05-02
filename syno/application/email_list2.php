@@ -59,7 +59,8 @@ if (file_exists(SERIES_FILE))
 							);
 	}
 }
-$tpl->assign( "email", $content);
+if (isset($content))
+	$tpl->assign( "email", $content);
 
 $tpl->draw( "email_line");
 

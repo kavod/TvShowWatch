@@ -61,7 +61,10 @@ def input_emails():
 			emails.append(email)
 	return emails
 
-def last_or_next(last,next):
+#def last_or_next(last,next):
+def last_or_next(serie):
+	last = serie.lastAired()
+	next = serie.nextAired()
 	if (last is None):
 		if Prompt.promptYN("Last season not yet started. Do you want to schedule the Season pilot on " + next['firstaired'],'y'):
 			return next
@@ -71,7 +74,20 @@ def last_or_next(last,next):
 		if Prompt.promptYN("Last season achieved. Do you want to download the Season final on " + last['firstaired'],'n'):
 			return last
 		else:
-			sys.exit()	
+			#sys.exit()	
+			s_choice = []
+			seasons = (season for season in serie.getSeasons() if season != "0")
+			for season in seasons:
+				s_choice.append([season,"Season " + season + " aired from " + serie[int(season)][1]['firstaired']])
+			season = int(Prompt.promptChoice("Please select season number",s_choice,len(s_choice)-1))
+			
+			s_choice = []
+			episodes = (key for key,episode in serie[season].items())
+			for episode in episodes:
+				s_choice.append([str(episode),"\"" + serie[season][int(episode)]['episodename'] + "\" aired on " + serie[season][int(episode)]['firstaired']])
+			episode = Prompt.promptChoice("Please select episode number",s_choice,len(s_choice)-1)
+			return serie[season][int(episode)]
+			
 	else:	
 		print("Next episode download scheduled on " + next['firstaired'])
 		str_last = 'Do you want also download the last aired : S{0:02}E{1:02} - {2} ?'
@@ -96,12 +112,15 @@ def action_run(m):
 		sys.exit()
 
 	liste = result['result']
-	processes = [Popen([
+	cmdline = [
 			sys.executable,	API_FILE,
 			'-c',m.conffile.filename,
 			'-s',m.seriefile.filename,
 			'--action','run'
-			],stdout=PIPE,bufsize=1, close_fds=True, universal_newlines=True)]
+			]
+	if m.getVerbosity():
+		cmdline.append('-v')
+	processes = [Popen(cmdline,stdout=PIPE,bufsize=1, close_fds=True, universal_newlines=True)]
 	
 	while processes:
 	        for p in processes[:]:
@@ -148,7 +167,8 @@ def action_add(m):
 		sys.exit()
 	last = result.lastAired()
 	next = result.nextAired()
-	next = last_or_next(last,next)
+	next = last_or_next(result)	
+	#next = last_or_next(last,next)
 	if m.testConf(False)['rtn']=='200' and Prompt.promptYN('Voulez-vous rajouter des emails de notification ?'):
 		emails = input_emails()
 	else:
@@ -344,6 +364,9 @@ def main():
     # Manage verbosity level
     if args.verbosity:
         logging.basicConfig(level=logging.DEBUG)
+        verbose = True
+    else:
+        verbose = False
     logging.info('SERIES started in verbosity mode')
 
     global arg;
@@ -351,7 +374,7 @@ def main():
         Prompt.arg = args.arg.split(',')
 
     # Initialize more data
-    m = TSWmachine(True,args.verbosity)
+    m = TSWmachine(True,verbose)
     if args.action != 'init':
 	logging.debug('Loading of conffile: %s', args.config)
 	logging.debug('Loading of seriefile: %s', args.seriefile)

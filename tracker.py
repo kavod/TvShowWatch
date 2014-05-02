@@ -67,8 +67,10 @@ class Tracker:
 		if not self.test():
 			self.connect(self.username, self.password)
 		result = requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token}, verify=False).json()
+		logging.debug('%s', result)
                 if 'torrents' in result.keys():
                         result = result['torrents']
+                        logging.debug('%s torrents found', int(len(result)))
                         result = filter(self.filter_t411,result)
                         return result
                 else:

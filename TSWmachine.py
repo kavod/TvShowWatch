@@ -26,6 +26,10 @@ class TSWmachine:
 		self.admin = admin
 		self.conffile = ConfFile()
 		self.seriefile = SerieList()
+		self.verbosity = log
+	
+	def getVerbosity(self):
+		return self.verbosity
 
 	def getAuth(self):
 		logging.info('Get Auth :'+ str(self.admin))
@@ -209,8 +213,11 @@ class TSWmachine:
 			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 		episode = serie['next']
 		if episode is None:
-			return {'rtn':'410','error':messages.returnCode['410']}
-		episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
+			# If TV show is achieved, just add it without episode scheduled
+			#return {'rtn':'410','error':messages.returnCode['410']}
+			episode = None
+		else:
+			episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
 		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
@@ -352,10 +359,10 @@ class TSWmachine:
 			return
 
 		for serie in liste:
-			if serie['episode'] == 0: # If last episode reached
-				result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
-				self.delSerie(serie['id'])
-				print(str_result.format('301',str(serie['id']),messages.returnCode['301']))
+			if serie['status'] == 90 or serie['episode'] == 0: # If last episode reached
+				#result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
+				#self.delSerie(serie['id'])
+				print(str_result.format('303',str(serie['id']),messages.returnCode['303']))
 				continue
 
 			
@@ -411,7 +418,14 @@ class TSWmachine:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
 
-						result = last_aired(serie['id'])
+						next = next_aired(serie['id'],serie['season'],serie['episode'])
+						self.seriefile.updateSerie(serie['id'],next)
+						if next['status'] == 90:
+							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
+						else:
+							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
+
+						'''result = last_aired(serie['id'])
 
 						if (result['next'] is not None):
 							self.seriefile.updateSerie(serie['id'],{
@@ -422,15 +436,22 @@ class TSWmachine:
 										'expected':	result['next']['firstaired']
 										})
 							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
-						else:
+						else: # If last episode reached
 							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
-							self.seriefile.delSerie(serie['id'])
+							#self.seriefile.delSerie(serie['id'])
+							self.seriefile.updateSerie(serie['id'],{
+										'status':	90,
+										'season':	0,
+										'episode':	0,
+										'slot_id':	0,
+										'expected':	0
+										})'''
 
 					else:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
-			if int(serie['status']) in [10,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
+			if int(serie['status']) in [10,15,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
 				if 'tc' not in locals():
 					tc = transmissionrpc.Client(
 						confTransmission['server'],

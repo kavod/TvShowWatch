@@ -12,6 +12,7 @@ returnCode = {
 	'300': 'No TV Show scheduled',
 	'301': 'Broadcast achieved - No more episode - Removing from list',
 	'302': 'Configuration OK without SMTP',
+	'303': 'Broadcast achieved - No more episode',
 
 	'400': 'Unknown parameter {0}',
 	'401': '{0} unfoundable',

@@ -72,7 +72,8 @@ $tpl->assign( "l_conf_keep_blank", 'Keep blank for disable');
 $tpl->assign( "l_conf_keep_blank_noauth", 'Keep blank if no authentification');
 $tpl->assign( "l_conf_keep_test_email", 'Email will be sent to it for test');
 
-$tpl->assign( "keywords", $keywords);
+if (isset($keywords))
+	$tpl->assign( "keywords", $keywords);
 
 $tpl->assign( "conf_tracker_id", $tracker_id);
 

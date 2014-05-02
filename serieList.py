@@ -54,16 +54,27 @@ class SerieList(MyFile):
 		serie_id.text = str(s_id)
 		name = ET.SubElement(serie, "name")
 		name.text = str(seriesname)
-		serie_s = ET.SubElement(serie, "season")
-		serie_s.text = str(s_episode['season'])
-		serie_e = ET.SubElement(serie, "episode")
-		serie_e.text = str(s_episode['episode'])
-		status = ET.SubElement(serie, "status")
-		status.text = str(10)
+		if s_episode is not None:
+			serie_s = ET.SubElement(serie, "season")
+			serie_s.text = str(s_episode['season'])
+			serie_e = ET.SubElement(serie, "episode")
+			serie_e.text = str(s_episode['episode'])
+			status = ET.SubElement(serie, "status")
+			status.text = str(10)
+			expected = ET.SubElement(serie, "expected")
+			expected.text = s_episode['aired'].strftime("%Y-%m-%d")
+		else:
+			serie_s = ET.SubElement(serie, "season")
+			serie_s.text = str(0)
+			serie_e = ET.SubElement(serie, "episode")
+			serie_e.text = str(0)
+			status = ET.SubElement(serie, "status")
+			status.text = str(90)
+			expected = ET.SubElement(serie, "expected")
+			expected.text = "9999-12-31"
+
 		slot_id = ET.SubElement(serie, "slot_id")
 		slot_id.text = str(0)
-		expected = ET.SubElement(serie, "expected")
-		expected.text = s_episode['aired'].strftime("%Y-%m-%d")
 
 		for email in emails:
 			node = ET.SubElement(serie, "email")
