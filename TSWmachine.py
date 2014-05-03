@@ -191,7 +191,7 @@ class TSWmachine:
 		elif isinstance(s_ids,list):
 			result = []
 			for s_id in s_ids:
-				res_serie = self.getSerie(s_id)
+				res_serie = self.getSerie(s_id,json_c)
 				if res_serie['rtn']!='200':
 					result.append(res_serie['result'])
 				else:

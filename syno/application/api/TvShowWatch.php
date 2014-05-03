@@ -114,7 +114,7 @@ class TvShowWatch
 
 	function getSerie($id)
 	{
-		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"ids\":" . $id . "}'";
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"ids\":[" . $id . "]}'";
 		exec($cmd,$result);
 		if ($this->debug)
 		{
@@ -157,6 +157,26 @@ class TvShowWatch
 			print_r($result);
 		}
 		return json_decode($result[0],true);
+	}
+
+	function addemail($id,$email)
+	{
+		$serie = $this->getSerie($id);
+		$emails = $serie['result']['emails'];
+		$emails[] = $email;
+		return $this->setSerie($id,array('emails'=>$emails));
+	}
+
+	function delemail($id,$email)
+	{
+		$serie = $this->getSerie($id);
+		$emails = $serie['result']['emails'];
+		for( $i=0;$i<count($emails);$i++)
+		{
+			if ($emails[$i] == $email)
+				unset($emails[$i]);
+		}
+		return $this->setSerie($id,array('emails'=>$emails));
 	}
 
     function delSerie($id)
@@ -395,7 +415,48 @@ if (isset($_GET['action']))
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
 				}
 			break;
+
+		case "addemail":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($_POST['email']) or $_POST['email']=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'Email blank')));
+
+				$id = (int)$_POST['serie_id'];
+				$email = htmlentities($_POST['email']);
+
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->addemail($id,$email);
+				if ($update['rtn'] != '200')
+					return $update;
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
+				}
+				
 		default:
+
+		case "delemail":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($_POST['email']) or $_POST['email']=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'Email blank')));
+
+				$id = (int)$_POST['serie_id'];
+				$email = htmlentities($_POST['email']);
+
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->delemail($id,$email);
+				if ($update['rtn'] != '200')
+					return $update;
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
+				}
 	}
 }
 

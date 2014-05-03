@@ -34,11 +34,12 @@
 	<section id="emails###">
 
 		<h2>Notification emails</h2>
+		<ul class="emails"></ul>
 		<form class="email_add">
-			<ul class="emails"></ul>
+			<input type="hidden" name="serie_id" value="###" />
 			<div>
 				<label>Add email</label>
-				<input type="email" name="addemail" placeholder="Add a notification receiver" />
+				<input type="email" name="email" placeholder="Add a notification receiver" required />
 				<button>Add</button>
 			</div>
 		</form>
@@ -52,7 +53,7 @@
 			<ul class="keywords"></ul>
 			<div>
 				<label>Add keyword</label>
-				<input type="text" name="addkeyword" placeholder="Add a keyword for your search" />
+				<input type="text" name="addkeyword" placeholder="Add a keyword for your search" required />
 				<button>Add</button>
 			</div>
 		</form>

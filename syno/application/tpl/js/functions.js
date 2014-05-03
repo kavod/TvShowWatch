@@ -72,11 +72,12 @@ function serieStatus(status_id)
 			$('#s' + id).load('tpl/serie.html', function() 
 			{
 				$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
-				$.post( "email_list2.php", {"id":id})
+				load_email(id);
+				/*$.post( "email_list2.php", {"id":id})
 				.done(function( data ) 
 				{
 					$('#s' + id +' .emails').html(data);
-				});
+				});*/
 				$.post( "keyword_list2.php", {"id":id})
 				.done(function( data ) 
 				{
@@ -88,6 +89,36 @@ function serieStatus(status_id)
 			});
 		}
     }
+
+	function load_email(id)
+	{
+		$.post( "email_list2.php", {"id":id})
+		.done(function( data ) 
+		{
+			$('#s' + id +' .emails').html(data);
+			$('#s' + id +' .emails>li>div>.ui-icon-circle-close').click($.proxy(del_email,null,id,this));
+		});
+	}
+	
+	function del_email(id,node)
+	{
+		event.preventDefault();
+		data = "serie_id="+id+"&email="+event.target.getAttribute('email');
+		$.post( "api/TvShowWatch.php?action=delemail", data)
+		.done(function( data )  
+		{
+			result = JSON.parse(data);			
+			if (result.rtn=='200')
+			{
+				show_info(result.error);
+				load_email(id);
+			}
+			else
+				show_error(result.error);
+		});
+		/*alert(id)
+		alert(event.target.getAttribute('email'));*/
+	}
 
 	function run() 
 	{
@@ -332,6 +363,8 @@ function email_activation() {
 								$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
 							}
 							$('#data' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
+							$('#emails' + opened_tabs[sid] + '>.email_add').submit($.proxy(add_email,null,opened_tabs[sid]));
+							
 						}
 					}
 				}
@@ -381,8 +414,46 @@ function email_activation() {
 		$.post( "api/TvShowWatch.php?action=setSerie", data)
 		.done(function( data )  
 		{
-			result = JSON.parse(data);
-			show_info(result.error);
+			result = JSON.parse(data);			
+			if (result.rtn=='200')
+				show_info(result.error);
+			else
+				show_error(result.error);
+		});
+	}
+
+	function add_email(sid)
+	{
+		event.preventDefault();
+		var data = $('#emails' + sid + '>.email_add').serialize();
+		$.post( "api/TvShowWatch.php?action=addemail", data)
+		.done(function( data )  
+		{
+			result = JSON.parse(data);			
+			if (result.rtn=='200')
+			{
+				show_info(result.error);
+				$('#emails' + sid + ' input[name=\'email\']').val('');
+				load_email(sid);
+			}
+			else
+				show_error(result.error);
+		});
+	}
+
+	function add_serie_keywords(sid)
+	{
+		event.preventDefault();
+		var data = $('#keywords' + sid + '>.keyword_add').serialize();
+		
+		$.post( "api/TvShowWatch.php?action=addkeyword", data)
+		.done(function( data )  
+		{
+			result = JSON.parse(data);			
+			if (result.rtn=='200')
+				show_info(result.error);
+			else
+				show_error(result.error);
 		});
 	}
 
