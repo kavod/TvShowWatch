@@ -69,13 +69,18 @@ function serieStatus(status_id)
 			tabs.find( ".ui-tabs-nav" ).append( li );
 			tabs.append( "<section id='s" + id + "'></section>");
 
-			$('#s' + id).load('serie.html', function() 
+			$('#s' + id).load('tpl/serie.html', function() 
 			{
-				$('#s' + id).html($('#s' + id).html().replace("###",id));
+				$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
 				$.post( "email_list2.php", {"id":id})
 				.done(function( data ) 
 				{
 					$('#s' + id +' .emails').html(data);
+				});
+				$.post( "keyword_list2.php", {"id":id})
+				.done(function( data ) 
+				{
+					$('#s' + id +' .keywords').html(data);
 				});
 				apply_jcss();
 				$( "#tabs" ).tabs("option", "active", tabCounter);
@@ -297,6 +302,7 @@ function email_activation() {
 				result = result.result;
 				for (sid in opened_tabs)
 				{
+					var tabs = $( "#tabs_serie_" + opened_tabs[sid] ).tabs();
 					for (serie in result)
 					{
 						if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
@@ -304,10 +310,10 @@ function email_activation() {
 							$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
 							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
 							$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview);
-							$('#s' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
-							season_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
-							episode_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
-							pattern_field = '#s' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
+							$('#data' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
+							season_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
+							episode_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
+							pattern_field = '#data' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
 							$(season_selector).val(result[serie].season);
 							$(episode_selector).val(result[serie].episode);
 							format_2digits(season_selector);
@@ -316,16 +322,16 @@ function email_activation() {
 							var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
 							$(season_selector).change(proxy);
 							$(episode_selector).change(proxy);
-							$('#s' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
+							$('#data' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
 							if (result[serie].nextEpisode === null)
 							{
-								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
-								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","label","last episode reached");
+								$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
+								$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","label","last episode reached");
 							} else
 							{
-								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
+								$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
 							}
-							$('#s' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
+							$('#data' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
 						}
 					}
 				}
@@ -370,7 +376,7 @@ function email_activation() {
 	function set_episode(sid)
 	{
 		event.preventDefault();
-		var data = $('#s' + sid + '>.episode_form').serialize();
+		var data = $('#data' + sid + '>.episode_form').serialize();
 		
 		$.post( "api/TvShowWatch.php?action=setSerie", data)
 		.done(function( data )  

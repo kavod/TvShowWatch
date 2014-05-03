@@ -42,24 +42,11 @@ if (file_exists(SERIES_FILE))
 		break;
 	} else
 	{
-		$emails = array();
 		$keywords = array();
-		for ($i=0;$i<count($serie['emails']);$i++)
-		{
-			$emails[]= array('i'=>$i,'email'=>$serie['emails'][$i],'u_del'=>'index.php?page=del_email&mail_id='.$i.'&id='.$serie['id'].$debug);
-		}
 		for ($i=0;$i<count($serie['keywords']);$i++)
 		{
 			$keywords[]= array('i'=>$i,'keyword'=>$serie['keywords'][$i],'u_del'=>'index.php?page=del_keyword&keyword_id='.$i.'&id='.$serie['id'].$debug);
 		}
-	}
-	foreach($emails as $key => $email)
-	{
-		$content[] = array(
-						'l_email_num' => 'Email '.($key+1),
-						'email_id' => 		'email'.$key,
-						'email' =>			$email['email']
-							);
 	}
 	foreach($keywords as $key => $keyword)
 	{
@@ -70,11 +57,9 @@ if (file_exists(SERIES_FILE))
 							);
 	}
 }
-if (isset($content))
-	$tpl->assign( "email", $content);
 if (isset($content_keywords))
 	$tpl->assign( "keyword", $content_keywords);
 
-$tpl->draw( "email_line");
+$tpl->draw( "keyword_line");
 
 ?>
