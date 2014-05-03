@@ -61,7 +61,32 @@ def input_emails():
 			emails.append(email)
 	return emails
 
-#def last_or_next(last,next):
+def input_keywords():
+	keywords = []
+	keyword = 'start'
+	while keyword != '':
+		keyword = Prompt.promptSimple("Enter a keyword [keep blank to finish]")
+		if keyword != '':
+			keywords.append(keyword)
+	return keywords
+
+def select_episode(serie):
+	s_choice = []
+	seasons = (season for season in serie.getSeasons() if season != "0")
+	for season in seasons:
+		s_choice.append([season,"Season " + season + " aired from " + serie[int(season)][1]['firstaired']])
+	season = int(Prompt.promptChoice("Please select season number",s_choice,len(s_choice)-1))
+	
+	s_choice = []
+	episodes = (key for key,episode in serie[season].items())
+	for episode in episodes:
+		s_choice.append([str(episode),"\"" + serie[season][int(episode)]['episodename'] + "\" aired on " + serie[season][int(episode)]['firstaired']])
+	episode = Prompt.promptChoice("Please select episode number",s_choice,len(s_choice)-1)
+	return {
+			'season':int(season),
+			'episode':int(episode)
+			}
+
 def last_or_next(serie):
 	last = serie.lastAired()
 	next = serie.nextAired()
@@ -74,19 +99,8 @@ def last_or_next(serie):
 		if Prompt.promptYN("Last season achieved. Do you want to download the Season final on " + last['firstaired'],'n'):
 			return last
 		else:
-			#sys.exit()	
-			s_choice = []
-			seasons = (season for season in serie.getSeasons() if season != "0")
-			for season in seasons:
-				s_choice.append([season,"Season " + season + " aired from " + serie[int(season)][1]['firstaired']])
-			season = int(Prompt.promptChoice("Please select season number",s_choice,len(s_choice)-1))
-			
-			s_choice = []
-			episodes = (key for key,episode in serie[season].items())
-			for episode in episodes:
-				s_choice.append([str(episode),"\"" + serie[season][int(episode)]['episodename'] + "\" aired on " + serie[season][int(episode)]['firstaired']])
-			episode = Prompt.promptChoice("Please select episode number",s_choice,len(s_choice)-1)
-			return serie[season][int(episode)]
+			episode = select_episode(serie)
+			return serie[episode['season']][episode['episode']]
 			
 	else:	
 		print("Next episode download scheduled on " + next['firstaired'])
@@ -144,9 +158,76 @@ def action_run(m):
         	        #print(f.readline(),end='')
 	sys.exit()
 
+def action_edit(m):
+	global t
+	logging.debug('Call function action_edit()')
+	result = m.getSeries()
+	logging.debug('result => '+str(result))
+	if result['rtn']!='200' and result['rtn']!='300':
+		print('Error during TV Shows reading: '+result['error'])
+		sys.exit()
+	if result['rtn'] == '300':
+		print("No TV Show scheduled")
+		sys.exit()
+	pattern = '{0} - S{1:02}E{2:02} - expected on {3} (status: {4})'
+	choice = []
+	for serie in result['result']:
+		choice.append([serie['id'],pattern.format(serie['name'],serie['season'],serie['episode'],serie['expected'],serie['status'])])
+	serie_id = Prompt.promptChoice("Select TV Show to modify",choice,0)
+	for serie in result['result']:
+		if serie['id'] == serie_id:
+			break
+	logging.debug(serie)
+	if (serie['keywords'] is not None):
+	    keywords = ' / '.join(serie['keywords'])
+	else:
+	    keywords = ''
+	if (serie['emails'] is not None):
+	    emails = ' / '.join(serie['emails'])
+	else:
+	    emails = ''
+	configData = Prompt.promptChoice(
+            "Selection value you want modify for "+serie['name']+" ("+str(serie['id'])+"):",
+            [
+                ['pattern', 'Pattern:             '+serie['pattern']],
+                ['episode', 'Episode:             '+'S{0:02}E{1:02}'.format(serie['season'],serie['episode'])],
+                ['keywords','Search keywords:     '+keywords],
+                ['emails',  'Notification emails: ' + emails]
+            ])
+	if configData == 'pattern':
+		pattern = Prompt.promptSimple("Please enter the new search pattern:",serie['pattern'])
+		serie['pattern'] = pattern
+	if configData == 'episode':
+		if 't' not in globals():
+			t = myTvDB()
+		else:
+			logging.debug('connection saved')
+		logging.debug('API initiator: %s', t)
+		TVresult = t[serie['id']]
+		episode = select_episode(TVresult)
+		serie['season'] = episode['season']
+		serie['episode'] = episode['episode']
+	elif configData == 'emails':
+		serie['emails'] = input_emails()
+	elif configData == 'keywords':
+		serie['keywords'] = input_keywords()
+	else:
+		sys.exit()
+	rc = m.setSerie(serie['id'],{
+					'pattern':serie['pattern'],
+					'season':serie['season'],
+					'episode':serie['episode'],
+					'emails':serie['emails'],
+					'keywords':serie['keywords'],
+				},json_c=False)
+	if rc['rtn'] == '200':
+		print("TV Show updated")
+	else:
+		print("Error during TV Show update")
+
 def action_list(m):
 	logging.debug('Call function action_list()')
-	result = m.getSeries()
+	result = m.getSeries('all',False)
 	logging.debug('result => '+str(result))
 	if result['rtn']!='200' and result['rtn']!='300':
 		print('Error during TV Shows reading: '+result['error'])
@@ -333,7 +414,7 @@ def main():
             "-a",
             "--action",
             default='run',
-            choices=['run', 'list', 'init', 'add','config','getconf','del'],
+            choices=['run', 'list', 'init', 'add','config','getconf','del','edit'],
             help='action triggered by the script'
         )
     parser.add_argument(
@@ -395,6 +476,7 @@ def main():
             'init':action_reset,
             'config':action_config,
             'del':action_del,
+            'edit':action_edit,
             'getconf':action_getconf
         }
 

@@ -281,9 +281,10 @@ function email_activation() {
 
 	function load_serieData()
 	{
+		start_loading()
 		$.ajax({  
 			type: "GET", 
-			url: "api/TvShowWatch.php?action=getSeries"
+			url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
 		})
 		.done(function( data )  
 		{
@@ -306,20 +307,30 @@ function email_activation() {
 							$('#s' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
 							season_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
 							episode_selector = '#s' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
+							pattern_field = '#s' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
 							$(season_selector).val(result[serie].season);
 							$(episode_selector).val(result[serie].episode);
 							format_2digits(season_selector);
 							format_2digits(episode_selector);
+							$(pattern_field).val(result[serie].pattern);
 							var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
 							$(season_selector).change(proxy);
 							$(episode_selector).change(proxy);
 							$('#s' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
-							$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
+							if (result[serie].nextEpisode === null)
+							{
+								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
+								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","label","last episode reached");
+							} else
+							{
+								$('#s' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
+							}
 							$('#s' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
 						}
 					}
 				}
 			}
+			stop_loading()
 		});	
 	}
 
@@ -369,9 +380,9 @@ function email_activation() {
 		});
 	}
 
-
 	function retrieve_episode(sid,seasonnumber,episodenumber)
 	{
+		alert('retrieve');
 		season_selector = '#s' + sid + '>.episode_form>input[name="season"]';
 		episode_selector = '#s' + sid + '>.episode_form>input[name="episode"]';
 		$(season_selector).val(seasonnumber);

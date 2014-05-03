@@ -197,3 +197,4 @@ def keep_in_progress(tor):
 def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
+

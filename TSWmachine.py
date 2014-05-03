@@ -173,13 +173,13 @@ class TSWmachine:
 		else:
 			return {'rtn':'300','error':messages.returnCode['300']}
 
-	def getSeries(self,s_ids='all',json_c=False):
+	def getSeries(self,s_ids='all',json_c=False,load_tvdb=False):
 		logging.info('getSeries ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
 		if s_ids == 'all':
-			serielist = self.seriefile.listSeries(json_c)
+			serielist = self.seriefile.listSeries(json_c,load_tvdb)
 			if serielist == False:
 				return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 			if len(serielist)>0:
@@ -266,7 +266,7 @@ class TSWmachine:
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		if not all(y in ['emails','season','episode','expected','status','keywords'] for y in param.keys()):
+		if not all(y in ['emails','season','episode','expected','status','keywords','pattern'] for y in param.keys()):
 			return {'rtn':'400','error':messages.returnCode['400'].format(str(param.keys()))}
 		if 'emails' in param.keys():
 			emails = param.pop('emails')
@@ -360,23 +360,14 @@ class TSWmachine:
 
 		for serie in liste:
 			if serie['status'] == 90 or serie['episode'] == 0: # If last episode reached
-				#result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
-				#self.delSerie(serie['id'])
 				print(str_result.format('303',str(serie['id']),messages.returnCode['303']))
 				continue
 
 			
 			str_search_list = []
-			"""for keyword in self.conffile.getKeywords():
-				str_search_list.append(str_search.format(
-						serie['name'],
-						int(serie['season']),
-						int(serie['episode']),
-						keyword
-							))"""
 			for keyword in serie['keywords']:
 				str_search_list.append(str_search.format(
-						serie['name'],
+						serie['pattern'],
 						int(serie['season']),
 						int(serie['episode']),
 						keyword
@@ -417,36 +408,12 @@ class TSWmachine:
 							else:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
-
 						next = next_aired(serie['id'],serie['season'],serie['episode'])
 						self.seriefile.updateSerie(serie['id'],next)
 						if next['status'] == 90:
 							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
 						else:
 							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
-
-						'''result = last_aired(serie['id'])
-
-						if (result['next'] is not None):
-							self.seriefile.updateSerie(serie['id'],{
-										'status':	10,
-										'season':	result['next']['seasonnumber'],
-										'episode':	result['next']['episodenumber'],
-										'slot_id':	0,
-										'expected':	result['next']['firstaired']
-										})
-							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
-						else: # If last episode reached
-							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
-							#self.seriefile.delSerie(serie['id'])
-							self.seriefile.updateSerie(serie['id'],{
-										'status':	90,
-										'season':	0,
-										'episode':	0,
-										'slot_id':	0,
-										'expected':	0
-										})'''
-
 					else:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue

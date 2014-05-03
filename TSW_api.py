@@ -63,6 +63,8 @@ def main():
 		except:
 			print(json.dumps({'rtn':'415','error':messages.returnCode['415']}))
 			sys.exit()
+	else:
+		arg = {}
 
 	# Initialize more data
 	m = TSWmachine(args.admin,args.verbosity)
@@ -87,7 +89,11 @@ def main():
 		sys.exit()
 
 	if args.action == 'list':
-		print(json.dumps(m.getSeries(json_c=True)))
+		if 'ids' not in arg.keys():
+			arg['ids'] = 'all'
+		if 'load_tvdb' not in arg.keys():
+			arg['load_tvdb'] = False
+		print(json.dumps(m.getSeries(arg['ids'],json_c=True,load_tvdb=arg['load_tvdb'])))
 		sys.exit()
 
 	if args.action == 'add':

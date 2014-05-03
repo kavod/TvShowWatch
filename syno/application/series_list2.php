@@ -50,7 +50,7 @@ foreach ($series as $serie)
 	$serielist[] = array(
 						'series_id' => $serie['id'],
 						'series_name' => $serie['name'],
-						'series_episode' => sprintf("S%1$02dE%1$02d",$serie['season'],$serie['episode']),
+						'series_episode' => sprintf("S%1$02dE%2$02d",$serie['season'],$serie['episode']),
 						'series_status' => serieStatus($serie['status']),
 						'series_expected' => $serie['expected']
 						);

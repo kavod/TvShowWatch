@@ -6,7 +6,7 @@ from myDate import *
 from myTvDB import *
 
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-LIST_VERSION = "1.2"
+LIST_VERSION = "1.3"
 
 class SerieList(MyFile):
 	def __init__(self):
@@ -54,6 +54,8 @@ class SerieList(MyFile):
 		serie_id.text = str(s_id)
 		name = ET.SubElement(serie, "name")
 		name.text = str(seriesname)
+		pattern = ET.SubElement(serie, "pattern")
+		pattern.text = str(seriesname)
 		if s_episode is not None:
 			serie_s = ET.SubElement(serie, "season")
 			serie_s.text = str(s_episode['season'])
@@ -136,8 +138,9 @@ class SerieList(MyFile):
 		[542,5428,45758]
 		
 	"""
-	def listSeries(self,json_c=False):
-		t = myTvDB()
+	def listSeries(self,json_c=False,retr_tvdb_data=False):
+		if retr_tvdb_data:
+			t = myTvDB()
 		result = []
 		series = self.tree.getroot()
 		for serie in series.findall('serie'):
@@ -147,13 +150,15 @@ class SerieList(MyFile):
 			keywords_list = []
 			for keyword in serie.findall('keyword'):
 				keywords_list.append(keyword.text)
-			try:			
-				tvdb_data = t[int(serie.find('id').text)]
-			except:
-				return False
+			if retr_tvdb_data:
+				try:			
+					tvdb_data = t[int(serie.find('id').text)]
+				except:
+					return False
 			result.append({
 				'id': 		int(serie.find('id').text),
 				'name':		str(serie.find('name').text),
+				'pattern':	str(serie.find('pattern').text),
 				'season': 	int(serie.find('season').text),
 				'episode': 	int(serie.find('episode').text),
 				'status': 	int(serie.find('status').text),
@@ -161,9 +166,9 @@ class SerieList(MyFile):
 				'expected':	serie.find('expected').text if json_c else convert_date(serie.find('expected').text),
 				'emails': 	emails_list,
 				'keywords':	keywords_list,
-				'tvdb':		tvdb_data.data,
-				'lastEpisode': tvdb_data.lastAired(),
-				'nextEpisode': tvdb_data.nextAired()
+				'tvdb':		tvdb_data.data if retr_tvdb_data else {},
+				'lastEpisode': tvdb_data.lastAired() if retr_tvdb_data else {},
+				'nextEpisode': tvdb_data.nextAired() if retr_tvdb_data else {}
 					})
 		return result
 
@@ -199,4 +204,10 @@ class SerieList(MyFile):
 			self._save()
 		return result
 
-
+	def migration_1_2_to_1_3(self):
+		series = self.tree.getroot()
+		series.find('version').text = '1.3'
+		for serie in series.findall('serie'):
+			pattern = ET.SubElement(serie, "pattern")
+			pattern.text = serie.find('name').text
+		self._save()

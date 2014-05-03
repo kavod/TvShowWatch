@@ -100,9 +100,21 @@ class TvShowWatch
 		return json_decode($result[0],true);
 	}
 
-	function getSeries()
+	function getSeries($load_tvdb=false)
 	{
-		$cmd = PYTHON_EXEC . " " . $this->cmd .' --action list';
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"load_tvdb\":" . (($load_tvdb) ? 'true' : 'false') . "}'";
+		exec($cmd,$result);
+		if ($this->debug)
+		{
+			echo $cmd.'<br />';
+			print_r($result);
+		}
+		return json_decode($result[0],true);
+	}
+
+	function getSerie($id)
+	{
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"ids\":" . $id . "}'";
 		exec($cmd,$result);
 		if ($this->debug)
 		{
@@ -136,7 +148,7 @@ class TvShowWatch
 			else
 				$cmd.='"' . $key . '":"' . $value . '",';
 		}
-		$cmd .= '"status":10';
+		$cmd .= '"status":15';
 		$cmd .= "}}'";
 		exec($cmd,$result);
 		if ($this->debug)
@@ -286,6 +298,7 @@ if (isset($_GET['action']))
 			break;
 
 		case "getSeries":
+			$load_tvdb = (isset($_GET['load_tvdb']) && $_GET['load_tvdb']==1) ? true : false;
 			try {
 				if (!isset($TSW))
 					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
@@ -294,7 +307,19 @@ if (isset($_GET['action']))
 				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
 			}
 			$TSW->auth();
-			die(json_encode($TSW->getSeries()));
+			die(json_encode($TSW->getSeries($load_tvdb)));
+			break;
+
+		case "getSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->getSerie((int)$_POST['id'])));
 			break;
 
 		case "delSerie":
@@ -332,12 +357,14 @@ if (isset($_GET['action']))
 			$TSW->auth();
 			die(json_encode($TSW->getEpisode((int)$_POST['serie_id'],(int)$_POST['season'],(int)$_POST['episode'])));
 			break;
+
 		case "setSerie":
 				if (isset($_POST['season']) and isset($_POST['episode']) and isset($_POST['serie_id']))
 				{
 					$serie_id = (int)$_POST['serie_id'];
 					$season = (int)$_POST['season'];
 					$episode = (int)$_POST['episode'];
+					$pattern = htmlentities($_POST['pattern']);
 					if ($season * $episode != 0)
 					{
 						if (!isset($TSW))
@@ -350,14 +377,7 @@ if (isset($_GET['action']))
 						catch (Exception $e)
 						{
 							die(json_encode(array('rtn' => 419, 'error' => 'Episode S' . sprintf("%02s", $season) . 'E'. sprintf("%02s", $episode) . ' does not exist')));
-						}
-						$update = $TSW->setSerie($serie_id,array('season'=>$season,'episode'=>$episode,'expected'=>$val_episode['result']['firstaired']));
-						if ($update['rtn'] != '200')
-							die(json_encode(array('rtn' => $update['rtn'], 'error' => 'Error during TV Show update<br />'.$update['error'])));
-						else
-						{
-							die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
-						}
+						}	
 					} else
 					{
 						die(json_encode(array('rtn' => 499, 'error' => 'You must indicate both of Season and Episode numbers')));
@@ -365,6 +385,14 @@ if (isset($_GET['action']))
 				} else
 				{
 					die(json_encode(array('rtn' => 499, 'error' => 'You must indicate both of Season and Episode numbers')));
+				}
+
+				$update = $TSW->setSerie($serie_id,array('season'=>$season,'episode'=>$episode,'pattern'=>$pattern,'expected'=>$val_episode['result']['firstaired']));
+				if ($update['rtn'] != '200')
+					die(json_encode(array('rtn' => $update['rtn'], 'error' => 'Error during TV Show update<br />'.$update['error'])));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
 				}
 			break;
 		default:

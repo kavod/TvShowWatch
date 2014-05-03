@@ -4,6 +4,7 @@
 import os
 import sys
 import logging
+import string
 import xml.etree.ElementTree as ET
 from Prompt import *
 import messages
@@ -30,7 +31,7 @@ class MyFile:
 		else:
 			self.tree = ET.parse(self.filename)
 			if self.getVersion() != self._version():
-				mig_meth = "migration_" + str(self.getVersion()) + "_to_" + str(self._version())
+				mig_meth = "migration_" + string.replace(str(self.getVersion()),'.','_') + "_to_" + string.replace(str(self._version()),'.','_')
 				if mig_meth in dir(self):
 					migration_res = getattr(self,mig_meth)()
 					self.pushOpened(True)
