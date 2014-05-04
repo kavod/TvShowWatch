@@ -479,6 +479,7 @@ class TSWmachine:
 					print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
+
 	def getEpisode(self,serieID,season,episode):
 		t = myTvDB()
 		try:
@@ -486,5 +487,16 @@ class TSWmachine:
 			return {'rtn':'200','result':result}
 		except Exception,e:
 			return {'rtn':'419','error':messages.returnCode['419']}
+
+	def search(self,pattern):
+		t = myTvDB()
+		try:
+			result = t.search(pattern)
+			if len(result)>0:
+				return {'rtn':'200','result':result}
+			else:
+				return {'rtn':'408','error':messages.returnCode['408'].format(pattern)}
+		except Exception,e:
+			return {'rtn':'419','error':messages.returnCode['404'].format('TvDB')}
 		
 

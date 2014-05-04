@@ -542,11 +542,12 @@ function email_activation() {
 		format_2digits(episode_selector);
 	}
 
-	function addSerie()
+	function addSerie(id)
 	{
 		event.preventDefault();
-		var data = $('#addSerie').serialize();
-		var serie_id = $('#addSerie input[name="serie_id"]').val();
+		//var data = $('#addSerie').serialize();
+		//var serie_id = $('#addSerie input[name="serie_id"]').val();
+		var data = {'serie_id': id}
 		$.post( "api/TvShowWatch.php?action=addSerie", data)
 		.done(function( data )  
 		{

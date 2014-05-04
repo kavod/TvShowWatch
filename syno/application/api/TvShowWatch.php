@@ -219,6 +219,18 @@ class TvShowWatch
             return json_decode($result[0],true);
     }
 
+	function search($pattern)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action search --arg '{\"pattern\":\"" . $pattern . "\"}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
     function addSerie($id)
     {
             $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
@@ -465,7 +477,7 @@ if (isset($_GET['action']))
 				$TSW->auth();
 				$update = $TSW->addemail($id,$email);
 				if ($update['rtn'] != '200')
-					return $update;
+					die(json_encode($update));
 				else
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
@@ -486,7 +498,7 @@ if (isset($_GET['action']))
 				$TSW->auth();
 				$update = $TSW->delemail($id,$email);
 				if ($update['rtn'] != '200')
-					return $update;
+					die(json_encode($update));
 				else
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
@@ -500,7 +512,7 @@ if (isset($_GET['action']))
 				$TSW->auth();
 				$update = $TSW->resetSerieKeywords($id);
 				if ($update['rtn'] != '200')
-					return $update;
+					die(json_encode($update));
 				else
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
@@ -513,10 +525,27 @@ if (isset($_GET['action']))
 				$TSW->auth();
 				$update = $TSW->resetAllKeywords();
 				if ($update['rtn'] != '200')
-					return $update;
+					die(json_encode($update));
 				else
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated for all TV shows')));
+				}
+				break;
+
+		case "search":
+				if (isset($_GET['pattern']))
+					$pattern = $_GET['pattern'];
+				if (!isset($pattern) or $pattern=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$result = $TSW->search($pattern);
+				if ($result['rtn'] != '200')
+					die(json_encode($result));
+				else
+				{
+					die(json_encode($result));
 				}
 				break;
 		default:

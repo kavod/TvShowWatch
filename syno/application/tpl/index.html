@@ -148,9 +148,12 @@
 		<form id="addSerie">
 			<fieldset>
 				<legend>Add TV Show</legend>
-				<label for="serie_id">TvDB show ID</label>
-				<input type="number" min="0" max="999999" name="serie_id" placeholder="TheTvDB ID of required TV Show" required />
-				<input type="submit" value="Add" />
+				<label>TV Show name</label>
+				<input type="text" id="tvshow_name" />
+				<input type="submit" value="Search" />
+				<ul id="search_result"></ul>
+				<!--<label for="serie_id">TvDB show ID</label>
+				<input type="number" min="0" max="999999" name="serie_id" placeholder="TheTvDB ID of required TV Show" required />-->
 			</fieldset>
 		</form>
 		<form enctype="multipart/form-data">

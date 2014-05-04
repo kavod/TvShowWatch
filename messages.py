@@ -16,7 +16,7 @@ returnCode = {
 	'304': 'Keywords updated but blank values ignored',
 
 	'400': 'Unknown parameter {0}',
-	'401': '{0} unfoundable',
+	'401': '{0} not found',
 	'402': '{0} file version ({1}) is obsolet (<{2}).',
 	'403': 'No opened file for {0}',
 	'404': 'Connection error on {0}: {1}',

@@ -7,6 +7,7 @@ $.ajaxSetup({
 	$( document ).tooltip({
 		track: true
 		});
+	var tvshow_result = [];
 	
 	$('#apply_jcss').click(apply_jcss);
 	$("#smtp_enable").blur(email_activation);
@@ -17,7 +18,8 @@ $.ajaxSetup({
 	$( "#conf_ko" ).click(conf_ko);
 	$( "#param" ).submit(event,save_conf);
 	$( "#import_conf" ).submit(event,import_conf);
-	$( "#addSerie" ).submit(event,addSerie);
+	//$( "#addSerie" ).submit(event,addSerie);
+	$( "#addSerie" ).submit(function() { return false; });
 
 	$( "#keywords_list" ).sortable({
 		placeholder: "ui-state-highlight",
@@ -39,6 +41,38 @@ $.ajaxSetup({
 	$( "#add_keyword" ).click(event, add_keyword);
 
 	$( "#resetAllKeywords" ).click(event,resetAllKeywords);
+
+	$( "#tvshow_name" ).change(function() {
+			if ($(this).val().length>2)
+			{
+				$.get("api/TvShowWatch.php?action=search&pattern="+$(this).val())
+				.done(function(result) {
+					data = JSON.parse(result);
+					tvshow_result = data['result'];
+					liste = '';
+					for(serie in tvshow_result)
+					{
+						liste += '<li><div style="display:inline-block;width:200px"><a href="#" class="result_item" serie_id="' + tvshow_result[serie]['seriesid'] 
+									+ '" >' + tvshow_result[serie]['seriesname'] + '</div></a>'
+									+ '<div style="display:inline-block;width:150px">' + tvshow_result[serie]['network'] + '</div>'
+									+ '<div style="display:inline-block;width:100px">' + tvshow_result[serie]['firstaired'] + '</div>'
+									+ '</li>';
+					}
+					$( "#search_result" ).html(liste);
+						$( ".result_item").click(function() {
+								id = this.getAttribute('serie_id');
+								addSerie(id);
+						$( "#tvshow_name" ).val('');
+						$( "#search_result" ).html('');
+											});
+				});
+				return false;
+			} else
+			{
+				$( "#search_result" ).html('');
+			}
+
+		});
 
 	if (!conf_status)
 		$(document).ready(conf_ko);

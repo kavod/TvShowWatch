@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -100,6 +100,13 @@ def main():
 		if 'emails' not in arg.keys():
 			arg['emails'] = []
 		print(json.dumps(m.addSeries(arg['id'],arg['emails'])))
+		sys.exit()
+
+	if args.action == 'search':
+		if 'pattern' not in arg.keys():
+			print(json.dumps({'rtn':415,'error':'Blank search'}))
+			sys.exit()
+		print(json.dumps(m.search(arg['pattern'])))
 		sys.exit()
 
 	if args.action == 'update':
