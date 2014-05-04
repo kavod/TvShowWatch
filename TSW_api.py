@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -106,6 +106,14 @@ def main():
 		if 'param' not in arg.keys():
 			arg['param'] = {}
 		print(json.dumps(m.setSerie(arg['id'],arg['param'],json_c=True)))
+		sys.exit()
+
+	if args.action == 'resetKeywords':
+		print(json.dumps(m.resetKeywords(arg['id'])))
+		sys.exit()
+
+	if args.action == 'resetAllKeywords':
+		print(json.dumps(m.resetAllKeywords()))
 		sys.exit()
 
 	if args.action == 'config':

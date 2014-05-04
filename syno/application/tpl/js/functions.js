@@ -130,6 +130,44 @@ function serieStatus(status_id)
 				}
 			});
 			$( "#keyword_add"+id ).submit(event, add_serie_keyword);
+			$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
+		});
+	}
+
+	function reset_serie_keywords(event,ui)
+	{
+		id = event.target.parentNode.getAttribute('serie_id');
+		data = {"serie_id":id}
+		$.post( "api/TvShowWatch.php?action=reset_serie_keywords", data)
+		.done(function( result ) 
+		{
+			data = JSON.parse(result);
+			if (data.rtn != '200')
+				show_error(data.error);
+			else
+				show_info('Keywords updated');
+			load_serie_keywords(id);
+			//stop_loading();
+		});
+	}
+
+	function resetAllKeywords()
+	{
+		start_loading();
+		$.post( "api/TvShowWatch.php?action=reset_all_keywords")
+		.done(function( result ) 
+		{
+			//alert(result);
+			data = JSON.parse(result);
+			if (data.rtn != '200')
+				show_error(data.error);
+			else
+				show_info('Keywords updated for all TV shows');
+			for (sid in opened_tabs)
+			{
+				load_serie_keywords(id);
+			}
+			stop_loading();
 		});
 	}
 

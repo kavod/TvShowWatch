@@ -195,6 +195,30 @@ class TvShowWatch
             return json_decode($result[0],true);
     }
 
+    function resetSerieKeywords($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action resetKeywords --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
+    function resetAllKeywords()
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action resetAllKeywords";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
     function addSerie($id)
     {
             $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
@@ -446,7 +470,7 @@ if (isset($_GET['action']))
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
 				}
-		default:
+				break;
 
 		case "delemail":
 				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
@@ -467,6 +491,35 @@ if (isset($_GET['action']))
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
 				}
+		case "reset_serie_keywords":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				$id = (int)$_POST['serie_id'];
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->resetSerieKeywords($id);
+				if ($update['rtn'] != '200')
+					return $update;
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
+				}
+				break;
+
+		case "reset_all_keywords":
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->resetAllKeywords();
+				if ($update['rtn'] != '200')
+					return $update;
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated for all TV shows')));
+				}
+				break;
+		default:
 	}
 }
 

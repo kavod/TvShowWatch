@@ -38,6 +38,8 @@ $.ajaxSetup({
 
 	$( "#add_keyword" ).click(event, add_keyword);
 
+	$( "#resetAllKeywords" ).click(event,resetAllKeywords);
+
 	if (!conf_status)
 		$(document).ready(conf_ko);
 

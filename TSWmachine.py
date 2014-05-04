@@ -302,6 +302,29 @@ class TSWmachine:
 		else:
 			return {'rtn':'300','error':messages.returnCode['300']}
 
+	def resetKeywords(self,s_id):
+		logging.info('resetKeywords ' + str(s_id))
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		keywords = self.conffile.getKeywords()
+		return self.setSerie(s_id,{'keywords':keywords},False)
+
+	def resetAllKeywords(self):
+		logging.info('resetAllKeywords ')
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		keywords = self.conffile.getKeywords()
+		series = self.getSeries('all',False,False)
+		if len(series)<1:
+			return {'rtn':'300','error':messages.returnCode['300']}
+		for serie in series['result']:
+			result = self.resetKeywords(serie['id'])
+			if result['rtn'] != '200':
+				break
+		return result
+
 	def delSerie(self,s_id):
 		logging.info('delSerie ')
 		opened = self.openedFiles()
