@@ -33,7 +33,7 @@ class Tracker:
 
 	def connect_t411(self,username, password):
 		if not self.token: #If no token, let's connect
-			req = requests.post("https://api.t411.me/auth", {'username': username, 'password': password})
+			req = requests.post("https://api.t411.me/auth", {'username': username, 'password': password}, verify=False)
 			if 'code' not in req.json().keys():
 				self.token = req.json()['token']
 				self.uid = req.json()['uid']
@@ -54,7 +54,7 @@ class Tracker:
 		if not self.token: 
 			return False
 		else: 
-			req = requests.post("https://api.t411.me/users/profile/" + self.uid,headers={"Authorization": self.token})
+			req = requests.post("https://api.t411.me/users/profile/" + self.uid,headers={"Authorization": self.token}, verify=False)
 			if 'code' not in req.json().keys():
 				return True
 			else:
@@ -66,9 +66,11 @@ class Tracker:
 	def search_t411(self, search):
 		if not self.test():
 			self.connect(self.username, self.password)
-		result = requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token}).json()
+		result = requests.post("https://api.t411.me/torrents/search/" + search,headers={"Authorization": self.token}, verify=False).json()
+		logging.debug('%s', result)
                 if 'torrents' in result.keys():
                         result = result['torrents']
+                        logging.debug('%s torrents found', int(len(result)))
                         result = filter(self.filter_t411,result)
                         return result
                 else:
@@ -81,7 +83,7 @@ class Tracker:
 
 	def download_t411(self,torrent_id):
 		logging.debug("/torrents/download/"+str(torrent_id))
-		stream = requests.post("https://api.t411.me/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True)
+		stream = requests.post("https://api.t411.me/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False)
 		with open('file.torrent', 'wb') as f:
 			for chunk in stream.iter_content(chunk_size=1024): 
 				if chunk: # filter out keep-alive new chunks

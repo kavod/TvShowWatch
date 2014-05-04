@@ -12,16 +12,18 @@ returnCode = {
 	'300': 'No TV Show scheduled',
 	'301': 'Broadcast achieved - No more episode - Removing from list',
 	'302': 'Configuration OK without SMTP',
+	'303': 'Broadcast achieved - No more episode',
+	'304': 'Keywords updated but blank values ignored',
 
 	'400': 'Unknown parameter {0}',
-	'401': '{0} unfoundable',
+	'401': '{0} not found',
 	'402': '{0} file version ({1}) is obsolet (<{2}).',
 	'403': 'No opened file for {0}',
 	'404': 'Connection error on {0}: {1}',
 	'405': 'No configuration for {0}',
 	'406': 'Admin authentification required',
 	'407': 'Incorrect parameter: {0}',
-	'408': 'Unfoundable TV Show: {0}',
+	'408': 'TV Show not found: {0}',
 	'409': 'Already scheduled TV Show',
 	'410': 'Next episode not scheduled',
 	'411': 'Error during adding {0}',
@@ -31,5 +33,8 @@ returnCode = {
 	'415': 'Unable to parse arguments',
 	'416': 'You must provide ID of TV Show you want to delete or \'all\' for global reset',
 	'417': 'Error during updating {0}',
-	'418': 'Error during transfer'
+	'418': 'Error during transfer',
+	'419': 'Unknow episode reference',
+	'420': 'Blank keyword is ignored',
+	'499': 'General Error'
 	}

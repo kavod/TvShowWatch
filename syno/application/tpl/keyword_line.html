@@ -1,0 +1,9 @@
+{loop="keyword"}
+		<li class="keyword ui-state-default" title="{$value.keyword}">{$value.keyword}</li>	
+{/loop}
+	<li class="keyword ui-state-default ui-state-disabled">
+		<input type="hidden" name="serie_id" value="{$serie_id}" />
+		<input type="text" name="keywords_new" placeholder="Add a new keyword" required />
+		<input type="submit" id="add_keyword{$serie_id}" value="Add" />
+	</li>
+	<li class="keyword ui-state-default ui-state-disabled" id="trash{$serie_id}" title="Drag here to delete">Drag here to delete</span></li>

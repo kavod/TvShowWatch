@@ -12,6 +12,7 @@ from myDate import *
 from ConfFile import ConfFile
 from serieList import SerieList
 from functions import *
+from myTvDB import *
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
@@ -25,6 +26,10 @@ class TSWmachine:
 		self.admin = admin
 		self.conffile = ConfFile()
 		self.seriefile = SerieList()
+		self.verbosity = log
+	
+	def getVerbosity(self):
+		return self.verbosity
 
 	def getAuth(self):
 		logging.info('Get Auth :'+ str(self.admin))
@@ -109,13 +114,24 @@ class TSWmachine:
 				if key.split('_')[0] == 'smtp':
 					send = True
 			elif key == 'keywords':
+				original_len = len(value)
+				value = [x for x in value if x != '']
+				final_len = len(value)
+				if final_len < 1:
+					value = 'None';
 				if (self.conffile.changeKeywords(value)==False):
 					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 			else:
 				return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 		if save:
 			self.conffile._save()
-			return self.testConf(send)
+			result = self.testConf(send)
+			if result['rtn'] == '200':
+				if original_len == final_len:
+					return result
+				else:
+					return {'rtn':'304','error':messages.returnCode['304'].format(key)}
+			return result
 		else:	
 			return {'rtn':'200','error':messages.returnCode['200']}
 
@@ -148,6 +164,8 @@ class TSWmachine:
 		if opened['rtn'] != '200':
 			return opened
 		liste = self.seriefile.listSeries(json_c)
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
@@ -162,34 +180,36 @@ class TSWmachine:
 				else:
 					return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 			else:
-				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
+				return {'rtn':'407','error':messages.returnCode['407'].format(str(s_id))}
 		else:
-			return {'rtn':'300','error:':messages.returnCode['300']}
+			return {'rtn':'300','error':messages.returnCode['300']}
 
-	def getSeries(self,s_ids='all',json_c=False):
+	def getSeries(self,s_ids='all',json_c=False,load_tvdb=False):
 		logging.info('getSeries ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
 		if s_ids == 'all':
-			serielist = self.seriefile.listSeries(json_c)
+			serielist = self.seriefile.listSeries(json_c,load_tvdb)
+			if serielist == False:
+				return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 			if len(serielist)>0:
 				return {'rtn':'200','result':[x for x in serielist]}
 			else:
-				return {'rtn':'300','error:':messages.returnCode['300']}
+				return {'rtn':'300','error':messages.returnCode['300']}
 		elif isinstance(s_ids,int) or (isinstance(s_ids,basestring) and s_ids.isdigit()):
 			return self.getSerie(s_ids)
 		elif isinstance(s_ids,list):
 			result = []
 			for s_id in s_ids:
-				res_serie = self.getSerie(s_id)
+				res_serie = self.getSerie(s_id,json_c)
 				if res_serie['rtn']!='200':
 					result.append(res_serie['result'])
 				else:
 					return res_serie
 			return {'rtn':'200','result':result}
 		else:
-			return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_ids))}
+			return {'rtn':'407','error':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):
 		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
@@ -197,15 +217,18 @@ class TSWmachine:
 		if opened['rtn'] != '200':
 			return opened
 		if self.getSerie(s_id)['rtn']=='200':
-			return {'rtn':'409','error:':messages.returnCode['409']}
+			return {'rtn':'409','error':messages.returnCode['409']}
 
 		serie = last_aired(int(s_id),int(season),int(episode))
 		if len(serie.keys())<1:
 			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))}
 		episode = serie['next']
 		if episode is None:
-			return {'rtn':'410','error:':messages.returnCode['410']}
-		episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
+			# If TV show is achieved, just add it without episode scheduled
+			#return {'rtn':'410','error':messages.returnCode['410']}
+			episode = None
+		else:
+			episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
 		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
@@ -247,14 +270,14 @@ class TSWmachine:
 			else:
 				return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
 		else:
-			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))} #Unfoundable
+			return {'rtn':'408','error':messages.returnCode['408'].format(str(s_id))} #Not found
 
 	def setSerie(self,s_id,param={},json_c=False):
 		logging.info('getSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		if not all(y in ['emails','season','episode','expected','status','keywords'] for y in param.keys()):
+		if not all(y in ['emails','season','episode','expected','status','keywords','pattern'] for y in param.keys()):
 			return {'rtn':'400','error':messages.returnCode['400'].format(str(param.keys()))}
 		if 'emails' in param.keys():
 			emails = param.pop('emails')
@@ -265,6 +288,8 @@ class TSWmachine:
 		else:
 			keywords = None
 		liste = self.seriefile.listSeries(json_c)
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 		if len(liste)>0:
 			if isinstance(s_id,int) or (isinstance(s_id,basestring) and s_id.isdigit()):
 				result = [x for x in liste if x['id'] == int(s_id)]
@@ -273,9 +298,32 @@ class TSWmachine:
 				result = [x for x in liste if x['name'] == s_id]
 				return self._setSerie(s_id,result[0],emails,keywords,param)
 			else:
-				return {'rtn':'407','error:':messages.returnCode['407'].format(str(s_id))}
+				return {'rtn':'407','error':messages.returnCode['407'].format(str(s_id))}
 		else:
-			return {'rtn':'300','error:':messages.returnCode['300']}
+			return {'rtn':'300','error':messages.returnCode['300']}
+
+	def resetKeywords(self,s_id):
+		logging.info('resetKeywords ' + str(s_id))
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		keywords = self.conffile.getKeywords()
+		return self.setSerie(s_id,{'keywords':keywords},False)
+
+	def resetAllKeywords(self):
+		logging.info('resetAllKeywords ')
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		keywords = self.conffile.getKeywords()
+		series = self.getSeries('all',False,False)
+		if len(series)<1:
+			return {'rtn':'300','error':messages.returnCode['300']}
+		for serie in series['result']:
+			result = self.resetKeywords(serie['id'])
+			if result['rtn'] != '200':
+				break
+		return result
 
 	def delSerie(self,s_id):
 		logging.info('delSerie ')
@@ -335,30 +383,25 @@ class TSWmachine:
 
 		str_search = '{0} S{1:02}E{2:02} {3}'
 		str_result = "{0}|{1}|{2}"
+		
+		liste = series.listSeries()
+		if liste == False:
+			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 
-		if (len(series.listSeries())<1):
+		if (len(liste)<1):
 			print("{0}|{1}".format('300',messages.returnCode['300']))
 			return
 
-		for serie in series.listSeries():
-			if serie['episode'] == 0: # If last episode reached
-				result.append({'rtn':301,'id':serie['id'],'error':messages.returnCode['301']})
-				self.delSerie(serie['id'])
-				print(str_result.format('301',str(serie['id']),messages.returnCode['301']))
+		for serie in liste:
+			if serie['status'] == 90 or serie['episode'] == 0: # If last episode reached
+				print(str_result.format('303',str(serie['id']),messages.returnCode['303']))
 				continue
 
 			
 			str_search_list = []
-			"""for keyword in self.conffile.getKeywords():
-				str_search_list.append(str_search.format(
-						serie['name'],
-						int(serie['season']),
-						int(serie['episode']),
-						keyword
-							))"""
 			for keyword in serie['keywords']:
 				str_search_list.append(str_search.format(
-						serie['name'],
+						serie['pattern'],
 						int(serie['season']),
 						int(serie['episode']),
 						keyword
@@ -399,27 +442,17 @@ class TSWmachine:
 							else:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
-
-						result = last_aired(serie['id'])
-
-						if (result['next'] is not None):
-							self.seriefile.updateSerie(serie['id'],{
-										'status':	10,
-										'season':	result['next']['seasonnumber'],
-										'episode':	result['next']['episodenumber'],
-										'slot_id':	0,
-										'expected':	result['next']['firstaired']
-										})
-							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
-						else:
+						next = next_aired(serie['id'],serie['season'],serie['episode'])
+						self.seriefile.updateSerie(serie['id'],next)
+						if next['status'] == 90:
 							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
-							self.seriefile.delSerie(serie['id'])
-
+						else:
+							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
 					else:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
-			if int(serie['status']) in [10,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
+			if int(serie['status']) in [10,15,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
 				if 'tc' not in locals():
 					tc = transmissionrpc.Client(
 						confTransmission['server'],
@@ -447,4 +480,23 @@ class TSWmachine:
 			else:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 
+	def getEpisode(self,serieID,season,episode):
+		t = myTvDB()
+		try:
+			result = t[serieID][season][episode]
+			return {'rtn':'200','result':result}
+		except Exception,e:
+			return {'rtn':'419','error':messages.returnCode['419']}
+
+	def search(self,pattern):
+		t = myTvDB()
+		try:
+			result = t.search(pattern)
+			if len(result)>0:
+				return {'rtn':'200','result':result}
+			else:
+				return {'rtn':'408','error':messages.returnCode['408'].format(pattern)}
+		except Exception,e:
+			return {'rtn':'419','error':messages.returnCode['404'].format('TvDB')}
+		
 

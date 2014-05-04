@@ -1,10 +1,14 @@
 <?
-define("PY_FILE", '/var/packages/TvShowWatch/target/TSW_api.py');
-define("RUN_FILE", '/var/packages/TvShowWatch/target/tvShowWatch.py');
-define("CONF_FILE", '/var/packages/TvShowWatch/etc/config.xml');
-define("LIST_FILE", '/var/packages/TvShowWatch/etc/series.xml');
-define("PYTHON_EXEC", 'PATH=/var/packages/python/target/bin:$PATH ; python');
-define("LOGFILE", '/var/log/TSW.log');
+
+error_reporting(E_ALL | E_STRICT);  
+ini_set('display_startup_errors',1);  
+ini_set('display_errors',1);
+
+if (!isset($path))
+	$path = '../';
+
+require_once($path."inc/constants.php");
+require_once($path."functions.php");
 
 class TvShowWatch
 {
@@ -13,31 +17,29 @@ class TvShowWatch
 	var $auth;
 	var $cmd;
 
-	function TvShowWatch($py_file = PY_FILE, $conffile = CONF_FILE, $serielist = LIST_FILE, $debug = False, $run_file = RUN_FILE)
+	function TvShowWatch($py_file = API_FILE, $conffile = CONF_FILE, $serielist = SERIES_FILE, $debug = False, $run_file = RUN_FILE)
 	{
 		$this->debug = ($debug != False);
 		$this->auth = false;
 		if (!file_exists($conffile))
 		{
-			trigger_error("Configuration file $conffile does not exist",E_ERROR);
+			throw new Exception("Configuration file $conffile does not exist",401);
+			//trigger_error("Configuration file $conffile does not exist");
 			return false;
 		}
 		$this->conffile = $conffile;
-		/*if (!file_exists($serielist))
-		{
-			trigger_error("Serie list file $serielist does not exist",E_ERROR);
-			return false;
-		}*/
 		$this->serielist = $serielist;
 		if (!file_exists($py_file))
 		{
-			trigger_error("Python file $py_file does not exist",E_ERROR);
+			throw new Exception("Python executable $py_file does not exist",401);
+			//trigger_error("Python file $py_file does not exist");
 			return false;
 		}
 		$this->py_file = $py_file;
 		if (!file_exists($run_file))
 		{
-			trigger_error("Python run file $run_file does not exist",E_ERROR);
+			throw new Exception("Python run file $run_file does not exist",401);
+			//trigger_error("Python run file $run_file does not exist",E_ERROR);
 			return false;
 		}
 		$this->run_file = $run_file;
@@ -98,9 +100,33 @@ class TvShowWatch
 		return json_decode($result[0],true);
 	}
 
-	function getSeries()
+	function getSeries($load_tvdb=false)
 	{
-		$cmd = PYTHON_EXEC . " " . $this->cmd .' --action list';
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"load_tvdb\":" . (($load_tvdb) ? 'true' : 'false') . "}'";
+		exec($cmd,$result);
+		if ($this->debug)
+		{
+			echo $cmd.'<br />';
+			print_r($result);
+		}
+		return json_decode($result[0],true);
+	}
+
+	function getSerie($id)
+	{
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action list --arg '{\"ids\":[" . $id . "]}'";
+		exec($cmd,$result);
+		if ($this->debug)
+		{
+			echo $cmd.'<br />';
+			print_r($result);
+		}
+		return json_decode($result[0],true);
+	}
+
+	function getEpisode($serie_id,$season,$episode)
+	{
+		$cmd = PYTHON_EXEC . " " . $this->cmd ." --action getEpisode --arg '{\"id\":$serie_id, \"season\":$season,\"episode\":$episode}'";
 		exec($cmd,$result);
 		if ($this->debug)
 		{
@@ -119,12 +145,14 @@ class TvShowWatch
 				$cmd .= '"emails":["' . implode('","',$value) . '"],';
 			elseif ($key == 'emails' && count($value)<1)
 				$cmd .= '"emails":[],';
+			elseif ($key == 'keywords' && count($value)>0)
+				$cmd .= '"keywords":["' . implode('","',$value) . '"],';
+			elseif ($key == 'keywords' && count($value)<1)
+				$cmd .= '"keywords":[],';
 			else
 				$cmd.='"' . $key . '":"' . $value . '",';
 		}
-		$cmd .= '"status":10';
-		/*if (count($param)>0)
-			$cmd = substr($cmd,0,-1);*/
+		$cmd .= '"status":15';
 		$cmd .= "}}'";
 		exec($cmd,$result);
 		if ($this->debug)
@@ -135,39 +163,95 @@ class TvShowWatch
 		return json_decode($result[0],true);
 	}
 
-        function delSerie($id)
-        {
-                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action del --arg '{\"id\":" . $id . "}'";
-                exec($cmd,$result);
-                if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                        print_r($result);
-                }
-                return json_decode($result[0],true);
-        }
+	function addemail($id,$email)
+	{
+		$serie = $this->getSerie($id);
+		$emails = $serie['result']['emails'];
+		$emails[] = $email;
+		return $this->setSerie($id,array('emails'=>$emails));
+	}
 
-        function addSerie($id)
-        {
-                $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
-                exec($cmd,$result);
-                if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                        print_r($result);
-                }
-                return json_decode($result[0],true);
-        }
+	function delemail($id,$email)
+	{
+		$serie = $this->getSerie($id);
+		$emails = $serie['result']['emails'];
+		for( $i=0;$i<count($emails);$i++)
+		{
+			if ($emails[$i] == $email)
+				unset($emails[$i]);
+		}
+		return $this->setSerie($id,array('emails'=>$emails));
+	}
+
+    function delSerie($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action del --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
+    function resetSerieKeywords($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action resetKeywords --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
+    function resetAllKeywords()
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action resetAllKeywords";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
+	function search($pattern)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action search --arg '{\"pattern\":\"" . $pattern . "\"}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
+
+    function addSerie($id)
+    {
+            $cmd = PYTHON_EXEC . " " . $this->cmd ." --action add --arg '{\"id\":" . $id . "}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+    }
 	
 	function testRunning()
 	{
-		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status';
+		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status 2>&1';
 		exec($cmd,$result);
 		if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                        print_r($result);
-                }
+        {
+                echo $cmd.'<br />';
+                print_r($result);
+        }
 		return str_replace('tvShowWatch is ','',$result[0]);
 	}
 
@@ -176,10 +260,295 @@ class TvShowWatch
 		$cmd = "date >> " . LOGFILE . ";".PYTHON_EXEC . " " . $this->run_cmd." --action run >>".LOGFILE." 2>&1 &";
 		exec($cmd,$result);
 		if ($this->debug)
-                {
-                        echo $cmd.'<br />';
-                }
+        {
+			echo $cmd.'<br />';
+        }
 		return true;
+	}
+}
+
+if (isset($_GET['action']))
+{
+	$debug = (isset($_GET['debug'])) ? $_GET['debug'] : false;
+	switch ($_GET['action'])
+	{
+		case "run":
+			if (!isset($TSW))
+				$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			$TSW->auth();
+			$TSW-run();
+			break;
+		case 'save_conf':
+			$result = '{"tracker":' . tracker_api_conf($_POST);
+			$result .= ',"transmission":' . transmission_api_conf($_POST);
+			$result .= ',"smtp":' . email_api_conf($_POST).'}';
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+
+			if (file_exists(CONF_FILE))
+			{
+				$conf = $TSW->setConf($result);
+				if ($conf['rtn']=='200')
+					$msg = 'Configuration file saved';
+				else
+					$msg = 'Error during configuration save: ' . $conf['error'];
+			} else
+			{
+				$conf = $TSW->createConf($result);
+				if ($conf['rtn']=='200')
+					$msg = 'Configuration file created';
+				else
+					$msg = 'Error during configuration creation: ' . $conf['error'];
+			}
+			die($msg);
+			break;
+		case 'get_conf':
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			echo json_encode($TSW->getConf());
+			break;
+		case 'save_keywords':
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			if (isset($_POST['keywords']))
+				$keywords = $_POST['keywords'];
+			else
+				$keywords = array();
+			if (isset($_POST['serie_id']) and (int)$_POST['serie_id']>0)
+			{
+				$res = $TSW->setSerie($_POST['serie_id'],array('keywords' => $keywords));
+				if ($res['rtn']!='200')
+					die(json_encode(array('rtn' => $res['rtn'], 'error' => $res['error']	)));
+				die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
+			} else
+			{
+				$res = $TSW->setConf(json_encode(array('keywords' => $keywords)));
+				if ($res['rtn']!='200')
+					die(json_encode(array('rtn' => $res['rtn'], 'error' => $res['error']	)));
+				die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
+			}			
+			break;
+
+		case 'import_conf':
+			if(isset($_FILES['configFile']))
+			{ 
+				 if(move_uploaded_file($_FILES['configFile']['tmp_name'], CONF_FILE))
+				 {
+				  $msg =  'Upload of configuration file completed!';
+				 }
+				 else //Sinon (la fonction renvoie FALSE).
+				 {
+				  $msg =  'Failed to upload configuration file!';
+				 }
+			} 
+			else
+				$msg =  'Failed to upload configuration file due to missing file';
+			die($msg);
+			break;
+
+		case "getSeries":
+			$load_tvdb = (isset($_GET['load_tvdb']) && $_GET['load_tvdb']==1) ? true : false;
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->getSeries($load_tvdb)));
+			break;
+
+		case "getSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->getSerie((int)$_POST['id'])));
+			break;
+
+		case "delSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->delSerie((int)$_POST['serie_id'])));
+			break;
+
+		case "addSerie":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->addSerie((int)$_POST['serie_id'])));
+			break;
+
+		case "getEpisode":
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			die(json_encode($TSW->getEpisode((int)$_POST['serie_id'],(int)$_POST['season'],(int)$_POST['episode'])));
+			break;
+
+		case "setSerie":
+				if (isset($_POST['season']) and isset($_POST['episode']) and isset($_POST['serie_id']))
+				{
+					$serie_id = (int)$_POST['serie_id'];
+					$season = (int)$_POST['season'];
+					$episode = (int)$_POST['episode'];
+					$pattern = htmlentities($_POST['pattern']);
+					if ($season * $episode != 0)
+					{
+						if (!isset($TSW))
+							$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+						$TSW->auth();
+						try
+						{
+							$val_episode = $TSW->getEpisode($serie_id, $season, $episode, 'en');
+						}
+						catch (Exception $e)
+						{
+							die(json_encode(array('rtn' => 419, 'error' => 'Episode S' . sprintf("%02s", $season) . 'E'. sprintf("%02s", $episode) . ' does not exist')));
+						}	
+					} else
+					{
+						die(json_encode(array('rtn' => 499, 'error' => 'You must indicate both of Season and Episode numbers')));
+					}
+				} else
+				{
+					die(json_encode(array('rtn' => 499, 'error' => 'You must indicate both of Season and Episode numbers')));
+				}
+
+				$update = $TSW->setSerie($serie_id,array('season'=>$season,'episode'=>$episode,'pattern'=>$pattern,'expected'=>$val_episode['result']['firstaired']));
+				if ($update['rtn'] != '200')
+					die(json_encode(array('rtn' => $update['rtn'], 'error' => 'Error during TV Show update<br />'.$update['error'])));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
+				}
+			break;
+
+		case "addemail":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($_POST['email']) or $_POST['email']=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'Email blank')));
+
+				$id = (int)$_POST['serie_id'];
+				$email = htmlentities($_POST['email']);
+
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->addemail($id,$email);
+				if ($update['rtn'] != '200')
+					die(json_encode($update));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
+				}
+				break;
+
+		case "delemail":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($_POST['email']) or $_POST['email']=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'Email blank')));
+
+				$id = (int)$_POST['serie_id'];
+				$email = htmlentities($_POST['email']);
+
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->delemail($id,$email);
+				if ($update['rtn'] != '200')
+					die(json_encode($update));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
+				}
+		case "reset_serie_keywords":
+				if (!isset($_POST['serie_id']) or (int)$_POST['serie_id']==0)
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				$id = (int)$_POST['serie_id'];
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->resetSerieKeywords($id);
+				if ($update['rtn'] != '200')
+					die(json_encode($update));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
+				}
+				break;
+
+		case "reset_all_keywords":
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$update = $TSW->resetAllKeywords();
+				if ($update['rtn'] != '200')
+					die(json_encode($update));
+				else
+				{
+					die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated for all TV shows')));
+				}
+				break;
+
+		case "search":
+				if (isset($_GET['pattern']))
+					$pattern = $_GET['pattern'];
+				if (!isset($pattern) or $pattern=='')
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+				$TSW->auth();
+				$result = $TSW->search($pattern);
+				if ($result['rtn'] != '200')
+					die(json_encode($result));
+				else
+				{
+					die(json_encode($result));
+				}
+				break;
+		default:
 	}
 }
 

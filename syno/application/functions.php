@@ -4,6 +4,11 @@ function cmp($a, $b)
     return strcmp($a['col1']["label"], $b['col1']["label"]);
 }
 
+function cmp_serie_az($a, $b)
+{
+    return strcmp($a["series_name"], $b['series_name']);
+}
+
 date_default_timezone_set('America/New_York'); 
 function cmp_serie($a, $b)
 {
@@ -29,10 +34,14 @@ function serieStatus($status_id)
 	{
 		case '10':
 			return 'Waiting for broadcast';
+		case '15':
+			return 'Torrent search scheduled';
 		case '20':
 			return 'Waiting for torrent availability';
 		case '30':
 			return 'Download in progress';
+		case '90':
+			return 'Broadcast achieved';
 		default:
 			return 'Unknown status';
 	}

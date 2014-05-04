@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -63,6 +63,8 @@ def main():
 		except:
 			print(json.dumps({'rtn':'415','error':messages.returnCode['415']}))
 			sys.exit()
+	else:
+		arg = {}
 
 	# Initialize more data
 	m = TSWmachine(args.admin,args.verbosity)
@@ -87,7 +89,11 @@ def main():
 		sys.exit()
 
 	if args.action == 'list':
-		print(json.dumps(m.getSeries(json_c=True)))
+		if 'ids' not in arg.keys():
+			arg['ids'] = 'all'
+		if 'load_tvdb' not in arg.keys():
+			arg['load_tvdb'] = False
+		print(json.dumps(m.getSeries(arg['ids'],json_c=True,load_tvdb=arg['load_tvdb'])))
 		sys.exit()
 
 	if args.action == 'add':
@@ -96,10 +102,25 @@ def main():
 		print(json.dumps(m.addSeries(arg['id'],arg['emails'])))
 		sys.exit()
 
+	if args.action == 'search':
+		if 'pattern' not in arg.keys():
+			print(json.dumps({'rtn':415,'error':'Blank search'}))
+			sys.exit()
+		print(json.dumps(m.search(arg['pattern'])))
+		sys.exit()
+
 	if args.action == 'update':
 		if 'param' not in arg.keys():
 			arg['param'] = {}
 		print(json.dumps(m.setSerie(arg['id'],arg['param'],json_c=True)))
+		sys.exit()
+
+	if args.action == 'resetKeywords':
+		print(json.dumps(m.resetKeywords(arg['id'])))
+		sys.exit()
+
+	if args.action == 'resetAllKeywords':
+		print(json.dumps(m.resetAllKeywords()))
 		sys.exit()
 
 	if args.action == 'config':
@@ -120,6 +141,10 @@ def main():
 
 	if args.action == 'del':
 		print(json.dumps(m.delSerie(arg['id'])))
+		sys.exit()
+
+	if args.action == 'getEpisode':
+		print(json.dumps(m.getEpisode(arg['id'],arg['season'],arg['episode'])))
 		sys.exit()
 
 	print(json.dumps({'rtn':'400','error':messages.returnCode['400'].format(args.action)}))

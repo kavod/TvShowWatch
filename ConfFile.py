@@ -283,10 +283,10 @@ class ConfFile(MyFile):
 				}
 
 	def changeKeywords(self,keywords=[]):
-		if keywords == 'None':
-			keywords=[]
 		if len(keywords) < 1:
 			keywords = promptList('Enter your keywords [keep blank to save]:')
+		if keywords == 'None':
+			keywords=[]
 		conf = self.tree.getroot()
 		if conf.find('keywords') is not None:
 			keywordsNode = conf.find('keywords')

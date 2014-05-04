@@ -1,0 +1,9 @@
+{loop="series"}
+			<tr>
+				<td class="td_tvshow"><a id="serie_{$value.series_id}" href="#">{$value.series_name}</a></td>
+				<td class="td_episode">{$value.series_episode}</td>
+				<td class="td_status">{$value.series_status}</td>
+				<td class="td_expected">{$value.series_expected}</td>
+			</tr>
+{/loop}
+{if="$noTvShow != ''"}{$noTvShow}{/if}

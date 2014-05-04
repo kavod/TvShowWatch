@@ -1,0 +1,54 @@
+		<h1></h1>
+		<h2>Description</h2>
+		<div class="banner"><img /></div>
+		<p class="description"></p>
+
+<!-- Tabs -->
+<div id="tabs_serie_###">
+	<nav>
+		<ul>
+			<li><a href="#data###" id="tab_data###">Data</a></li>
+			<li><a href="#emails###" id="tab_emails###">Notification emails</a></li>
+			<li><a href="#keywords###" id="tab_keywords###">Keywords</a></li>
+		</ul>
+	</nav>
+	<section id="data###">
+
+		<label>Status:</label>
+		<span class="serie_status"></span><br />
+		<form class="episode_form">
+			<input type="hidden" name="serie_id" value="###" />
+			<label>Next scheduled episode</label>
+			S<input type="number" placeorder="SE" name="season" min="0" max="99" />E<input type="number" name="episode" placeorder="EP" min="0" max="99" />
+			<button class="retrieve">Retrieve next episode</button><br />
+			<label for="pattern">Search pattern</label>
+			<input type="text" placeorder="Enter search pattern here" name="pattern" /><br />
+			<input type="submit" value="Change" />
+		</form>
+		<button class="unschedule">Unschedule TV Show</button>
+
+
+	</section>
+	<section id="emails###">
+
+		<ul class="emails"></ul>
+		<form class="email_add">
+			<input type="hidden" name="serie_id" value="###" />
+			<div>
+				<label>Add email</label>
+				<input type="email" name="email" placeholder="Add a notification receiver" required />
+				<button>Add</button>
+			</div>
+		</form>
+
+
+	</section>
+	<section id="keywords###">
+
+		<form id="keyword_add###" serie_id="###">
+			<ul id="keywords_list###" class="sortable" serie_id="###"></ul>
+		</form>
+		<button class="resetKeywords" serie_id="###">Reset keywords</button>
+
+	</section>
+</div>

@@ -3,8 +3,11 @@ error_reporting(E_ERROR | E_STRICT);
 ini_set('display_startup_errors',1);  
 ini_set('display_errors',1);
 
+if (!isset($path))
+	$path = './';
+
 include "inc/rain.tpl.class.php"; //include Rain TPL
-include "functions.php";
+require_once($path . "functions.php");
 require_once "api/TvShowWatch.php";
 require_once("api/tvdb.php");
 

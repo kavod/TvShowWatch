@@ -51,8 +51,9 @@ if (!TSW)
 		display_error($page,$msg);
 		break;
 	}
-	if (isset($_POST['season']) or isset($_POST['episode']))
+	if (isset($_POST['season']) or isset($_POST['episode']) or isset($_POST['pattern']))
 	{
+		$pattern = htmlentities($_POST['pattern']);
 		if ((int)$_POST['season'] * (int)$_POST['episode'] != 0)
 		{
 			try
@@ -60,7 +61,12 @@ if (!TSW)
 				$episode = $tvdb->getEpisode($serie['id'], (int)$_POST['season'], (int)$_POST['episode'], 'en');
 				if (!isset($TSW))
 					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$_GET['debug']);
-				$update = $TSW->setSerie($serie['id'],array('season'=>(int)$_POST['season'],'episode'=>(int)$_POST['episode'],'expected'=>$episode['firstaired']));
+				$update = $TSW->setSerie($serie['id'],array(
+														'season'=>(int)$_POST['season'],
+														'episode'=>(int)$_POST['episode'],
+														'expected'=>$episode['firstaired'],
+														'pattern'=>$pattern
+															));
 				if ($update['rtn'] != '200')
 					$msg = 'Error during TV Show update<br />'.$update['error'];
 				else
@@ -126,9 +132,20 @@ if (!TSW)
 									'e_id'=>'episode', 
 									'episode'=>sprintf("%02s", $serie['episode']),
 												),
-								'col3' => array('type' => 'submit', 'label' => 'Change')
-									)
+								//'col3' => array('type' => 'submit', 'label' => 'Change')
+								),
+								array(
+								'type' => 'line',
+								'visible' => true,
+								'col1' => array('type' => 'text', 'label' => 'Search pattern '),
+								'col2' => array('type' => 'input_text', 'name' => 'pattern', 'value' => $serie['pattern'])
+								),
+								array(
+								'type' => 'line',
+								'visible' => true,
+								'col1' => array('type' => 'submit', 'label' => 'Change')
 								)
+							)
 					);
 	$content[] = array(
 						'type' => 'line',

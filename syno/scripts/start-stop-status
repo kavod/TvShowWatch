@@ -18,6 +18,17 @@ ValidateConfFile() {
                 retval="0"
         fi                
         echo "$retval"                                                                                                                          
+} 
+
+RestartCron() {                            
+        if [[ `grep majorversion /etc.defaults/VERSION` = 'majorversion="5"' ]] ; then
+                /usr/syno/sbin/synoservicectl --restart crond
+        else
+                sleep 1
+                /usr/syno/etc/rc.d/S04crond.sh stop
+                sleep 1                                           
+                /usr/syno/etc/rc.d/S04crond.sh start
+        fi  
 }     
 
 StartPackage () {
@@ -41,9 +52,10 @@ StartPackage () {
         echo "Starting TvShowWatch..."
 #       python /var/packages/TvShowWatch/target/tvShowWatch.py >> $LogFile
         echo -e ${MINUTE}$CRONLINE >>$CRONFILE
-        /usr/syno/etc/rc.d/S04crond.sh stop
-        sleep 1
-        /usr/syno/etc/rc.d/S04crond.sh start
+        RestartCron
+		#/usr/syno/etc/rc.d/S04crond.sh stop
+        #sleep 1
+        #/usr/syno/etc/rc.d/S04crond.sh start
 
         # Enable desktop icon & config file editor
 #       if [ ! -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
@@ -58,10 +70,11 @@ StopPackage () {
         #fi
         sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
         mv $TMPFILE $CRONFILE
-        sleep 1
-        /usr/syno/etc/rc.d/S04crond.sh stop
-        sleep 1
-        /usr/syno/etc/rc.d/S04crond.sh start
+        RestartCron
+		#sleep 1
+        #/usr/syno/etc/rc.d/S04crond.sh stop
+        #sleep 1
+        #/usr/syno/etc/rc.d/S04crond.sh start
 }
                                                                                                                                                                              
 

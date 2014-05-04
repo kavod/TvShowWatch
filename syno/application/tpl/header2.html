@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>TvShowWatch</title>
+	<link href="css/sunny/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+	<link href="css/TSW.css" rel="stylesheet">
+	<script src="js/jquery-1.9.1.js"></script>
+	<script src="js/jquery-ui-1.10.3.custom.js"></script>
+	<script src="js/functions.js"></script>
+	<script type="text/javascript">
+		{$javascript}
+	</script>
+	<script src="js/TSW.js"></script>
+</head>
+<body>
+<header>
+TvShowWatch
+</header>
+<div id="loading"></div>
+<div id="blocker" class="ui-loader-background"> </div>
+<!-- Tabs -->
+<div id="tabs">
+	<nav>
+		<ul>
+			<li><a href="#home" id="tab_home">Home</a></li>
+			<li><a href="#conf" id="tab_conf">Configuration</a></li>
+			<li><a href="#keywords" id="tab_keywords">Keywords</a></li>
+			<li><a href="#series" id="tab_series">TV Shows</a></li>
+		</ul>
+	</nav>
+	<div class="ui-widget box" style="display:none" id="info_box">
+		<div class="ui-state-highlight ui-corner-all info_box">
+			<p>
+				<span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span><span id="info_content"></span>
+			</p>
+		</div>
+	</div>
+	<div class="ui-widget box" style="display:none" id="error_box">
+		<div class="ui-state-error ui-corner-all info_box">
+			<p>
+				<span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span><span id="error_content"></span>
+			</p>
+		</div>
+	</div>

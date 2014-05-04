@@ -69,6 +69,12 @@ class myShow(tvdb_api.Show):
 				result.append(episode)
 		return result
 
+	def getSeasons(self):
+		result = [];
+		for key,season in self.items():
+			result.append(str(key))
+		return result
+
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
