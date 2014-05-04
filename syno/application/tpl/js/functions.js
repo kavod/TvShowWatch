@@ -73,16 +73,7 @@ function serieStatus(status_id)
 			{
 				$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
 				load_email(id);
-				/*$.post( "email_list2.php", {"id":id})
-				.done(function( data ) 
-				{
-					$('#s' + id +' .emails').html(data);
-				});*/
-				$.post( "keyword_list2.php", {"id":id})
-				.done(function( data ) 
-				{
-					$('#s' + id +' .keywords').html(data);
-				});
+				load_serie_keywords(id)
 				apply_jcss();
 				$( "#tabs" ).tabs("option", "active", tabCounter);
 				tabCounter++;
@@ -97,6 +88,69 @@ function serieStatus(status_id)
 		{
 			$('#s' + id +' .emails').html(data);
 			$('#s' + id +' .emails>li>div>.ui-icon-circle-close').click($.proxy(del_email,null,id,this));
+		});
+	}
+
+	function add_serie_keyword(event)
+	{
+		event.preventDefault();
+		id = event.target.serie_id.value;
+		var text = $("#keywords_list"+id+" input[name='keywords_new']").val();
+		if (text != '')
+		{
+			var $li = $("<li class='keyword ui-state-default'/>").text(text);
+			$li.attr('title',text);
+			$("input[name='keywords_new']").val('');
+			$("#keywords_list"+id+">.ui-state-disabled:first").before($li);
+			$("#keywords_list"+id).sortable('refresh');
+			save_serie_keywords(event,$("#keywords_list"+id));
+		}
+	}
+
+	function load_serie_keywords(id)
+	{
+		$.post( "keyword_list2.php", {"id":id})
+		.done(function( data ) 
+		{
+			$('#keywords_list' + id).html(data);
+			$( "#keywords_list" + id ).sortable({
+				placeholder: "ui-state-highlight",
+				distance: 15,
+				items: "li:not(.ui-state-disabled)",
+				axis: "y",
+				stop: save_serie_keywords
+			});
+			$( "#keywords_list" +id ).disableSelection();
+
+			$("#trash" +id ).droppable({
+				accept: "#keywords_list" + id + " li",
+				hoverClass: "ui-state-hover",
+				drop: function(ev, ui) {
+					ui.draggable.remove();
+				}
+			});
+			$( "#keyword_add"+id ).submit(event, add_serie_keyword);
+		});
+	}
+
+	function save_serie_keywords(event,ui)
+	{
+		id = event.target.getAttribute('serie_id');
+		var keywords = [];
+		$( "#keywords_list" + id ).children('li:not(.ui-state-disabled)').each(function()
+		{
+			keywords.push($(this).html());
+		});
+		data = {"serie_id":id,"keywords":keywords};
+		$.post( "api/TvShowWatch.php?action=save_keywords", data)
+		.done(function( result ) 
+		{
+			data = JSON.parse(result);
+			if (data.rtn != '200')
+				show_error(data.error);
+			else
+				show_info('Keywords updated');
+			//stop_loading();
 		});
 	}
 	
@@ -116,15 +170,12 @@ function serieStatus(status_id)
 			else
 				show_error(result.error);
 		});
-		/*alert(id)
-		alert(event.target.getAttribute('email'));*/
 	}
 
 	function run() 
 	{
 		var jqxhr = $.get( "api/TvShowWatch.php?action=run", function() {
 		  show_info("Successfully run");
-			//alert( "success" );
 		});
 	}
 	function closeTab(element) 
@@ -170,7 +221,6 @@ function email_activation() {
 		.done(function( data ) 
 		{
 			show_info(data);
-			//alert(data);
 			stop_loading();
 		});
 		return false;
@@ -191,7 +241,6 @@ function email_activation() {
 		.done(function( data )  
 		{  
 			show_info(data)
-			//alert( data );  
 			get_conf();
 			stop_loading();
 		});
@@ -445,25 +494,8 @@ function email_activation() {
 		});
 	}
 
-	function add_serie_keywords(sid)
-	{
-		event.preventDefault();
-		var data = $('#keywords' + sid + '>.keyword_add').serialize();
-		
-		$.post( "api/TvShowWatch.php?action=addkeyword", data)
-		.done(function( data )  
-		{
-			result = JSON.parse(data);			
-			if (result.rtn=='200')
-				show_info(result.error);
-			else
-				show_error(result.error);
-		});
-	}
-
 	function retrieve_episode(sid,seasonnumber,episodenumber)
 	{
-		alert('retrieve');
 		season_selector = '#s' + sid + '>.episode_form>input[name="season"]';
 		episode_selector = '#s' + sid + '>.episode_form>input[name="episode"]';
 		$(season_selector).val(seasonnumber);

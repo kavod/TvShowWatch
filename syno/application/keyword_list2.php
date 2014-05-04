@@ -51,12 +51,14 @@ if (file_exists(SERIES_FILE))
 	foreach($keywords as $key => $keyword)
 	{
 		$content_keywords[] = array(
-						'l_keyword_num' => 'Keyword '.($key+1),
-						'keyword_id' => 		'keyword'.$key,
-						'keyword' =>			$keyword['keyword']
+						'l_keyword_num' =>	'Keyword '.($key+1),
+						'keyword_id' => 	'keyword'.$key,
+						'keyword' =>		$keyword['keyword']
 							);
 	}
 }
+
+$tpl->assign( "serie_id", $serie['id']);
 if (isset($content_keywords))
 	$tpl->assign( "keyword", $content_keywords);
 

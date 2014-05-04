@@ -27,7 +27,6 @@ $.ajaxSetup({
 		stop: save_keywords
 	});
 	$( "#keywords_list" ).disableSelection();
-	$( "#add_keyword" ).click(event, add_keyword);
 
 	$("#trash").droppable({
 		accept: "#keywords_list li",
@@ -36,6 +35,8 @@ $.ajaxSetup({
 		    ui.draggable.remove();
 		}
 	});
+
+	$( "#add_keyword" ).click(event, add_keyword);
 
 	if (!conf_status)
 		$(document).ready(conf_ko);

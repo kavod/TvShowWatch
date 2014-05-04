@@ -145,6 +145,10 @@ class TvShowWatch
 				$cmd .= '"emails":["' . implode('","',$value) . '"],';
 			elseif ($key == 'emails' && count($value)<1)
 				$cmd .= '"emails":[],';
+			elseif ($key == 'keywords' && count($value)>0)
+				$cmd .= '"keywords":["' . implode('","',$value) . '"],';
+			elseif ($key == 'keywords' && count($value)<1)
+				$cmd .= '"keywords":[],';
 			else
 				$cmd.='"' . $key . '":"' . $value . '",';
 		}
@@ -289,17 +293,24 @@ if (isset($_GET['action']))
 			}
 			$TSW->auth();
 			if (isset($_POST['keywords']))
+				$keywords = $_POST['keywords'];
+			else
+				$keywords = array();
+			if (isset($_POST['serie_id']) and (int)$_POST['serie_id']>0)
 			{
-				$res = $TSW->setConf(json_encode(array('keywords' => $_POST['keywords'])));
+				$res = $TSW->setSerie($_POST['serie_id'],array('keywords' => $keywords));
 				if ($res['rtn']!='200')
 					die(json_encode(array('rtn' => $res['rtn'], 'error' => $res['error']	)));
 				die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
-			}
-			else
+			} else
 			{
-				die(json_encode(array('rtn' => 415, 'error' => 'Unable to parse arguments'	)));
+				$res = $TSW->setConf(json_encode(array('keywords' => $keywords)));
+				if ($res['rtn']!='200')
+					die(json_encode(array('rtn' => $res['rtn'], 'error' => $res['error']	)));
+				die(json_encode(array('rtn' => 200, 'error' => 'Keywords updated')));
 			}			
 			break;
+
 		case 'import_conf':
 			if(isset($_FILES['configFile']))
 			{ 
@@ -435,7 +446,6 @@ if (isset($_GET['action']))
 				{
 					die(json_encode(array('rtn' => 200, 'error' => 'TV Show updated')));
 				}
-				
 		default:
 
 		case "delemail":

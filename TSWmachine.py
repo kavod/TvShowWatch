@@ -118,7 +118,7 @@ class TSWmachine:
 				value = [x for x in value if x != '']
 				final_len = len(value)
 				if final_len < 1:
-					return {'rtn':'420','error':messages.returnCode['420'].format(key)}
+					value = 'None';
 				if (self.conffile.changeKeywords(value)==False):
 					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 			else:
