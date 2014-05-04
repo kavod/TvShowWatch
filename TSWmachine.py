@@ -114,13 +114,24 @@ class TSWmachine:
 				if key.split('_')[0] == 'smtp':
 					send = True
 			elif key == 'keywords':
+				original_len = len(value)
+				value = [x for x in value if x != '']
+				final_len = len(value)
+				if final_len < 1:
+					return {'rtn':'420','error':messages.returnCode['420'].format(key)}
 				if (self.conffile.changeKeywords(value)==False):
 					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 			else:
 				return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 		if save:
 			self.conffile._save()
-			return self.testConf(send)
+			result = self.testConf(send)
+			if result['rtn'] == '200':
+				if original_len == final_len:
+					return result
+				else:
+					return {'rtn':'304','error':messages.returnCode['304'].format(key)}
+			return result
 		else:	
 			return {'rtn':'200','error':messages.returnCode['200']}
 

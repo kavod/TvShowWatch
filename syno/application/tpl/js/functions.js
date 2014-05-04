@@ -303,16 +303,20 @@ function email_activation() {
 		});
 	}
 
+
 	function add_keyword(e)
 	{
 		e.preventDefault();
 		var text = $("input[name='keywords_new']").val();
-		var $li = $("<li class='ui-state-default'/>").text(text);
-		$li.attr('title',text);
-		$("input[name='keywords_new']").val('');
-		$("#keywords_list>.ui-state-disabled:first").before($li);
-		$("#keywords_list").sortable('refresh');
-		save_keywords();
+		if (text != '')
+		{
+			var $li = $("<li class='keyword ui-state-default'/>").text(text);
+			$li.attr('title',text);
+			$("input[name='keywords_new']").val('');
+			$("#keywords_list>.ui-state-disabled:first").before($li);
+			$("#keywords_list").sortable('refresh');
+			save_keywords();
+		}
 	}
 
 	function load_serieData()

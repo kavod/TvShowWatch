@@ -123,13 +123,13 @@
 			<fieldset>
 				<ul id="keywords_list" class="sortable">
 {loop="keywords"}
-					<li class="ui-state-default" title="{$value.value}" id="keyword-{$value.key}">{$value.value}</li>
+					<li class="keyword ui-state-default" title="{$value.value}" id="keyword-{$value.key}">{$value.value}</li>
 {/loop}
-					<li class="ui-state-default ui-state-disabled">
-						<input type="text" name="keywords_new" placeholder="Add a new keyword" />
+					<li class="keyword ui-state-default ui-state-disabled">
+						<input type="text" name="keywords_new" placeholder="Add a new keyword" required />
 						<input type="submit" id="add_keyword" value="Add" />
 					</li>
-					<li class="ui-state-default ui-state-disabled" id="trash"><span class="ui-icon ui-icon-trash" style="float: left; margin-right: .3em;"></span></li>
+					<li class="keyword ui-state-default ui-state-disabled" id="trash"><span class="ui-icon ui-icon-trash" style="float: left; margin-right: .3em;"></span></li>
 				</ul>
 			</fieldset>
 		</form>
