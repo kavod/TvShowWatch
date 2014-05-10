@@ -65,7 +65,7 @@ def next_aired(serie_id,s_season=0,s_episode=0):
 					'season':	s_season+1,
 					'episode':	1,
 					'slot_id':	0,
-					'expected':	serie[s_season][s_episode+1]['firstaired']
+					'expected':	serie[s_season+1][1]['firstaired']
 					}
 			else:
 				# TV show achieved
