@@ -255,6 +255,18 @@ class TvShowWatch
 		return str_replace('tvShowWatch is ','',$result[0]);
 	}
 
+	function push($serie_id,$destination)
+	{
+			$cmd = PYTHON_EXEC . " " . $this->cmd ." --action push --arg '{\"id\":" . $serie_id . ",\"filepath\":\"" . $destination . "\"}'";
+            exec($cmd,$result);
+            if ($this->debug)
+            {
+                    echo $cmd.'<br />';
+                    print_r($result);
+            }
+            return json_decode($result[0],true);
+	}
+
 	function run()
 	{
 		$cmd = "date >> " . LOGFILE . ";".PYTHON_EXEC . " " . $this->run_cmd." --action run >>".LOGFILE." 2>&1 &";
@@ -546,6 +558,29 @@ if (isset($_GET['action']))
 				else
 				{
 					die(json_encode($result));
+				}
+				break;
+
+		case "pushTorrent":
+				if (isset($_POST['serie_id']))
+					$serie_id = $_POST['serie_id'];
+				else
+					die(json_encode(array('rtn' => 499, 'error' => 'TV Show unfound')));
+				if(isset($_FILES['torrent']))
+				{ 
+					$destination = getcwd() . '/../' . TMP_DIR . '/' . $_FILES['torrent']['name'];
+					if(move_uploaded_file($_FILES['torrent']['tmp_name'], $destination))
+					{
+						if (!isset($TSW))
+							$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+						$TSW->auth();
+						die(json_encode($TSW->push($serie_id,$destination)));
+						
+					}
+				}	 
+				else
+				{
+					die(json_encode(array('rtn' => 499, 'error' => 'Enable to upload file')));
 				}
 				break;
 		default:

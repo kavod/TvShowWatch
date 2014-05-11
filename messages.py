@@ -36,5 +36,7 @@ returnCode = {
 	'418': 'Error during transfer',
 	'419': 'Unknow episode reference',
 	'420': 'Blank keyword is ignored',
+	'421': 'Torrent cannot be pushed',
+	'422': 'File {0} does not exists',
 	'499': 'General Error'
 	}

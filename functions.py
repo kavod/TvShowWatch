@@ -168,16 +168,12 @@ def transferFile(fichiers,serie,conf):
 		#print('Error during transfer :'+sys.exc_info()[1].strerror)
 		return False
 
-def add_torrent(result, tc, tracker,confTransmission):
-	result = tracker.select_torrent(result)
-	logging.debug("selected torrent:")
-	logging.debug(result)
-	tracker.download(result['id'])
-
+def add_torrent(filepath, tc, slotNumber):
+	# fileuri = 'file.torrent'
 	torrents = tc.get_torrents()
 	torrents = filter(ignore_stopped,torrents)
 
-	while len(torrents) >= int(confTransmission['slotNumber']):
+	while len(torrents) >= int(slotNumber):
 		# If there is not slot available, close the older one
 		torrents = filter(keep_in_progress,torrents)
 		torrent = sorted(torrents, key=lambda tor: tor.date_added)[0]
@@ -186,8 +182,8 @@ def add_torrent(result, tc, tracker,confTransmission):
 		torrents = tc.stop_torrent(torrent.id)
 		torrents = tc.get_torrents()
 	
-	new_torrent = tc.add_torrent('file://file.torrent')
-	os.remove('file.torrent')
+	new_torrent = tc.add_torrent('file://'+filepath)
+	os.remove(filepath)
 	tc.start_torrent(new_torrent.id)
 	return new_torrent
 
