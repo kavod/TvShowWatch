@@ -144,6 +144,7 @@ def sendEmail(content,serie,conffile):
 
 def transferFile(fichiers,serie,conf):
 	try:
+		logging.debug('FTP connection:',conf['server'])
 		ftp = FTP(conf['server'])
 		ftp.login(conf['user'],conf['password']) 
 		for fichier in fichiers.values():
@@ -158,8 +159,10 @@ def transferFile(fichiers,serie,conf):
 				if not os.path.isdir(chemin + folder):
 					os.mkdir(chemin + folder)
 				chemin += folder + '/'
+			ftp_cmd = 'RETR ' + str(fichier['name'])
+			logging.debug(ftp_cmd)
 			ftp.retrbinary(
-				'RETR ' + str(fichier['name']), 
+				ftp_cmd, 
 				open(conf['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
 		ftp.quit()
 		#print(' => File download is completed!')
