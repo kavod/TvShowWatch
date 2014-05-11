@@ -221,7 +221,8 @@ function serieStatus(status_id)
 		var tabs = $('#tabs');
 		var panelId = element.remove().attr( "aria-controls" );
 		panelId = panelId.substring(1);
-		$( "#" + panelId).remove();
+		$( "#s" + panelId).remove();
+		tabs.tabs("option", "active", 3);
 		tabs.tabs( "refresh" );
 		tabCounter--;
 		for (i in opened_tabs)
@@ -435,16 +436,36 @@ function email_activation() {
 							$('#data' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
 							season_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
 							episode_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
+							episode_label = '#current_episode' + opened_tabs[sid];
 							pattern_field = '#data' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
-							$(season_selector).val(result[serie].season);
-							$(episode_selector).val(result[serie].episode);
+
+							season = (result[serie].season > 9) ? result[serie].season : '0' + result[serie].season;
+							episode = (result[serie].episode > 9) ? result[serie].episode : '0' + result[serie].episode;
+							$(season_selector).val(season);
+							$(episode_selector).val(episode);
+							$(episode_label).text('S' + season + 'E' + episode);
 							format_2digits(season_selector);
 							format_2digits(episode_selector);
 							$(pattern_field).val(result[serie].pattern);
+							switch(result[serie].status)
+							{
+								case 10:
+								case 15:
+								case 20:
+									break;
+								case 30:
+								case 90:
+								default:
+									$("#tab_push" + opened_tabs[sid]).attr("title", serieStatus(result[serie].status));
+									$( "#tabs_serie_" + opened_tabs[sid] ).tabs( "disable", 3 );
+									break;
+							}
+
 							var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
 							$(season_selector).change(proxy);
 							$(episode_selector).change(proxy);
 							$('#data' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
+							$('#push' + opened_tabs[sid] + '>form').submit($.proxy(push_torrent,$('#push' + opened_tabs[sid] + '>form'),opened_tabs[sid]));
 							if (result[serie].nextEpisode === null)
 							{
 								$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
@@ -462,6 +483,37 @@ function email_activation() {
 			}
 			stop_loading()
 		});	
+	}
+
+	function push_torrent(sid)
+	{
+		event.preventDefault();
+		start_loading();
+		var formObj = event.target;
+		var formURL = "api/TvShowWatch.php?action=pushTorrent";
+		var formData = new FormData(formObj);
+		$.ajax({
+			url: formURL,
+			type: 'POST',
+			data: formData,
+			mimeType: "multipart/form-data",
+			contentType: false,
+			cache: false,
+			processData: false,
+			success: function( data, textStatus, jqXHR )  
+				{
+					result = JSON.parse(data);
+					if (result.rtn != 230)
+						show_error(result.error);
+					else
+					{
+						load_serieData();
+						$( "#tabs_serie_" + sid ).tabs( "option", "active", 0 );
+						stop_loading();
+						show_info(result.error);
+					}
+				}
+			});
 	}
 
 	function check_episode(sid)

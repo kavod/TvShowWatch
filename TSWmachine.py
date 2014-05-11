@@ -158,12 +158,12 @@ class TSWmachine:
 		else:
 			return {'rtn':'200','error':messages.returnCode['200']}
 
-	def getSerie(self,s_id,json_c=False):
+	def getSerie(self,s_id,json_c=False,load_tvdb=False):
 		logging.info('getSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		liste = self.seriefile.listSeries(json_c)
+		liste = self.seriefile.listSeries(json_c,load_tvdb)
 		if liste == False:
 			return {'rtn': 404,'error':messages.returnCode['404'].format('TvDB','') }
 		if len(liste)>0:
@@ -365,6 +365,37 @@ class TSWmachine:
 			return {'rtn':'200','result':result}
 		else:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
+
+	def pushTorrent(self,serieID,filepath):
+		logging.info('pushTorrent ')
+		opened = self.openedFiles()
+		if opened['rtn'] != '200':
+			return opened
+		if int(serieID) == 0:
+			return {'rtn':'416','error':messages.returnCode['416']}
+		result = self.getSerie(serieID,json_c=False,load_tvdb=True)
+		if (result['rtn'] != '200'):
+			return result
+		serie = result['result']
+		if (not os.path.isfile(filepath)):
+			return {'rtn':'422','error':messages.returnCode['422'].format(filepath)}
+		if (serie['status'] in [10,15,20]): # Status waiting for broadcast / waiting for run / searching torrent
+			season = int(serie['season'])
+			episode = int(serie['episode'])
+			result = self.getEpisode(serieID,season,episode)
+			if (season * episode > 0 and result['rtn']=='200'):
+				confTransmission = self.conffile.getTransmission()
+				tc = transmissionrpc.Client(
+						confTransmission['server'],
+						confTransmission['port'],
+						confTransmission['user'],
+						confTransmission['password']
+					)
+				new_torrent = add_torrent(filepath, tc, confTransmission['slotNumber'])
+				self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
+				return {'rtn':'230','error':messages.returnCode['230']}
+		return {'rtn':'421','error':messages.returnCode['421']}
+		
 		
 	def run(self):
 		logging.info('Run !!! ')
@@ -470,7 +501,11 @@ class TSWmachine:
 					logging.debug(search + ":" + str(nb_result) + ' result(s)')
 
 					if nb_result > 0: # If at least 1 relevant torrent is found
-						new_torrent = add_torrent(result, tc, tracker,self.conffile.getTransmission())
+						result = tracker.select_torrent(result)
+						logging.debug("selected torrent:")
+						logging.debug(result)
+						tracker.download(result['id'])
+						new_torrent = add_torrent('file.torrent', tc, confTransmission['slotNumber'])
 						self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 						break
 				if nb_result > 0:

@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search','push'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -145,6 +145,10 @@ def main():
 
 	if args.action == 'getEpisode':
 		print(json.dumps(m.getEpisode(arg['id'],arg['season'],arg['episode'])))
+		sys.exit()
+
+	if args.action == 'push':
+		print(json.dumps(m.pushTorrent(arg['id'],arg['filepath'])))
 		sys.exit()
 
 	print(json.dumps({'rtn':'400','error':messages.returnCode['400'].format(args.action)}))

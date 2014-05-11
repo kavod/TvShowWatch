@@ -10,6 +10,7 @@
 			<li><a href="#data###" id="tab_data###">Data</a></li>
 			<li><a href="#emails###" id="tab_emails###">Notification emails</a></li>
 			<li><a href="#keywords###" id="tab_keywords###">Keywords</a></li>
+			<li><a href="#push###" id="tab_push###">Push torrent</a></li>
 		</ul>
 	</nav>
 	<section id="data###">
@@ -49,6 +50,16 @@
 			<ul id="keywords_list###" class="sortable" serie_id="###"></ul>
 		</form>
 		<button class="resetKeywords" serie_id="###">Reset keywords</button>
+
+	</section>
+	<section id="push###">
+
+		<form id="push_torrent###" enctype="multipart/form-data">
+			<label for="torrent">Push torrent for <span id="current_episode###">SXXEXX</span> (*.torrent)</label>
+			<input type="file" name="torrent" accept=".torrent" required />
+			<input type="submit" value="Push" />
+			<input type="hidden" name="serie_id" value="###" /> 
+		</form>
 
 	</section>
 </div>
