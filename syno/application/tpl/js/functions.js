@@ -221,7 +221,8 @@ function serieStatus(status_id)
 		var tabs = $('#tabs');
 		var panelId = element.remove().attr( "aria-controls" );
 		panelId = panelId.substring(1);
-		$( "#" + panelId).remove();
+		$( "#s" + panelId).remove();
+		tabs.tabs("option", "active", 3);
 		tabs.tabs( "refresh" );
 		tabCounter--;
 		for (i in opened_tabs)
