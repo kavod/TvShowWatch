@@ -144,31 +144,32 @@ def sendEmail(content,serie,conffile):
 
 def transferFile(fichiers,serie,conf):
 	try:
-		logging.debug('FTP connection:',conf['server'])
+		logging.debug('FTP connection: %s',conf['server'])
 		ftp = FTP(conf['server'])
 		ftp.login(conf['user'],conf['password']) 
 		for fichier in fichiers.values():
+			logging.debug('FTP transfer: %s',fichier['name'].encode('UTF-8'))
 			pattern = '{0}/season {1}/{2}'
 			chemin_cible = pattern.format(
 					str(serie['name']),
 					str(serie['season']),
-					"/".join(fichier['name'].split('/')[0:-1])
+					"/".join(fichier['name'].encode('UTF-8').split('/')[0:-1])
 							)
 			chemin = conf['folder'] + '/'
 			for folder in chemin_cible.split('/'):
 				if not os.path.isdir(chemin + folder):
 					os.mkdir(chemin + folder)
 				chemin += folder + '/'
-			ftp_cmd = 'RETR ' + str(fichier['name'])
+			ftp_cmd = 'RETR ' + fichier['name'].encode('UTF-8')
 			logging.debug(ftp_cmd)
 			ftp.retrbinary(
 				ftp_cmd, 
-				open(conf['folder'] + '/' + chemin_cible + '/' + str(fichier['name'].split('/')[-1]), 'wb').write)
+				open(conf['folder'] + '/' + chemin_cible + '/' + fichier['name'].encode('UTF-8').split('/')[-1], 'wb').write)
 		ftp.quit()
-		#print(' => File download is completed!')
+		# File download is completed!
 		return True
 	except:
-		#print('Error during transfer :'+sys.exc_info()[1].strerror)
+		#Error during transfer
 		return False
 
 def add_torrent(filepath, tc, slotNumber):
