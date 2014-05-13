@@ -66,7 +66,7 @@ function serieStatus(status_id)
 		if (!found)
 		{
 			opened_tabs.push(id);
-			tabs.find( ".ui-tabs-nav" ).append( li );
+			tabs.find( ">nav>.ui-tabs-nav" ).append( li );
 			tabs.append( "<section id='s" + id + "'></section>");
 
 			$('#s' + id).load('tpl/serie.html', function() 
@@ -507,10 +507,11 @@ function email_activation() {
 						show_error(result.error);
 					else
 					{
-						load_serieData();
+						apply_jcss();
 						$( "#tabs_serie_" + sid ).tabs( "option", "active", 0 );
 						stop_loading();
 						show_info(result.error);
+						
 					}
 				}
 			});
