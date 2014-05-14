@@ -58,7 +58,7 @@ def next_aired(serie_id,s_season=0,s_episode=0):
 				}
 		else:
 			# Check if next season exists
-			if s_season+1 in serie.keys():
+			if s_season+1 in serie.keys() and not serie[s_season+1][1]['firstaired'] is None:
 				status = 10 if convert_date(serie[s_season+1][1]['firstaired']) >= date.today() else 15
 				return {
 					'status':	status,
