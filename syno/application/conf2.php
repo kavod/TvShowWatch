@@ -30,7 +30,9 @@ if (!TSW)
 	}
 
 $tracker_id = array(
-					array('value' => 't411', 'text' => 'T411')
+					array('value' => 't411', 'text' => 'T411','login' => true),
+					array('value' => 'tpb', 'text' => 'The Pirate Bay', 'login' => false),
+					array('value' => 'none', 'text' => 'No tracker, only manual push', 'login' => false)
 					);
 
 $tpl->assign( "l_conf_title", 'Configuration parameters');

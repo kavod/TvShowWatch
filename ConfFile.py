@@ -11,6 +11,7 @@ from transmissionrpc.error import TransmissionError, HTTPHandlerError
 from email.mime.text import MIMEText
 from Prompt import *
 from myDate import *
+from myExceptions import *
 from tracker import *
 from MyFile import *
 
@@ -98,11 +99,19 @@ class ConfFile(MyFile):
 	def confTracker(self):
 		while True:
 			tracker_id = self.change('tracker_id')
-			username = self.change('tracker_user')
-			password = self.change('tracker_password')
+			try:
+				provider = check_provider(tracker_id)
+				for param in provider['param']:
+					if param == 'username':
+						username = self.change('tracker_user')
+					elif param == 'password':
+						password = self.change('tracker_password')
+					else:
+						raise InputError('param','Unknown parameter name: '+param)
+			except InputError as e:
+				print(e.msg)
+				sys.exit()
 			
-			#tracker = Tracker(tracker_id,username,password)
-			#if tracker.test():
 			if self.testTracker()['rtn']=='200':
 				break
 			else:
@@ -118,10 +127,16 @@ class ConfFile(MyFile):
 	def testTracker(self):
 		logging.info('testTracker')
 		trackerConf = self.getTracker()
-		if trackerConf['id'] == '' or trackerConf['user'] == '':
-			return {'rtn':'405','error':messages.returnCode['405'].format('Tracker')}
 		try:
-			tracker = Tracker(trackerConf['id'],trackerConf['user'],trackerConf['password'])
+			provider = check_provider(trackerConf['id'])
+			if 'username' in provider['param'] and trackerConf['user'] == '':
+				return {'rtn':'422','error':messages.returnCode['422'].format(provider['name'])}
+			
+		#if trackerConf['id'] == '' or trackerConf['user'] == '':
+		#	return {'rtn':'405','error':messages.returnCode['405'].format('Tracker')}
+			tracker = Tracker(trackerConf['id'],{'username':trackerConf['user'],'password':trackerConf['password']})
+		except InputError as e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e.msg)}
 		except Exception,e:
 			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e)}
 		else:
@@ -192,10 +207,9 @@ class ConfFile(MyFile):
 		else:
 			return {'rtn':'200','error':messages.returnCode['200']}
 
-	def confEmail(self):
-		if (promptYN("Do you want to activate Email notification?",'N')):
+	def confEmail(self,disable=False):
+		if (not disable and promptYN("Do you want to activate Email notification?",'N')):
 			while True:
-				
 				server = self.change('smtp_server')
 				port = self.change('smtp_port')
 				ssltls = self.change('smtp_ssltls')
@@ -238,7 +252,12 @@ class ConfFile(MyFile):
 				'password':	password,
 				'emailSender':	emailSender
 				}
-		return {}
+		else:
+			conf = self.tree.getroot()
+			if conf.find('smtp') is not None:
+				conf.remove(conf.find('smtp'))
+			self._save()
+			return {}
 
 	def testEmail(self,send=False):
 		email = self.getEmail()
@@ -345,14 +364,16 @@ class ConfFile(MyFile):
 			return {}
 
 	def select_tracker_id(self):
-		return promptChoice("Please select your tracker:",TRACKER_CONF)
+		tracker_list = []
+		for tracker in TRACKER_CONF:
+			tracker_list.append([tracker['id'],tracker['name']])
+		return promptChoice("Please select your tracker:",tracker_list)
 
 	def select_tracker_user(self):
-		return promptSimple('Enter your username:')
+		return promptSimple('If required by tracker, enter your username (else, press Enter):')
 
 	def select_tracker_password(self):
-		return promptPass('Enter your password:')
-
+		return promptPass('If required by tracker, enter your password (else, press Enter):')
 
 	def select_transmission_server(self):
 		return promptSimple('Enter your Transmission server:','localhost')

@@ -84,7 +84,8 @@ def select_episode(serie):
 	episode = Prompt.promptChoice("Please select episode number",s_choice,len(s_choice)-1)
 	return {
 			'season':int(season),
-			'episode':int(episode)
+			'episode':int(episode),
+			'expected':serie[season][int(episode)]['firstaired']
 			}
 
 def last_or_next(serie):
@@ -207,6 +208,7 @@ def action_edit(m):
 		episode = select_episode(TVresult)
 		serie['season'] = episode['season']
 		serie['episode'] = episode['episode']
+		serie['expected'] = convert_date(episode['expected'])
 	elif configData == 'emails':
 		serie['emails'] = input_emails()
 	elif configData == 'keywords':
@@ -219,6 +221,7 @@ def action_edit(m):
 					'episode':serie['episode'],
 					'emails':serie['emails'],
 					'keywords':serie['keywords'],
+					'expected':serie['expected']
 				},json_c=False)
 	if rc['rtn'] == '200':
 		print("TV Show updated")
@@ -347,6 +350,9 @@ def action_config(m):
         folder = conf['transmission']['folder']
     else:
         folder = 'No transfer'
+    if 'user' not in conf['tracker'] or conf['tracker']['user'] is None:
+        conf['tracker']['user'] = ''
+
     configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
@@ -366,6 +372,7 @@ def action_config(m):
         configData = Prompt.promptChoice(
             "Selection value you want modify:",
             [
+                ['smtp_enable','Enable : ' + email_activated],
                 ['smtp_server','SMTP Server : ' + str(conf['smtp']['server'])],
                 ['smtp_port','SMTP Port : ' + str(conf['smtp']['port'])],
                 ['smtp_ssltls','Secure connection : ' + str(conf['smtp']['ssltls'])],
@@ -373,7 +380,17 @@ def action_config(m):
                 ['smtp_password','SMTP Password : ******'],
                 ['smtp_emailSender','Sender Email : ' + str(conf['smtp']['emailSender'])]
             ])
-        result = m.setConf({configData:'None'})
+        if configData == 'smtp_enable':
+            configData = Prompt.promptChoice(
+				"Disable SMTP notification?",
+				[
+					[False,'Disable'],
+					[True,'Enable']
+				])
+            m.conffile.confEmail(not configData)
+            result = {'rtn':'200','result':'OK'}
+        else:
+            result = m.setConf({configData:'None'})
     else:
         result = m.setConf({configData:'None'})
     if result['rtn'] == '200':

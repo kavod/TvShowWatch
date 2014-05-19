@@ -107,8 +107,12 @@ class TSWmachine:
 
 		send = False
 		conf = convert_conf(conf)
+		original_len = 0
+		final_len = 0
 		for key, value in conf.iteritems():
 			if key.split('_')[0] in ['tracker','transmission','smtp']:
+				if key == 'smtp_enable' and value == 'False':
+					self.conffile.confEmail(True)
 				if (self.conffile.change(key,value)==False):
 					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
 				if key.split('_')[0] == 'smtp':
@@ -391,7 +395,7 @@ class TSWmachine:
 						confTransmission['user'],
 						confTransmission['password']
 					)
-				new_torrent = add_torrent(filepath, tc, confTransmission['slotNumber'])
+				new_torrent = add_torrent('file://' +filepath, tc, confTransmission['slotNumber'],confTransmission['folder'] is not None)
 				self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 				return {'rtn':'230','error':messages.returnCode['230']}
 		return {'rtn':'421','error':messages.returnCode['421']}
@@ -408,8 +412,11 @@ class TSWmachine:
 			print("{0}|{1}".format(testconf['rtn'],testconf['error']))
 			return
 		conf = self.conffile.getTracker()
-		tracker = Tracker(conf['id'],conf['user'],conf['password'])
-
+		try:
+			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']})
+		except InputError as e:
+			print(e.msg)
+			return
 		series = self.seriefile
 
 		str_search = '{0} S{1:02}E{2:02} {3}'
@@ -483,35 +490,43 @@ class TSWmachine:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
-			if int(serie['status']) in [10,15,20] and serie['expected'] < date.today(): # If episode broadcast is in the past
-				if 'tc' not in locals():
-					tc = transmissionrpc.Client(
-						confTransmission['server'],
-						confTransmission['port'],
-						confTransmission['user'],
-						confTransmission['password']
-					)
+			if int(serie['status']) in [10,15,20,21] and serie['expected'] < date.today(): # If episode broadcast is in the past
+				if conf['id'] == 'none':
+					self.seriefile.updateSerie(serie['id'],{'status':21})
+					print(str_result.format('221',str(serie['id']),messages.returnCode['221']))
 				else:
-					logging.info('connection saved')
+					if 'tc' not in locals():
+						tc = transmissionrpc.Client(
+							confTransmission['server'],
+							confTransmission['port'],
+							confTransmission['user'],
+							confTransmission['password']
+						)
+					else:
+						logging.info('connection saved')
 
-				self.seriefile.updateSerie(serie['id'],{'status':20})
-				for search in str_search_list:
-					result = tracker.search(search)
-					nb_result = len(result)
-					logging.debug(search + ":" + str(nb_result) + ' result(s)')
+					self.seriefile.updateSerie(serie['id'],{'status':20})
+					for search in str_search_list:
+						try:
+							result = tracker.search(search)
+						except requests.exceptions.ConnectionError as e:
+							print(e)
+							sys.exit()
+						nb_result = len(result)
+						logging.debug(search + ":" + str(nb_result) + ' result(s)')
 
-					if nb_result > 0: # If at least 1 relevant torrent is found
-						result = tracker.select_torrent(result)
-						logging.debug("selected torrent:")
-						logging.debug(result)
-						tracker.download(result['id'])
-						new_torrent = add_torrent('file.torrent', tc, confTransmission['slotNumber'])
-						self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
-						break
-				if nb_result > 0:
-					print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
-				else:
-					print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
+						if nb_result > 0: # If at least 1 relevant torrent is found
+							result = tracker.select_torrent(result)
+							logging.debug("selected torrent:")
+							logging.debug(result)
+							torrent = tracker.download(result['id'])
+							new_torrent = add_torrent(torrent, tc, confTransmission['slotNumber'],confTransmission['folder'] is not None)
+							self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
+							break
+					if nb_result > 0:
+						print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
+					else:
+						print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 

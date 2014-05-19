@@ -3,7 +3,8 @@ global returnCode
 returnCode = {
 	'200':'OK',
 	'210':'Not yet aired',
-	'220': 'Torrent unfoundable',
+	'220': 'Torrent not found',
+	'221': 'No tracker configured',
 	'230': 'Torrent added',
 	'240': 'Torrent in progress',
 	'250': 'Torrent downloaded and next episode scheduled',
@@ -38,5 +39,6 @@ returnCode = {
 	'420': 'Blank keyword is ignored',
 	'421': 'Torrent cannot be pushed',
 	'422': 'File {0} does not exists',
+	'422': 'Tracker {0} requires username/password',
 	'499': 'General Error'
 	}

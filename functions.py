@@ -8,7 +8,6 @@ import transmissionrpc
 import smtplib
 from email.mime.text import MIMEText
 from datetime import date
-from tracker import *
 from myDate import *
 from myTvDB import *
 from ConfFile import ConfFile
@@ -172,7 +171,7 @@ def transferFile(fichiers,serie,conf):
 		#Error during transfer
 		return False
 
-def add_torrent(filepath, tc, slotNumber):
+def add_torrent(filepath, tc, slotNumber,delete_data):
 	# fileuri = 'file.torrent'
 	torrents = tc.get_torrents()
 	torrents = filter(ignore_stopped,torrents)
@@ -181,13 +180,14 @@ def add_torrent(filepath, tc, slotNumber):
 		# If there is not slot available, close the older one
 		torrents = filter(keep_in_progress,torrents)
 		torrent = sorted(torrents, key=lambda tor: tor.date_added)[0]
-		tc.remove_torrent(torrent.id, delete_data=True)
+		tc.remove_torrent(torrent.id, delete_data= delete_data)
 		logging.info("Maximum slot number reached, deletion of the oldest torrent : {0}".format(torrent.name))
 		torrents = tc.stop_torrent(torrent.id)
 		torrents = tc.get_torrents()
 	
-	new_torrent = tc.add_torrent('file://'+filepath)
-	os.remove(filepath)
+	new_torrent = tc.add_torrent(filepath)
+	if (filepath[:7] == 'file://'):
+		os.remove(filepath[7:])
 	tc.start_torrent(new_torrent.id)
 	return new_torrent
 

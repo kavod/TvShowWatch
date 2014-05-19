@@ -25,17 +25,19 @@
 					<label for="tracker_id">{$l_conf_tracker_provider}</label>
 					<select name="tracker_id" id="tracker_id" required>
 {loop="conf_tracker_id"}
-						<option value="{$value.value}"{if="$value.selected == true"} selected{/if}>{$value.text}</option>
+						<option value="{$value.value}"{if="$value.login == true"} login="1"{else} login="0"{/if}>{$value.text}</option>
 {/loop}
 					</select>
 				</div>
-				<div>
-					<label for="tracker_username">{$l_conf_tracker_username}</label>
-					<input type="text" name="tracker_username" id="tracker_username" placeholder="{$l_conf_username_here}" required />
-				</div>
-				<div>
-					<label for="tracker_password">{$l_conf_tracker_password}</label>
-					<input type="password" name="tracker_password" id="tracker_password" placeholder="{$l_conf_password_here}" required />
+				<div id="tracker_login">
+					<div>
+						<label for="tracker_username">{$l_conf_tracker_username}</label>
+						<input type="text" name="tracker_username" id="tracker_username" placeholder="{$l_conf_username_here}" required />
+					</div>
+					<div>
+						<label for="tracker_password">{$l_conf_tracker_password}</label>
+						<input type="password" name="tracker_password" id="tracker_password" placeholder="{$l_conf_password_here}" required />
+					</div>
 				</div>
 			</fieldset>
 			<fieldset>

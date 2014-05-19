@@ -38,6 +38,8 @@ function serieStatus($status_id)
 			return 'Torrent search scheduled';
 		case '20':
 			return 'Waiting for torrent availability';
+		case '21':
+			return 'No tracker configured';
 		case '30':
 			return 'Download in progress';
 		case '90':
@@ -77,11 +79,15 @@ function transmission_api_conf($post)
 
 function email_api_conf($post)
 {
-	$conf_out = '{"server":"' . $post['smtp_server'] . '","port":'.$post['smtp_port'];
-	$conf_out .= ($post['smtp_ssltls'] == '1') ? ',"ssltls":"True"' : ',"ssltls":"False"';
-	$conf_out .= ',"user":"' . $post['smtp_username'] . '"';
-	$conf_out .= ($post['smtp_password'] != 'initial') ? ',"password":"'.$post['smtp_password'] . '"' : '';
-	$conf_out .= ',"emailSender":"' . $post['smtp_emailSender'] . '"';
+	if ($post['smtp_enable'] == '0')
+		return '{"enable":"False"}';
+	else
+		$values = $post;
+	$conf_out = '{"server":"' . $values['smtp_server'] . '","port":'.$values['smtp_port'];
+	$conf_out .= ($values['smtp_ssltls'] == '1') ? ',"ssltls":"True"' : ',"ssltls":"False"';
+	$conf_out .= ',"user":"' . $values['smtp_username'] . '"';
+	$conf_out .= ($values['smtp_password'] != 'initial') ? ',"password":"'.$values['smtp_password'] . '"' : '';
+	$conf_out .= ',"emailSender":"' . $values['smtp_emailSender'] . '"';
 	$conf_out .= '}';
 	return $conf_out;
 }

@@ -293,7 +293,8 @@ if (isset($_GET['action']))
 		case 'save_conf':
 			$result = '{"tracker":' . tracker_api_conf($_POST);
 			$result .= ',"transmission":' . transmission_api_conf($_POST);
-			$result .= ',"smtp":' . email_api_conf($_POST).'}';
+			$result .= ',"smtp":' . email_api_conf($_POST);
+			$result .= '}';
 			try {
 				if (!isset($TSW))
 					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
@@ -306,7 +307,7 @@ if (isset($_GET['action']))
 			if (file_exists(CONF_FILE))
 			{
 				$conf = $TSW->setConf($result);
-				if ($conf['rtn']=='200')
+				if ($conf['rtn']=='200' || $conf['rtn']=='302')
 					$msg = 'Configuration file saved';
 				else
 					$msg = 'Error during configuration save: ' . $conf['error'];

@@ -40,6 +40,9 @@ $.ajaxSetup({
 
 	$( "#add_keyword" ).click(event, add_keyword);
 
+// Hide or show login fields for tracker if required
+	$('#tracker_id').change(load_tracker_conf); 
+
 	$( "#resetAllKeywords" ).click(event,resetAllKeywords);
 
 	$( "#tvshow_name" ).change(function() {
