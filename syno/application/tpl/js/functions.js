@@ -35,6 +35,7 @@ function load_serie_keywords(id)
 	});
 }
 
+
 function get_conf(event)
 {
 	$.ajax({  
@@ -43,11 +44,8 @@ function get_conf(event)
 	})
 	.done(function( data )  
 	{
-		result = JSON.parse(data);
-		if (result.rtn != 200)
-		{
-			show_error(result.error);
-		} else
+		result = compute_data(data);
+		if (result.ok)
 		{
 			result = result.result;
 			formdata = {};
@@ -82,12 +80,9 @@ function load_serieData()
 		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
 	})
 	.done(function( data )  
-	{
-		result = JSON.parse(data);
-		if (result.rtn != 200)
-		{
-			show_error(result.error);
-		} else
+	{		
+		result = compute_data(data);
+		if (result.ok)
 		{
 			result = result.result;
 			for (sid in opened_tabs)
@@ -322,13 +317,13 @@ function reset_serie_keywords(event,ui)
 	id = event.target.parentNode.getAttribute('serie_id');
 	data = {"serie_id":id}
 	$.post( "api/TvShowWatch.php?action=reset_serie_keywords", data)
-	.done(function( result ) 
+	.done(function( data ) 
 	{
-		data = JSON.parse(result);
-		if (data.rtn != '200')
-			show_error(data.error);
-		else
+		result = compute_data(data);
+		if (result.ok)
+		{
 			show_info('Keywords updated');
+		}
 		load_serie_keywords(id);
 		//stop_loading();
 	});
@@ -338,12 +333,10 @@ function resetAllKeywords()
 {
 	start_loading();
 	$.post( "api/TvShowWatch.php?action=reset_all_keywords")
-	.done(function( result ) 
+	.done(function( data ) 
 	{
-		data = JSON.parse(result);
-		if (data.rtn != '200')
-			show_error(data.error);
-		else
+		result = compute_data(data);
+		if (result.ok)
 			show_info('Keywords updated for all TV shows');
 		for (sid in opened_tabs)
 		{
@@ -363,14 +356,11 @@ function save_serie_keywords(event,ui)
 	});
 	data = {"serie_id":id,"keywords":keywords};
 	$.post( "api/TvShowWatch.php?action=save_keywords", data)
-	.done(function( result ) 
+	.done(function( data ) 
 	{
-		data = JSON.parse(result);
-		if (data.rtn != '200')
-			show_error(data.error);
-		else
+		result = compute_data(data);
+		if (result.ok)
 			show_info('Keywords updated');
-		//stop_loading();
 	});
 }
 
@@ -381,14 +371,12 @@ function del_email(id,node)
 	$.post( "api/TvShowWatch.php?action=delemail", data)
 	.done(function( data )  
 	{
-		result = JSON.parse(data);			
-		if (result.rtn=='200')
+		result = compute_data(data);
+		if (result.ok)
 		{
 			show_info(result.error);
 			load_email(id);
 		}
-		else
-			show_error(result.error);
 	});
 }
 
@@ -415,7 +403,11 @@ function save_conf(event)
 	$.post( "api/TvShowWatch.php?action=save_conf", data)
 	.done(function( data ) 
 	{
-		show_info(data);
+		result = compute_data(data);
+		if (result.ok)
+		{
+			show_info(data);
+		}
 		stop_loading();
 	});
 	return false;
@@ -435,9 +427,13 @@ function import_conf(event) {
 	})
 	.done(function( data )  
 	{  
-		show_info(data)
-		get_conf();
-		load_tracker_conf();
+		result = compute_data(data);
+		if (result.ok)
+		{
+			show_info(result.error)
+			get_conf();
+			load_tracker_conf();
+		}
 		stop_loading();
 	});
 	return false;
@@ -490,6 +486,28 @@ function show_error(msg)
 	},8000);
 }
 
+function compute_data(data)
+{
+		try
+		{
+			result = JSON.parse(data);
+			if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230)
+			{
+				show_error(result.error);
+				result.ok = false;
+			} else
+			{
+				result.ok = true;
+			}
+			return result;
+		}
+		catch(err)
+		{
+			alert("API returns: "+data+"\r\nError:"+err.message);
+			return {"ok":false};
+		}
+}
+
 function save_keywords()
 {
 	//start_loading();
@@ -500,12 +518,10 @@ function save_keywords()
 	});
 	data = {"keywords":keywords};
 	$.post( "api/TvShowWatch.php?action=save_keywords", data)
-	.done(function( result ) 
-	{
-		data = JSON.parse(result);
-		if (data.rtn != '200')
-			show_error(data.error);
-		else
+	.done(function( data ) 
+	{  
+		result = compute_data(data);
+		if (result.ok)
 			show_info('Keywords updated');
 		//stop_loading();
 	});
@@ -543,17 +559,14 @@ function push_torrent(sid)
 		cache: false,
 		processData: false,
 		success: function( data, textStatus, jqXHR )  
-			{
-				result = JSON.parse(data);
-				if (result.rtn != 230)
-					show_error(result.error);
-				else
+			{  
+				result = compute_data(data);
+				if (result.ok)
 				{
 					apply_jcss();
 					$( "#tabs_serie_" + sid ).tabs( "option", "active", 0 );
 					stop_loading();
 					show_info(result.error);
-					
 				}
 			}
 		});
@@ -570,8 +583,8 @@ function check_episode(sid)
 		episode_selector = '#s' + sid + '>.episode_form>input[name="episode"]';
 		format_2digits(season_selector);
 		format_2digits(episode_selector);
-		result = JSON.parse(data);
-		if (result.rtn != 200)
+		result = compute_data(data);
+		if (!result.ok)
 		{
 			show_error(result.error);
 			$(season_selector).css('background-color','#fea339');
@@ -600,11 +613,9 @@ function set_episode(sid)
 	$.post( "api/TvShowWatch.php?action=setSerie", data)
 	.done(function( data )  
 	{
-		result = JSON.parse(data);			
-		if (result.rtn=='200')
+		result = compute_data(data);
+		if (result.ok)
 			show_info(result.error);
-		else
-			show_error(result.error);
 	});
 }
 
@@ -615,15 +626,13 @@ function add_email(sid)
 	$.post( "api/TvShowWatch.php?action=addemail", data)
 	.done(function( data )  
 	{
-		result = JSON.parse(data);			
-		if (result.rtn=='200')
+		result = compute_data(data);
+		if (result.ok)
 		{
 			show_info(result.error);
 			$('#emails' + sid + ' input[name=\'email\']').val('');
 			load_email(sid);
 		}
-		else
-			show_error(result.error);
 	});
 }
 
@@ -644,12 +653,8 @@ function addSerie(id)
 	$.post( "api/TvShowWatch.php?action=addSerie", data)
 	.done(function( data )  
 	{
-		result = JSON.parse(data);
-		if (result.rtn != 200)
-		{
-			show_error(result.error);
-		}
-		else
+		result = compute_data(data);
+		if (result.ok)
 		{
 			serie_id = $('#addSerie input[name="serie_id"]').val();
 			$('#addSerie input[name="serie_id"]').val('');

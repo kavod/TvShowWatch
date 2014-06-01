@@ -319,7 +319,7 @@ if (isset($_GET['action']))
 				else
 					$msg = 'Error during configuration creation: ' . $conf['error'];
 			}
-			die($msg);
+			die(json_encode(array('rtn' => $conf['rtn'], 'error' => $msg)));
 			break;
 		case 'get_conf':
 			try {
@@ -365,16 +365,18 @@ if (isset($_GET['action']))
 			{ 
 				 if(move_uploaded_file($_FILES['configFile']['tmp_name'], CONF_FILE))
 				 {
-				  $msg =  'Upload of configuration file completed!';
+					$rtn = '200';
+					$msg =  'Upload of configuration file completed!';
 				 }
-				 else //Sinon (la fonction renvoie FALSE).
+				 else
 				 {
-				  $msg =  'Failed to upload configuration file!';
+					$rtn = '418';
+					$msg =  'Failed to upload configuration file!';
 				 }
 			} 
 			else
 				$msg =  'Failed to upload configuration file due to missing file';
-			die($msg);
+			die(json_encode(array('rtn' => $rtn, 'error' => $msg	)));
 			break;
 
 		case "getSeries":

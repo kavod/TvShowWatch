@@ -29,7 +29,7 @@ returnCode = {
 	'410': 'Next episode not scheduled',
 	'411': 'Error during adding {0}',
 	'412': 'Incomplete TV Show adding',
-	'413': 'Error during deleting {0}',
+	'413': 'Error during deletion of {0}',
 	'414': 'Incomplete TV Show deletion',
 	'415': 'Unable to parse arguments',
 	'416': 'You must provide ID of TV Show you want to delete or \'all\' for global reset',

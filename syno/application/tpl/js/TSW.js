@@ -9,13 +9,9 @@ $.ajaxSetup({
 		});
 	var tvshow_result = [];
 	
-	$('#apply_jcss').click(apply_jcss);
 	$("#smtp_enable").blur(email_activation);
 	$('input').attr("autocomplete", "off");
 	$( "#run" ).click(run);
-
-	$( "#conf_ok" ).click(conf_ok);
-	$( "#conf_ko" ).click(conf_ko);
 	$( "#param" ).submit(event,save_conf);
 	$( "#import_conf" ).submit(event,import_conf);
 	//$( "#addSerie" ).submit(event,addSerie);
