@@ -14,7 +14,6 @@ $.ajaxSetup({
 	$( "#run" ).click(run);
 	$( "#param" ).submit(event,save_conf);
 	$( "#import_conf" ).submit(event,import_conf);
-	//$( "#addSerie" ).submit(event,addSerie);
 	$( "#addSerie" ).submit(function() { return false; });
 
 	$( "#keywords_list" ).sortable({
@@ -86,7 +85,7 @@ $.ajaxSetup({
 	var tabTitle; // = $( "#tab_title" ),
       tabContent = $( "#tab_content" ),
       tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
-      tabCounter = 4;
+      tabCounter = 5;
 	opened_tabs = [];
 
 
@@ -102,4 +101,5 @@ $.ajaxSetup({
 	closeTab(element);
       }
     });
+
 });

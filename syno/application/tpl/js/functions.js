@@ -1,4 +1,55 @@
 // Load functions
+function load_logs()
+{
+	$.ajax({  
+		type: "GET", 
+		url: "api/TvShowWatch.php?action=logs"
+	})
+	.done(function( data )  
+	{
+		result = compute_data(data);
+		if (result.ok)
+		{
+			logs = [];
+			result.result.forEach(function(log_entry)
+			{
+				logs.push({
+						datetime:	log_entry.datetime,
+						name:		log_entry.seriesname,
+						rtn:		log_entry.rtn,
+						msg:		log_entry.msg,
+						season:		log_entry.season,
+						episode: 	log_entry.episode
+						});
+			});
+
+			$("#list4").jqGrid({
+				datatype: "local",
+				height: 345,
+				width: 700,
+				rowNum:15,
+			   	colNames:['Date', 'TVShow', 'Season','Episode','ResCd','Message'],
+			   	colModel:[
+			   		{name:'datetime',index:'datetime', width:110, sorttype:"date", formatter:"date", formatoptions:{srcformat:'ISO8601Long', newformat:"Y-m-d H:i:s"}},
+			   		{name:'name',index:'name', width:150},
+			   		{name:'season',index:'season', width:50, align:"center",sorttype:"number"},
+			   		{name:'episode',index:'episode', width:50, align:"center",sorttype:"number"},		
+			   		{name:'rtn',index:'rtn', width:55,align:"center",sorttype:"number"},		
+			   		{name:'msg',index:'msg', sortable:false}		
+			   	],
+			   	caption: "TvShowWatch logs entries",
+				hidegrid: false,
+				viewrecords: true,
+				recordtext: "View {0} - {1} of {2}",
+				loadtext: "Loading...",
+				pager: "#pager5",
+				data: logs
+			});
+			jQuery("#list4").jqGrid('filterToolbar',{searchOperators : false});
+		}
+	});
+}
+
 function load_email(id)
 {
 	$.post( "email_list2.php", {"id":id})
@@ -202,18 +253,21 @@ function serieStatus(status_id)
 
 function apply_jcss() 
 {
-	// Serie List content
-	get_serielist();
-
-	// Serie detail content
-	load_serieData();
-
 	// Tab management
 	$( "#tabs" ).tabs( "refresh" );
 
 	// General design
 	$( "button" ).button();
 	$( 'input[type="submit"]' ).button();
+
+	// Serie List content
+	get_serielist();
+
+	// Serie detail content
+	load_serieData();
+
+	// Load logs
+	load_logs();
 }
 
 // Tabs management
@@ -272,7 +326,7 @@ function closeTab(element)
 	var panelId = element.remove().attr( "aria-controls" );
 	panelId = panelId.substring(1);
 	$( "#s" + panelId).remove();
-	tabs.tabs("option", "active", 3);
+	tabs.tabs("option", "active", 4);
 	tabs.tabs( "refresh" );
 	tabCounter--;
 	for (i in opened_tabs)

@@ -276,6 +276,18 @@ class TvShowWatch
 			echo $cmd.'<br />';
         }
 		return true;
+	}	
+
+	function logs()
+	{
+		$cmd = PYTHON_EXEC . " " . $this->cmd .' --action logs';
+		exec($cmd,$result);
+		if ($this->debug)
+		{
+			echo $cmd.'<br />';
+			print_r($result);
+		}
+		return json_decode($result[0],true);
 	}
 }
 
@@ -586,6 +598,18 @@ if (isset($_GET['action']))
 					die(json_encode(array('rtn' => 499, 'error' => 'Enable to upload file')));
 				}
 				break;
+
+		case 'logs':
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			echo json_encode($TSW->logs());
+			break;
 		default:
 	}
 }

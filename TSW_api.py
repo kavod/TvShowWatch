@@ -18,7 +18,7 @@ def main():
 		"-a",
 		"--action",
 		default='',
-		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search','push'],
+		choices=['run', 'list', 'init', 'add','config','getconf','del','update','getEpisode','resetKeywords','resetAllKeywords','search','push','logs'],
 		help='action triggered by the script'
 		)
 	parser.add_argument(
@@ -149,6 +149,10 @@ def main():
 
 	if args.action == 'push':
 		print(json.dumps(m.pushTorrent(arg['id'],arg['filepath'])))
+		sys.exit()
+
+	if args.action == 'logs':
+		print(json.dumps(m.logs(json_c=True)))
 		sys.exit()
 
 	print(json.dumps({'rtn':'400','error':messages.returnCode['400'].format(args.action)}))

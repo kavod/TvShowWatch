@@ -35,7 +35,7 @@ th {
 	text-align:left;
 }
 
-table, form {
+.TSWtable, form {
 	margin-bottom: 20px;
 }
 
@@ -111,3 +111,4 @@ p {
 	margin: 0;
 	padding: 0;	
 }
+

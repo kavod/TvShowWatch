@@ -554,5 +554,20 @@ class TSWmachine:
 				return {'rtn':'408','error':messages.returnCode['408'].format(pattern)}
 		except Exception,e:
 			return {'rtn':'419','error':messages.returnCode['404'].format('TvDB')}
-		
+
+	def logs(self,json_c=False):
+		t = myTvDB()
+		logger = Logger()
+		if json_c:
+			result = [ convert_dt2str(i) for i in logger.filter_log()]
+		else:
+			result = logger.filter_log()
+		for i in result:
+			i['msg'] = messages.returnCode[i['rtn']]
+			if 'args' in i.keys():
+				i['msg'] = i['msg'].format(i['args'])
+			i['seriesname'] = t[i['serieID']]['seriesname']
+
+
+		return {'rtn':'200','result': result}
 
