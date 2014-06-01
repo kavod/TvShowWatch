@@ -112,7 +112,7 @@ class SerieList(MyFile):
 		:rtype: boolean
 
 		:Example:
-
+t
 		>>> f.testSerieExists(5262)
 		False
 		
@@ -130,12 +130,8 @@ class SerieList(MyFile):
 		
 		Return the list of TV Shows in configuration file
 
-		:return: list of TV Shows ID
-		:rtype: list of Integers
-
-		:Example:
-		f.listSeries()
-		[542,5428,45758]
+		:return: dict of TV shows
+		:rtype: dict
 		
 	"""
 	def listSeries(self,json_c=False,retr_tvdb_data=False):

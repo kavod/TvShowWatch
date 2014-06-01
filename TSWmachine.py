@@ -13,6 +13,7 @@ from ConfFile import ConfFile
 from serieList import SerieList
 from functions import *
 from myTvDB import *
+from logger import *
 
 CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
 LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
@@ -403,6 +404,7 @@ class TSWmachine:
 		
 	def run(self):
 		logging.info('Run !!! ')
+		logger = Logger()
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			print("{0}|{1}".format(opened['rtn'],opened['error']))
@@ -483,8 +485,10 @@ class TSWmachine:
 						next = next_aired(serie['id'],serie['season'],serie['episode'])
 						self.seriefile.updateSerie(serie['id'],next)
 						if next['status'] == 90:
+							logger.append(serie['id'],'260',{"season":serie['season'],"episode":serie['episode']})
 							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
 						else:
+							logger.append(serie['id'],'260',{"season":serie['season'],"episode":serie['episode']})
 							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
 					else:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
@@ -493,6 +497,7 @@ class TSWmachine:
 			if int(serie['status']) in [10,15,20,21] and serie['expected'] < date.today(): # If episode broadcast is in the past
 				if conf['id'] == 'none':
 					self.seriefile.updateSerie(serie['id'],{'status':21})
+					logger.append(serie['id'],'221',{"season":serie['season'],"episode":serie['episode']})
 					print(str_result.format('221',str(serie['id']),messages.returnCode['221']))
 				else:
 					if 'tc' not in locals():
@@ -528,6 +533,7 @@ class TSWmachine:
 					else:
 						print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
+				self.seriefile.updateSerie(serie['id'],{'status':10})
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 
 	def getEpisode(self,serieID,season,episode):

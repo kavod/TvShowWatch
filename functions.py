@@ -25,7 +25,23 @@ def convert_conf(conf,root=''):
 		else:
 			return {}
 	return result
+'''
+	The ``next_aired`` function
+	=============================
+	
+	Retrieve the next step for TV Show schedule.
 
+	:param serie_id: TV Show identifier (from theTVDB)
+	:type serie_id: integer
+	:param s_season: Season number of the last downloaded episode. If blank or 0 => get the last aired season
+	:type s_season: integer
+	:param s_season: Episode number in the season of the last downloaded episode. If blank or 0 => get the last aired episode
+	:type s_episode: integer
+
+	:return: data for the next episode to be downloaded {'status','season','episode','slot_id','expected'}. Season, episode and expected are 0 if no next episode
+	:rtype: dict
+
+'''
 def next_aired(serie_id,s_season=0,s_episode=0):
 	global t
 	if 't' not in globals():
@@ -43,7 +59,8 @@ def next_aired(serie_id,s_season=0,s_episode=0):
 	except Exception,e:
 		return {}
 
-	if int(s_season)*int(s_episode)>0:
+	# If season & episode specified
+	if int(s_season)*int(s_episode)>0: 
 
 		# Check if next episode exists in season
 		if s_episode+1 in serie[s_season].keys():
@@ -75,6 +92,7 @@ def next_aired(serie_id,s_season=0,s_episode=0):
 						'slot_id':	0,
 						'expected':	'2100-12-31'
 					}
+	# If no episode specified
 	else:
 		# Retrieve last aired episode
 		if serie.nextAired() is not None:
