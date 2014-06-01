@@ -406,7 +406,7 @@ function save_conf(event)
 		result = compute_data(data);
 		if (result.ok)
 		{
-			show_info(data);
+			show_info(result.error);
 		}
 		stop_loading();
 	});
@@ -575,7 +575,7 @@ function push_torrent(sid)
 function check_episode(sid)
 {
 	event.preventDefault();
-	var data = $('#s' + sid + '>.episode_form').serialize();
+	var data = $('#s' + sid + ' .episode_form').serialize();
 	$.post( "api/TvShowWatch.php?action=getEpisode", data)
 	.done(function( data )  
 	{
