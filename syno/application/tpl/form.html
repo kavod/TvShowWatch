@@ -1,9 +1,0 @@
-<form method="POST" action="{$form.action}"{if="$form.enctype == 'file'"} enctype="multipart/form-data"{/if} class="{$form.class}"{if="$form.onsubmit != ''"} onsubmit="{$form.onsubmit}"{/if}>
-{$content=$form.content}
-{include="content"}
-{if condition="$form.submit!=''"}
-<div class="fieldDisplay">
-<div class="col col1"></div><div class="col col2"><input type="submit" name="envoyer" value="{$form.submit}" /></div>
-</div>
-{/if}
-</form>
