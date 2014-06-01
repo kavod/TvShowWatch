@@ -72,9 +72,17 @@ def input_keywords():
 
 def select_episode(serie):
 	s_choice = []
-	seasons = (season for season in serie.getSeasons() if season != "0")
+	seasons = (season for season in serie.getSeasons() if 
+					season != "0" 
+					and 'firstaired' in serie[int(season)][1].keys() 
+					and serie[int(season)][1]['firstaired'] is not None
+				)
 	for season in seasons:
-		s_choice.append([season,"Season " + season + " aired from " + serie[int(season)][1]['firstaired']])
+		try:
+			s_choice.append([season,"Season " + season + " aired from " + serie[int(season)][1]['firstaired']])
+		except:
+			print(season)
+			print(serie[int(season)][1].keys())
 	season = int(Prompt.promptChoice("Please select season number",s_choice,len(s_choice)-1))
 	
 	s_choice = []

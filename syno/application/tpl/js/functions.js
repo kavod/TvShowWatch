@@ -37,6 +37,8 @@ function load_logs()
 			   		{name:'rtn',index:'rtn', width:55,align:"center",sorttype:"number"},		
 			   		{name:'msg',index:'msg', sortable:false}		
 			   	],
+				sortname: 'datetime',
+				sortorder: 'desc',
 			   	caption: "TvShowWatch logs entries",
 				hidegrid: false,
 				viewrecords: true,
@@ -144,7 +146,8 @@ function load_serieData()
 					if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
 					{
 						$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
-						$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
+						if (typeof(result[serie].tvdb.banner) != 'undefined')
+							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
 						$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview);
 						$('#data' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
 						season_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="season"]';

@@ -1,8 +1,15 @@
 global returnCode
 
 returnCode = {
-	'200':'OK',
-	'210':'Not yet aired',
+	'100': 'TV Show modified',
+	'101': 'TV Show scheduled',
+	'102': 'TV Show keywords reseted',
+	'103': 'TV Show unscheduled',
+	'104': 'Torrent manually pushed',
+	'105': 'Torrent not found in Transmission. Reseting status',
+
+	'200': 'OK',
+	'210': 'Not yet aired',
 	'220': 'Torrent not found',
 	'221': 'No tracker configured',
 	'230': 'Torrent added',

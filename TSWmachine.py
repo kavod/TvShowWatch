@@ -216,7 +216,8 @@ class TSWmachine:
 		else:
 			return {'rtn':'407','error':messages.returnCode['407'].format(str(s_ids))}
 
-	def addSerie(self,s_id,emails=[],season=0,episode=0):
+	def addSerie(self,s_id,emails=[],season=0,episode=0):		
+		logger = Logger()
 		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -232,9 +233,12 @@ class TSWmachine:
 			# If TV show is achieved, just add it without episode scheduled
 			#return {'rtn':'410','error':messages.returnCode['410']}
 			episode = None
+			infolog = {}
 		else:
+			infolog = {'season':episode['seasonnumber'],'episode':episode['episodenumber']}
 			episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
 		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
+			logger.append(serie['id'],'101',infolog)
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
@@ -259,6 +263,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def _setSerie(self,s_id,result,emails,keywords,param={}):
+		logger = Logger()
 		error = False
 		if len(result)>0:
 			if (self.seriefile.updateSerie(result['id'],param)):
@@ -271,6 +276,7 @@ class TSWmachine:
 				if error:
 					return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
 				else:
+					logger.append(s_id,'100',{})
 					return {'rtn':'200','error':messages.returnCode['200']}
 			else:
 				return {'rtn':'417','error':messages.returnCode['417'].format(result['name'])} #Error during update
@@ -308,11 +314,13 @@ class TSWmachine:
 			return {'rtn':'300','error':messages.returnCode['300']}
 
 	def resetKeywords(self,s_id):
+		logger = Logger()
 		logging.info('resetKeywords ' + str(s_id))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
 		keywords = self.conffile.getKeywords()
+		logger.append(s_id,'102',{})
 		return self.setSerie(s_id,{'keywords':keywords},False)
 
 	def resetAllKeywords(self):
@@ -331,6 +339,7 @@ class TSWmachine:
 		return result
 
 	def delSerie(self,s_id):
+		logger = Logger()
 		logging.info('delSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -340,6 +349,7 @@ class TSWmachine:
 			return serie
 		result = self.seriefile.delSerie(s_id)
 		if result:
+			logger.append(s_id,'103',{})
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
 			return {'rtn':'413','error':messages.returnCode['413'].format(s_id)}
@@ -372,6 +382,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def pushTorrent(self,serieID,filepath):
+		logger = Logger()
 		logging.info('pushTorrent ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -398,6 +409,7 @@ class TSWmachine:
 					)
 				new_torrent = add_torrent('file://' +filepath, tc, confTransmission['slotNumber'],confTransmission['folder'] is not None)
 				self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
+				logger.append(serieID,'104',{"season":season,"episode":episode})
 				return {'rtn':'230','error':messages.returnCode['230']}
 		return {'rtn':'421','error':messages.returnCode['421']}
 		
@@ -471,6 +483,7 @@ class TSWmachine:
 						tor_found = True
 						break
 				if not tor_found:
+					logger.append(serie['id'],'105',{"season":serie['season'],"episode":serie['episode']})
 					self.seriefile.updateSerie(serie['id'],{'status':10,'slot_id':0})
 				else:
 					torrent = tc.get_torrent(serie['slot_id'])
@@ -529,8 +542,10 @@ class TSWmachine:
 							self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 							break
 					if nb_result > 0:
+						logger.append(serie['id'],'230',{"season":serie['season'],"episode":serie['episode']})
 						print(str_result.format('230',str(serie['id']),messages.returnCode['230']))
 					else:
+						logger.append(serie['id'],'220',{"season":serie['season'],"episode":serie['episode']})
 						print(str_result.format('220',str(serie['id']),messages.returnCode['220']))
 			else:
 				self.seriefile.updateSerie(serie['id'],{'status':10})
