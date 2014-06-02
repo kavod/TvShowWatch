@@ -501,7 +501,7 @@ class TSWmachine:
 							logger.append(serie['id'],'260',{"season":serie['season'],"episode":serie['episode']})
 							print(str_result.format('260',str(serie['id']),messages.returnCode['260']))
 						else:
-							logger.append(serie['id'],'260',{"season":serie['season'],"episode":serie['episode']})
+							logger.append(serie['id'],'250',{"season":serie['season'],"episode":serie['episode']})
 							print(str_result.format('250',str(serie['id']),messages.returnCode['250']))
 					else:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
