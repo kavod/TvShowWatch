@@ -266,7 +266,8 @@ class TSWmachine:
 		logger = Logger()
 		error = False
 		if len(result)>0:
-			if (self.seriefile.updateSerie(result['id'],param)):
+			serie = self.seriefile.updateSerie(result['id'],param)
+			if (serie['id'] == result['id']):
 				if emails is not None:
 					if(not self.seriefile.changeEmails(result['id'],emails)):
 						error = True
@@ -484,7 +485,7 @@ class TSWmachine:
 						break
 				if not tor_found:
 					logger.append(serie['id'],'105',{"season":serie['season'],"episode":serie['episode']})
-					self.seriefile.updateSerie(serie['id'],{'status':10,'slot_id':0})
+					serie = self.seriefile.updateSerie(serie['id'],{'status':15,'slot_id':0})
 				else:
 					torrent = tc.get_torrent(serie['slot_id'])
 					if torrent.status == 'seeding':

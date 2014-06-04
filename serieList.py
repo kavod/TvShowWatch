@@ -106,7 +106,7 @@ class SerieList(MyFile):
 		Use it in order to know if a TV show already is in configuration file
 
 		:param s_id: TvDB ID of the TV show
-		:type question: Integer
+		:type s_id: Integer
 
 		:return: True if TV Show is in the configuration file
 		:rtype: boolean
@@ -125,13 +125,69 @@ t
 		return False
 
 	"""
+		The ``getSerie`` method
+		==============================
+		
+		Return the TV Show data from configuration file
+
+		:param s_id: TvDB ID of the TV show
+		:type s_id: Integer
+
+		:param json_c: True if dates must be format as text (for json serialization purpose). False (by default) for datetime format.
+		:type json_c: Boolean
+
+		:param retr_tvdb_data: True if theTvDB data must be retrieved (requires connection delay). False (by default) to prevent connection.
+		:type retr_tvdb_data: Boolean
+
+		:return: dict of TV show
+		:rtype: dict
+
+		:Example:
+t
+		>>> f.getSerie(5262)
+		{'id':5262,'name':'Foo','pattern':'foo','season':1,'episode':1,status:10,'slot_id':10,'expected':'12-05-2042','emails':[],'keywords':'720p','tvdb':{},'lastEpisode':{},'nextEpisode':{}}
+		
+	"""
+	def getSerie(self, s_id,json_c=False,retr_tvdb_data=False):
+		series = self.tree.getroot()
+		for serie in series.findall('serie'):
+			if serie.find('id').text == str(s_id):
+				emails_list = []
+				for email in serie.findall('email'):
+					emails_list.append(email.text)
+				keywords_list = []
+				for keyword in serie.findall('keyword'):
+					keywords_list.append(keyword.text)
+				if retr_tvdb_data:
+					try:			
+						tvdb_data = t[int(serie.find('id').text)]
+					except:
+						tvdb_data = {}
+				return {
+					'id': 		int(serie.find('id').text),
+					'name':		str(serie.find('name').text),
+					'pattern':	str(serie.find('pattern').text),
+					'season': 	int(serie.find('season').text),
+					'episode': 	int(serie.find('episode').text),
+					'status': 	int(serie.find('status').text),
+					'slot_id': 	int(serie.find('slot_id').text),
+					'expected':	serie.find('expected').text if json_c else convert_date(serie.find('expected').text),
+					'emails': 	emails_list,
+					'keywords':	keywords_list,
+					'tvdb':		tvdb_data.data if retr_tvdb_data else {},
+					'lastEpisode': tvdb_data.lastAired() if retr_tvdb_data else {},
+					'nextEpisode': tvdb_data.nextAired() if retr_tvdb_data else {}
+					}
+		return False
+
+	"""
 		The ``listSeries`` method
 		=========================
 		
 		Return the list of TV Shows in configuration file
 
-		:return: dict of TV shows
-		:rtype: dict
+		:return: list of dict of TV shows
+		:rtype: list
 		
 	"""
 	def listSeries(self,json_c=False,retr_tvdb_data=False):
@@ -177,7 +233,8 @@ t
 					serie.find(val).text = str(values[val])
 				result = True
 		self._save()
-		return result
+		return self.getSerie(s_id)
+		#return result
 
 	def changeEmails(self,s_id,emails=[]):
 		return self.changeList('email',s_id,emails)

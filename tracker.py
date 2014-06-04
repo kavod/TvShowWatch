@@ -11,6 +11,9 @@ import re
 import unicodedata
 import string
 from myExceptions import *
+
+TMPPATH = "/tmp"
+
 cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"tpb")))
 if cmd_subfolder not in sys.path:
 	sys.path.insert(0, cmd_subfolder)
@@ -137,12 +140,12 @@ class Tracker:
 	def download_t411(self,torrent_id):
 		logging.debug("/torrents/download/"+str(torrent_id))
 		stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False)
-		with open('file.torrent', 'wb') as f:
+		with open(TMPPATH + '/file.torrent', 'wb') as f:
 			for chunk in stream.iter_content(chunk_size=1024): 
 				if chunk: # filter out keep-alive new chunks
 					f.write(chunk)
 			     		f.flush()
-		return 'file://file.torrent'
+		return 'file://' + TMPPATH + '/file.torrent'
 
 	def download_none(self,torrent_id):
 		return False
