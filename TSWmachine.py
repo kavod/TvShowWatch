@@ -5,6 +5,7 @@ import os
 import sys
 import messages
 import logging
+import json
 from datetime import date
 import transmissionrpc
 from tracker import *
@@ -15,10 +16,7 @@ from functions import *
 from myTvDB import *
 from logger import *
 
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-
-global t
+load_directories()
 
 class TSWmachine:
 	def __init__(self,admin=False,log=False):
@@ -217,7 +215,7 @@ class TSWmachine:
 			return {'rtn':'407','error':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):		
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -263,7 +261,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def _setSerie(self,s_id,result,emails,keywords,param={}):
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		error = False
 		if len(result)>0:
 			serie = self.seriefile.updateSerie(result['id'],param)
@@ -315,7 +313,7 @@ class TSWmachine:
 			return {'rtn':'300','error':messages.returnCode['300']}
 
 	def resetKeywords(self,s_id):
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		logging.info('resetKeywords ' + str(s_id))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -340,7 +338,7 @@ class TSWmachine:
 		return result
 
 	def delSerie(self,s_id):
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		logging.info('delSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -383,7 +381,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def pushTorrent(self,serieID,filepath):
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		logging.info('pushTorrent ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -417,7 +415,7 @@ class TSWmachine:
 		
 	def run(self):
 		logging.info('Run !!! ')
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			print("{0}|{1}".format(opened['rtn'],opened['error']))
@@ -428,7 +426,7 @@ class TSWmachine:
 			return
 		conf = self.conffile.getTracker()
 		try:
-			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']})
+			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},TMP_PATH)
 		except InputError as e:
 			print(e.msg)
 			return
@@ -553,6 +551,7 @@ class TSWmachine:
 				print(str_result.format('210',str(serie['id']),messages.returnCode['210']))
 
 	def getEpisode(self,serieID,season,episode):
+		global t
 		t = myTvDB()
 		try:
 			result = t[serieID][season][episode]
@@ -561,6 +560,7 @@ class TSWmachine:
 			return {'rtn':'419','error':messages.returnCode['419']}
 
 	def search(self,pattern):
+		global t
 		t = myTvDB()
 		try:
 			result = t.search(pattern)
@@ -572,8 +572,9 @@ class TSWmachine:
 			return {'rtn':'419','error':messages.returnCode['404'].format('TvDB')}
 
 	def logs(self,json_c=False):
+		global t
 		t = myTvDB()
-		logger = Logger()
+		logger = Logger(directory = LOG_PATH)
 		if json_c:
 			result = [ convert_dt2str(i) for i in logger.filter_log()]
 		else:

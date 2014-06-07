@@ -131,9 +131,6 @@ class ConfFile(MyFile):
 			provider = check_provider(trackerConf['id'])
 			if 'username' in provider['param'] and trackerConf['user'] == '':
 				return {'rtn':'422','error':messages.returnCode['422'].format(provider['name'])}
-			
-		#if trackerConf['id'] == '' or trackerConf['user'] == '':
-		#	return {'rtn':'405','error':messages.returnCode['405'].format('Tracker')}
 			tracker = Tracker(trackerConf['id'],{'username':trackerConf['user'],'password':trackerConf['password']})
 		except InputError as e:
 			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e.msg)}
@@ -284,10 +281,6 @@ class ConfFile(MyFile):
 	def getTracker(self):
 		logging.info('getTracker')
 		conf = self.tree.getroot().find('tracker')
-		"""if conf.find('keywords') is not None:
-			keywords = conf.find('keywords').text 
-		else:
-			keywords = '' """
 		if conf is not None and conf.find('id') is not None and conf.find('user') is not None and conf.find('password') is not None:
 			return {
 				'id':		conf.find('id').text,

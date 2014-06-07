@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #encoding:utf-8
 
+from __future__ import absolute_import
 import os
 import sys
 import inspect
@@ -10,19 +11,29 @@ import logging
 import re
 import unicodedata
 import string
+import imp
 from myExceptions import *
 
 TMPPATH = "/tmp"
 
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"tpb")))
+"""cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"tpb")))
 if cmd_subfolder not in sys.path:
-	sys.path.insert(0, cmd_subfolder)
+	sys.path.insert(0, cmd_subfolder)"""
+"""PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(PROJECT_DIR, 'tpb'))"""
+
 
 TRACKER_CONF = [
 	{'id':'t411','name':'T411','url':'https://api.t411.me','param':['username','password']},
-	{'id':'tpb','name':'ThePirateBay','url':"https://thepiratebay.se",'param':[]},
 	{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]
+
+try:
+	imp.find_module('tpbTSW')
+	TRACKER_CONF.append({'id':'tpb','name':'ThePirateBay','url':"https://thepiratebay.se",'param':[]})
+except ImportError:
+	print("ThePirateBay cannot be loaded")
+
 
 def check_provider(trackerID):
 	# Selecting requested provider
@@ -34,10 +45,11 @@ def check_provider(trackerID):
 		return provider[0]
 
 class Tracker:
-	def __init__(self,trackerID,param_data):
+	def __init__(self,trackerID,param_data,tmppath = TMPPATH ):
 		self.provider = {} 		# Provider data
 		self.token = ''			# If required by provider, authentification token
 		self.param = {}			# If required by provider, extra parameters (like username / password)
+		self.tmppath = tmppath
 
 		# Selecting requested provider
 		try:
