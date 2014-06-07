@@ -35,9 +35,6 @@ $tpl->assign( "l_home_conf_status", 'Configuration status:');
 $tpl->assign( "l_home_run_status", 'Run status:');
 $tpl->assign( "l_home_run_now", 'Run now:');
 $tpl->assign( "l_home_run", 'run');
-$tpl->assign( "l_home_last_logs", 'Last logs');
-
-$tpl->assign( "u_home_logs", 'log.php');
 
 $tpl->assign( "home_conf_status", $print_conf[$conf]);
 $tpl->assign( "home_run_status", $run);
