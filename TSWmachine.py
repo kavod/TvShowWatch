@@ -15,6 +15,7 @@ from serieList import SerieList
 from functions import *
 from myTvDB import *
 from logger import *
+from constants import *
 
 load_directories()
 
@@ -34,7 +35,7 @@ class TSWmachine:
 		logging.info('Get Auth :'+ str(self.admin))
 		return self.admin
 
-	def openFiles(self,conffile=CONFIG_FILE,seriefile=LIST_FILE):
+	def openFiles(self,conffile=myConstants.CONFIG_FILE,seriefile=myConstants.LIST_FILE):
 		logging.info('OpenFile ' + str(conffile) + ' and '+ str(seriefile))
 		result = self.conffile.openFile(str(conffile))
 		if (result['rtn']!='200'):
@@ -215,7 +216,7 @@ class TSWmachine:
 			return {'rtn':'407','error':messages.returnCode['407'].format(str(s_ids))}
 
 	def addSerie(self,s_id,emails=[],season=0,episode=0):		
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		logging.info('addSerie ' + str(s_id) + '/'+str(emails)+'/'+str(season)+'/'+str(episode))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -261,7 +262,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def _setSerie(self,s_id,result,emails,keywords,param={}):
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		error = False
 		if len(result)>0:
 			serie = self.seriefile.updateSerie(result['id'],param)
@@ -313,7 +314,7 @@ class TSWmachine:
 			return {'rtn':'300','error':messages.returnCode['300']}
 
 	def resetKeywords(self,s_id):
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		logging.info('resetKeywords ' + str(s_id))
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -338,7 +339,7 @@ class TSWmachine:
 		return result
 
 	def delSerie(self,s_id):
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		logging.info('delSerie ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -381,7 +382,7 @@ class TSWmachine:
 			return {'rtn':'411','error':messages.returnCode['411'].format(s_id)}
 
 	def pushTorrent(self,serieID,filepath):
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		logging.info('pushTorrent ')
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
@@ -415,7 +416,7 @@ class TSWmachine:
 		
 	def run(self):
 		logging.info('Run !!! ')
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			print("{0}|{1}".format(opened['rtn'],opened['error']))
@@ -426,7 +427,7 @@ class TSWmachine:
 			return
 		conf = self.conffile.getTracker()
 		try:
-			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},TMP_PATH)
+			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
 		except InputError as e:
 			print(e.msg)
 			return
@@ -574,7 +575,7 @@ class TSWmachine:
 	def logs(self,json_c=False):
 		global t
 		t = myTvDB()
-		logger = Logger(directory = LOG_PATH)
+		logger = Logger(directory = myConstants.LOG_PATH)
 		if json_c:
 			result = [ convert_dt2str(i) for i in logger.filter_log()]
 		else:

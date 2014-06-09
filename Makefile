@@ -1,15 +1,21 @@
 EXEC=TvShowWatch.spk
 
+install: script/install.sh
+	./script/install.sh
+
+uninstall: script/uninstall.sh
+	./script/uninstall.sh
+
 syno: TvShowWatch.spk
 
 TvShowWatch.spk: syno/package.tgz syno/INFO syno/scripts syno/PACKAGE_ICON.PNG
 	cd syno && tar cvf $@ package.tgz INFO scripts PACKAGE_ICON.PNG
 	mv syno/$@ .
 
-syno/package.tar: syno/application LICENSE README.md syno_directory
-	tar cvf package.tar *.py LICENSE README.md tpbTSW directory.json
+syno/package.tar: application LICENSE README.md syno_directory
+	tar cvf package.tar *.py LICENSE README.md tpbTSW directory.json application
 	mv package.tar syno
-	cd syno && tar rvf package.tar application
+	cd syno && tar rvf package.tar
 
 syno/package.tgz: syno/package.tar
 	gzip -c syno/package.tar > $@

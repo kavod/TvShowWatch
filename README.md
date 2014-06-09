@@ -21,6 +21,8 @@ Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
 
 Here are the dependencies:
 
++ ***Apache with php*** - For Web interface and web API
++ ***python*** - The following libraries will be automatically installed
 + ```tvdb_api``` - download and install from [here][1].
 + ```requests``` - run ```sudo pip install request```, see [this repo][2].
 + ```transmissionrpc``` - run ```easy_install transmissionrpc```, see [this repo][3]

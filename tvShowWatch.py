@@ -15,12 +15,10 @@ from myDate import *
 import Prompt
 from TSWmachine import *
 from myTvDB import *
+from constants import *
 
-global t
-
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-API_FILE= os.path.dirname(os.path.realpath(__file__)) + '/TSW_api.py'
+load_directories()
+API_FILE = myConstants.SCRIPT_PATH + '/TSW_api.py'
 
 def input_serie():
 	global t
@@ -445,14 +443,14 @@ def main():
     parser.add_argument(
             "-c",
             "--config",
-            default=CONFIG_FILE,
-            help='indicates the configuration file location. By default:'+CONFIG_FILE
+            default=myConstants.CONFIG_FILE,
+            help='indicates the configuration file location. By default:'+myConstants.CONFIG_FILE
         )
     parser.add_argument(
             "-s",
             "--seriefile",
-            default=LIST_FILE,
-            help='indicates the series list file location. By default:'+LIST_FILE
+            default=myConstants.LIST_FILE,
+            help='indicates the series list file location. By default:'+myConstants.LIST_FILE
         )
     parser.add_argument(
             "-v",

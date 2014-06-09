@@ -1,1 +1,1 @@
-{"logpath":"/tmp","configpath":"/var/package/TvShowWatch/etc","seriepath":"/var/package/TvShowWatch/etc","tmppath":"/tmp"}
+{"logpath":"/tmp","configpath":"/var/packages/TvShowWatch/etc","seriepath":"/var/packages/TvShowWatch/etc","tmppath":"/tmp","scriptpath":"/var/packages/TvShowWatch/target","python_exec":"PATH=/var/packages/python/target/bin:$PATH ; python "}
