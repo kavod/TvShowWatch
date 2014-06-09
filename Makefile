@@ -23,7 +23,7 @@ syno/package.tgz: syno/package.tar
 syno_directory: directory.syno.json
 	cp directory.syno.json directory.json
 clean:
-	rm -rf application/tmp/*
+	rm -rf application/tmp/*.php
 	for i in `find . -name "*.pyc"`; do rm -rf $$i ; done
 	for i in `find . -name "*~"`; do rm -rf $$i ; done
 	for i in `find . -name "*.xml"`; do rm -rf $i ; done

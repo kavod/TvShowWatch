@@ -40,6 +40,7 @@ fi
 touch ${LOG_DIR}/TSW.log.json
 chown -R ${APACHE_USER}:${APACHE_GROUP} ${DIR}/etc
 chown -R ${APACHE_USER}:${APACHE_GROUP} ${DIR}/application/tmp
+chmod -R 775 ${DIR}/application/tmp
 
 # Create files
 cp -v "$DIR/script/tvshowwatch.conf" $FILE
