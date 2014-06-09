@@ -1,10 +1,8 @@
 #!/bin/bash
 
-LOG_DIR="/var/log"
-
 # Make sure only root can run our script
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root" 1>&2
+if [[ $EUID -eq 0 ]]; then
+   echo "User installation requires not-root user. Use 'sudo make install' for not-root setup" 1>&2
    exit 1
 fi
 
@@ -18,47 +16,37 @@ done
 DIR="$(dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 echo "Script directory: $DIR"
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
+
+LOG_DIR="${DIR}/etc"
 LOG_DIR_SED=$(echo $LOG_DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 
-# Get Apache conf directory
-APACHE_DIR="$( apache2ctl -V|grep HTTPD_ROOT|cut -d'=' -f2|cut -d\" -f2 )"
-echo "Apache conf directory: $APACHE_DIR"
+SYMLINK="${HOME}/public_html/tvshowwatch"
 
-APACHE_USER="$(grep APACHE_RUN_USER /etc/apache2/envvars|cut -d'=' -f2)"
-APACHE_GROUP="$(grep APACHE_RUN_GROUP /etc/apache2/envvars|cut -d'=' -f2)"
-
-FILE="${APACHE_DIR}/sites-available/tvshowwatch"
-FILE_ENABLE="${APACHE_DIR}/sites-enabled/tvshowwatch"
-
-if [ -f ${FILE_ENABLE} ]
+if [ -h ${SYMLINK} ]
 then
     echo "TvShowWatch is already installed on this box"
     exit 1
 fi
 
 touch ${LOG_DIR}/TSW.log.json
-chown -R ${APACHE_USER}:${APACHE_GROUP} ${DIR}/etc
-chown -R ${APACHE_USER}:${APACHE_GROUP} ${DIR}/application/tmp
-chmod -R 775 ${DIR}/application/tmp
-chown ${APACHE_USER}:${APACHE_GROUP} ${LOG_DIR}/TSW.log.json
+chmod 775 ${DIR}/application/tmp
+APACHE_GROUP="$(grep APACHE_RUN_GROUP /etc/apache2/envvars|cut -d'=' -f2)"
+chgrp ${APACHE_GROUP} ${DIR}/application/tmp
 
 # Create files
-cp -v "$DIR/script/tvshowwatch.conf" $FILE
 cp -v "$DIR/directory.linux.json" "$DIR/directory.json"
 
 # Substitute alias with script directory
-sed -i "s/TSW_DIR/${DIR_SED}\/application\//g" $FILE
+ln -s "${DIR}/application" "${SYMLINK}"
 sed -i "s/LOG_DIR/${LOG_DIR_SED}/g" "$DIR/directory.json"
 sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "$DIR/directory.json"
 
 # Python libraries installation
-/usr/bin/env easy_install tvdb_api transmissionrpc requests
-
-# Site activation
-a2ensite tvshowwatch
-service apache2 restart 
-
-#ValidateConfFile() {
-#	
-#}
+#/usr/bin/env easy_install tvdb_api transmissionrpc requests
+echo "User libraries cannot be install without root access. Please check following libraries are installed:"
+echo "- tvdb_api"
+echo "- transmissionrpc"
+echo "- requests"
+echo "Installation completed. Use http://localhost/~yourUser/tvshowwatch/ to manage TvShowWatch"
+echo "Please note logfile is located in ${LOG_DIR}"

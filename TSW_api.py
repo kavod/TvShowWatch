@@ -7,9 +7,11 @@ import logging
 import argparse
 import json
 from TSWmachine import *
+from constants import *
 
-CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
+load_directories()
+#CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
+#LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 
 def main():
 	# Get input parameters
@@ -24,14 +26,14 @@ def main():
 	parser.add_argument(
 		"-c",
 		"--config",
-		default=CONFIG_FILE,
-		help='indicates the configuration file location. By default:'+CONFIG_FILE
+		default=myConstants.CONFIG_FILE,
+		help='indicates the configuration file location. By default:'+myConstants.CONFIG_FILE
 		)
 	parser.add_argument(
 		"-s",
 		"--seriefile",
-		default=LIST_FILE,
-		help='indicates the series list file location. By default:'+LIST_FILE
+		default=myConstants.LIST_FILE,
+		help='indicates the series list file location. By default:'+myConstants.LIST_FILE
 		)
 	parser.add_argument(
 		"-v",

@@ -36,7 +36,10 @@ class Logger:
 	def load(self):
 		if os.path.isfile(self.filename):
 			fd = open(self.filename)
-			data = json.load(fd)
+			try:
+				data = json.load(fd)
+			except ValueError:
+				data = []
 			fd.close
 			self.content = [ convert_str2dt(log) for log in data]
 

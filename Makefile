@@ -1,10 +1,24 @@
 EXEC=TvShowWatch.spk
 
+all: 
+	@echo "Usage:"
+	@echo "'sudo make install' for root installation. Allow schedule job"
+	@echo "'sudo make uninstall' for remove root installation"
+	@echo "'make user_install' for user installation (using public_html). No scheduled tracking"
+	@echo "'make user_uninstall' for remove user installation"
+	@echo "'make syno' for Synology package TvShowWatch.spk build"
+
+user_install: script/user_install.sh
+	@./script/user_install.sh
+
+user_uninstall: script/user_uninstall.sh
+	@./script/user_uninstall.sh
+
 install: script/install.sh
-	./script/install.sh
+	@./script/install.sh
 
 uninstall: script/uninstall.sh
-	./script/uninstall.sh
+	@./script/uninstall.sh
 
 syno: TvShowWatch.spk
 
