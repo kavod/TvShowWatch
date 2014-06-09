@@ -27,14 +27,24 @@ Here are the dependencies:
 + ```requests``` - run ```sudo pip install request```, see [this repo][2].
 + ```transmissionrpc``` - run ```easy_install transmissionrpc```, see [this repo][3]
 
-Just launch ```./tvShowWatch --init``` to create configuration file, then ```./tvShowWatch -h``` for use
+#### Root setup
+Install with root user allow job schedule for torrent tracking. Without it, you will have to manually push TvShowWatch every time.
+Just launch ```make install``` in the installation directory.
+Then use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/tvshowwatch/```
+Use ```./tvShowWatch -h``` for command line usage
+
+#### User setup
+Note that user setup does not allow job schedule via crontab.
+Just launch ```make user_install``` in the installation directory.
+Then use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/~yourUser/tvshowwatch/```
+Use ```./tvShowWatch -h``` for command line usage
 
 ### Synology Package
 
 From source, just use the Makefile:
 ```
 make mrproper
-make
+make syno
 ```
 This will generate the package tvShowWatch.spk you can add in the Synology Packages Center.
 Python dependant libraries will be automatically installed. Please note that each time Python package is updated, additionnal libraries are removed. You will have to manually reinstall them -or- reinstall TvShowWatch package.
