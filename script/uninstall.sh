@@ -39,3 +39,9 @@ service apache2 restart
 rm "${FILE}"
 rm "${DIR}/directory.json"
 
+CRONFILE="/etc/cron.hourly/tvshowwatch"
+if [ -f $CRONFILE ]; then
+	rm $CRONFILE
+else
+	echo "TvShowWatch already unscheduled"
+fi

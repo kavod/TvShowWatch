@@ -59,6 +59,15 @@ sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "$DIR/directory.json"
 a2ensite tvshowwatch
 service apache2 restart 
 
-#ValidateConfFile() {
-#	
-#}
+CRONFILE="/etc/cron.hourly/tvshowwatch"
+LogFile=/var/log/TSW.log
+CRONLINE="#!/bin/sh\n/usr/bin/env python ${DIR}/tvShowWatch.py -s\"${DIR}/etc/series.xml\" -c\"${DIR}/etc/config.xml\""
+CRONLINE="$CRONLINE --action run>>$LogFile"
+if [ -f $CRONFILE ]; then
+	echo "TvShowWatch already scheduled"
+	exit 0
+fi
+echo `date`" : Starting TvShowWatch..." >> $LogFile
+echo -e $CRONLINE >$CRONFILE
+chmod u+x $CRONFILE
+
