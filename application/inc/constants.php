@@ -3,6 +3,7 @@ $file = $path.'../directory.json';
 $directories = json_decode(file_get_contents($file), true);
 
 define('TSW',true);
+define("ARCH", $directories['arch']);
 define("CONF_VERSION", '1.8');
 define("CONF_FILE", $directories['configpath'].'/config.xml');
 define("SERIES_FILE", $directories['seriepath'].'/series.xml');

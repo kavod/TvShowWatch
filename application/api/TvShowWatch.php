@@ -9,7 +9,6 @@ if (!isset($path))
 
 require_once($path."inc/constants.php");
 require_once($path."functions.php");
-
 class TvShowWatch
 {
 	var $conffile;
@@ -248,10 +247,10 @@ class TvShowWatch
 		$cmd = '/var/packages/TvShowWatch/scripts/start-stop-status status 2>&1';
 		exec($cmd,$result);
 		if ($this->debug)
-        {
-                echo $cmd.'<br />';
-                print_r($result);
-        }
+		{
+		        echo $cmd.'<br />';
+		        print_r($result);
+		}
 		return str_replace('tvShowWatch is ','',$result[0]);
 	}
 
@@ -609,6 +608,22 @@ if (isset($_GET['action']))
 			}
 			$TSW->auth();
 			echo json_encode($TSW->logs());
+			break;
+
+		case 'get_arch':
+			echo ARCH;
+			break;
+
+		case 'testRunning':
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			echo $TSW->testRunning();
 			break;
 		default:
 	}

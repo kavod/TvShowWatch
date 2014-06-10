@@ -8,6 +8,12 @@ $.ajaxSetup({
 		track: true
 		});
 	var tvshow_result = [];
+
+	var trackers = [
+		{'value':'t411', 'text':'T411','login':true},
+		{'value':'tpb', 'text':'The Pirate Bay', 'login':false},
+		{'value':'none', 'text':'No tracker, only manual push', 'login':false}
+		];
 	
 	$("#smtp_enable").blur(email_activation);
 	$('input').attr("autocomplete", "off");
@@ -72,10 +78,16 @@ $.ajaxSetup({
 
 		});
 
-	if (!conf_status)
-		$(document).ready(conf_ko);
+	/*if (!conf_status)
+		$(document).ready(conf_ko);*/
 
 	$(document).ready(function(){
+		for (tracker in trackers)
+		{
+			myOption = new Option(trackers[tracker]["text"], trackers[tracker]["value"]);
+			$("#tracker_id").append(myOption);
+			$("#tracker_id option:last-child").attr('login',(trackers[tracker]["login"]) ? '1' : '0');
+		}
 		get_conf();
 		apply_jcss();
 		stop_loading();

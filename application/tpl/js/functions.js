@@ -88,6 +88,15 @@ function load_serie_keywords(id)
 	});
 }
 
+function load_keywords(keywords)
+{
+	for (key in keywords)
+	{
+		new_li = '<li class="keyword ui-state-default" title="'+keywords[key]+'" id="keyword-' + key + '">'+keywords[key]+'</li>';
+		$(new_li).insertBefore( "#add_new_keyword" );
+	}
+}
+
 
 function get_conf(event)
 {
@@ -97,9 +106,11 @@ function get_conf(event)
 	})
 	.done(function( data )  
 	{
+		get_arch();
 		result = compute_data(data);
 		if (result.ok)
 		{
+			conf_ok();
 			result = result.result;
 			formdata = {};
 			formdata.tracker_id = result.tracker.id;
@@ -120,8 +131,36 @@ function get_conf(event)
 			formdata.smtp_emailSender = result.smtp.emailSender;
 			populate('#param',formdata);
 			load_tracker_conf(event,$('#tracker_id option[value='+result.tracker.id+']').attr('login'));
+			load_keywords(result.keywords);
 			email_activation();
+		} else
+		{
+			conf_ko();
 		}
+	});
+}
+
+function get_arch()
+{
+	$.ajax({  
+		type: "GET", 
+		url: "api/TvShowWatch.php?action=get_arch"
+	})
+	.done(function( data )  
+	{
+		$('#arch').text(data);
+	});
+}
+
+function testRunning()
+{
+	$.ajax({  
+		type: "GET", 
+		url: "api/TvShowWatch.php?action=testRunning"
+	})
+	.done(function( data )  
+	{
+		$('#testRunning').text(data);
 	});
 }
 
@@ -276,18 +315,32 @@ function apply_jcss()
 // Tabs management
 function conf_ok() 
 {
-  $( "#tabs" ).tabs("enable", 2 );
-  $("#tab_keywords").attr("title", "");
-  $( "#tabs" ).tabs("enable", 3 );
-  $("#tab_series").attr("title", "");
+	$( "#tabs" ).tabs("enable", 2 );
+	$("#tab_keywords").attr("title", "");
+	$( "#tabs" ).tabs("enable", 3 );
+	$("#tab_series").attr("title", "");
+	$( "#tabs" ).tabs("enable", 4 );
+	$("#tab_series").attr("title", "");
+
+	$('#conf_status').text('OK')
+		.addClass('OK')
+		.removeClass('mandatory');
+	testRunning();
 }
 
 function conf_ko() {
-  $( "#tabs" ).tabs( "disable", 2 );
-  $("#tab_keywords").attr("title", "Configuration must be completed before");
-  $( "#tabs" ).tabs( "disable", 3 );
-  $("#tab_series").attr("title", "Configuration must be completed before");
-  $("span.ui-icon-close").click();
+	$( "#tabs" ).tabs( "disable", 2 );
+	$("#tab_keywords").attr("title", "Configuration must be completed before");
+	$( "#tabs" ).tabs( "disable", 3 );
+	$("#tab_series").attr("title", "Configuration must be completed before");
+	$( "#tabs" ).tabs( "disable", 4 );
+	$("#tab_series").attr("title", "Configuration must be completed before");
+	$("span.ui-icon-close").click();
+
+	$('#conf_status').text('Fail')
+		.removeClass('OK')
+		.addClass('mandatory');
+	$('#testRunning').text('Not configured');
 }
 
 function addTab(tabTitle,id) 
@@ -545,24 +598,25 @@ function show_error(msg)
 
 function compute_data(data)
 {
-		try
+	try
+	{
+		result = JSON.parse(data);
+		if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230)
 		{
-			result = JSON.parse(data);
-			if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230)
-			{
-				show_error(result.error);
-				result.ok = false;
-			} else
-			{
-				result.ok = true;
-			}
-			return result;
-		}
-		catch(err)
+			show_error(result.error);
+			result.ok = false;
+			
+		} else
 		{
-			alert("API returns: "+data+"\r\nError:"+err.message);
-			return {"ok":false};
+			result.ok = true;
 		}
+		return result;
+	}
+	catch(err)
+	{
+		alert("API returns: "+data+"\r\nError:"+err.message);
+		return {"ok":false};
+	}
 }
 
 function save_keywords()

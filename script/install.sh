@@ -1,6 +1,7 @@
 #!/bin/bash
 
 LOG_DIR="/var/log"
+TMP_DIR="/tmp"
 
 # Make sure only root can run our script
 if [[ $EUID -ne 0 ]]; then
@@ -19,7 +20,7 @@ DIR="$(dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 echo "Script directory: $DIR"
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 LOG_DIR_SED=$(echo $LOG_DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
-DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
+TMP_DIR_SED=$(echo $TMP_DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 
 # Get Apache conf directory
 APACHE_DIR="$( apache2ctl -V|grep HTTPD_ROOT|cut -d'=' -f2|cut -d\" -f2 )"
@@ -48,7 +49,8 @@ cp -v "$DIR/script/tvshowwatch.conf" $FILE
 cp -v "$DIR/directory.linux.json" "$DIR/directory.json"
 
 # Substitute alias with script directory
-sed -i "s/TSW_DIR/${DIR_SED}\/application\//g" $FILE
+sed -i "s/TSW_DIR/${DIR_SED}/g" $FILE
+sed -i "s/TMP_DIR/${TMP_DIR_SED}/g" $FILE
 sed -i "s/LOG_DIR/${LOG_DIR_SED}/g" "$DIR/directory.json"
 sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "$DIR/directory.json"
 

@@ -1,1 +1,1 @@
-{"logpath":"LOG_DIR","configpath":"SCRIPT_DIR/etc","seriepath":"SCRIPT_DIR/etc","tmppath":"/tmp","scriptpath":"SCRIPT_DIR","python_exec":"/usr/bin/env python"}
+{"arch":"linux","logpath":"LOG_DIR","configpath":"SCRIPT_DIR/etc","seriepath":"SCRIPT_DIR/etc","tmppath":"/tmp","scriptpath":"SCRIPT_DIR","python_exec":"/usr/bin/env python"}
