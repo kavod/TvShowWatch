@@ -78,9 +78,6 @@ $.ajaxSetup({
 
 		});
 
-	/*if (!conf_status)
-		$(document).ready(conf_ko);*/
-
 	$(document).ready(function(){
 		for (tracker in trackers)
 		{
@@ -90,6 +87,7 @@ $.ajaxSetup({
 		}
 		get_conf();
 		apply_jcss();
+		//load_series();
 		stop_loading();
 	});
 

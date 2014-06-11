@@ -202,11 +202,11 @@ class TSWmachine:
 			else:
 				return {'rtn':'300','error':messages.returnCode['300']}
 		elif isinstance(s_ids,int) or (isinstance(s_ids,basestring) and s_ids.isdigit()):
-			return self.getSerie(s_ids)
+			return self.getSerie(s_ids,json_c,load_tvdb)
 		elif isinstance(s_ids,list):
 			result = []
 			for s_id in s_ids:
-				res_serie = self.getSerie(s_id,json_c)
+				res_serie = self.getSerie(s_id,json_c,load_tvdb)
 				if res_serie['rtn']!='200':
 					result.append(res_serie['result'])
 				else:

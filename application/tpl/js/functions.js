@@ -164,6 +164,78 @@ function testRunning()
 	});
 }
 
+var series_data = new Array();
+
+function get_serielist()
+{
+	start_loading()
+	$.ajax({  
+		type: "GET", 
+		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=0"
+	})
+	.done(function( data )  
+	{
+		result = compute_data(data);
+		if (result.ok)
+		{
+			series_data = result.result;
+			for (serie_id in series_data)
+			{
+				serie = series_data[serie_id];
+				
+				series_episode = "S" 
+					+ ((serie.season < 10) ? "0"+serie.season : serie.season)
+					+ "E"
+					+ ((serie.episode < 10) ? "0"+serie.episode : serie.episode);
+
+				var d = new Date(Date.parse(serie.expected));
+
+				if($("#serie_line_" + serie.id).length == 0) 
+				{
+					tr = $('<tr></tr>');
+					tr.attr('id','serie_line_' + serie.id);
+					tr.attr('class',"serie_line");
+					$("#serielist").append(tr);
+				} else
+				{
+					$("#serie_line_" + serie.id).html('');
+				}
+				link = $('<a></a>')
+					.attr('id',"serie_" + serie.id)
+					.attr('href','#')
+					.html(serie["name"])
+					.click(function() {
+							addTab(serie["name"],serie.id);
+							return false;
+						});
+				td = $('<td></td>')
+					.addClass('td_tvshow');
+				td.append(link);
+				$("#serie_line_" + serie.id).append(td);
+
+				td = $('<td></td>')
+					.addClass('td_episode')
+					.html(series_episode);
+				$("#serie_line_" + serie.id).append(td);
+
+				td = $('<td></td>')
+					.addClass('td_status')
+					.html(serieStatus(serie.status));
+				$("#serie_line_" + serie.id).append(td);
+
+				td = $('<td></td>')
+					.addClass('td_expected')
+					.html(d.toLocaleDateString());
+				$("#serie_line_" + serie.id).append(td);
+
+			}
+		}
+		stop_loading()
+	});
+}
+
+
+
 function load_serieData()
 {
 	start_loading()
@@ -241,8 +313,9 @@ function load_serieData()
 	});	
 }
 
-function get_serielist(sid)
+/*function get_serielist(sid)
 {
+	return true;
 	$("#serielist").load('series_list2.php', sid, function(){
 		$("a[id^='serie_']").click(function() {
 			tabTitle = $(this).text();
@@ -255,7 +328,7 @@ function get_serielist(sid)
 			$("#serie_"+sid).click();
 		}
 	});
-}
+}*/
 
 function load_tracker_conf(event,login)
 {
@@ -775,7 +848,8 @@ function addSerie(id)
 							'series_id': serie_id,
 							}]})
 					};
-			get_serielist(serie_id);
+			//get_serielist(serie_id);
+			get_serielist();
 			show_info(result.error);
 		}
 	});
