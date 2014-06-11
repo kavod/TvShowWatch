@@ -200,12 +200,15 @@ function get_serielist()
 				{
 					$("#serie_line_" + serie.id).html('');
 				}
+
 				link = $('<a></a>')
 					.attr('id',"serie_" + serie.id)
 					.attr('href','#')
 					.html(serie["name"])
 					.click(function() {
-							addTab(serie["name"],serie.id);
+							tabTitle = $(this).text();
+							id = $(this).attr('id').substring(6);
+							addTab(tabTitle,id);
 							return false;
 						});
 				td = $('<td></td>')
