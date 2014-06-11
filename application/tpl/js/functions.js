@@ -268,6 +268,7 @@ function load_serieData()
 						episode_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
 						episode_label = '#current_episode' + opened_tabs[sid];
 						pattern_field = '#data' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
+						emails_selector = '#emails_' + opened_tabs[sid];
 
 						season = (result[serie].season > 9) ? result[serie].season : '0' + result[serie].season;
 						episode = (result[serie].episode > 9) ? result[serie].episode : '0' + result[serie].episode;
@@ -277,6 +278,8 @@ function load_serieData()
 						format_2digits(season_selector);
 						format_2digits(episode_selector);
 						$(pattern_field).val(result[serie].pattern);
+						emails = result[serie].emails;
+
 						switch(result[serie].status)
 						{
 							case 10:
@@ -290,6 +293,29 @@ function load_serieData()
 								$("#tab_push" + opened_tabs[sid]).attr("title", serieStatus(result[serie].status));
 								$( "#tabs_serie_" + opened_tabs[sid] ).tabs( "disable", 3 );
 								break;
+						}
+
+						for (key in emails)
+						{
+							email = emails[key];
+							li = $('<li></li>')
+								.attr('id','email_' + opened_tabs[sid] + '_' + key);
+							node = $('<label></label>').html('Emails '+(parseInt(key)+1));
+							li.append(node);
+							node = $('<span></span>').addClass('email').html(email);
+							li.append(node);
+
+							span = $('<span></span>')
+								.addClass("ui-icon ui-icon-circle-close")
+								.attr('title',"Remove email")
+								.attr('email',email)
+								.click($.proxy(del_email,null,opened_tabs[sid],this));
+						
+							node = $('<div></div>')
+								.attr("style","display:inline-block");
+							node.append(span);
+							li.append(node);
+							$(emails_selector).append(li);
 						}
 
 						var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
@@ -443,7 +469,7 @@ function addTab(tabTitle,id)
 		$('#s' + id).load('tpl/serie.html', function() 
 		{
 			$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
-			load_email(id);
+			//load_email(id);
 			load_serie_keywords(id)
 			apply_jcss();
 			$( "#tabs" ).tabs("option", "active", tabCounter);
