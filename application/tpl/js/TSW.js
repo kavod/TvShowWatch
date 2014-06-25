@@ -1,3 +1,6 @@
+var serie_time = "0";
+var series_data = new Array();
+var loading_in_progress = false;
 $(function() {
 $.ajaxSetup({
     // Disable caching of AJAX responses
@@ -87,7 +90,8 @@ $.ajaxSetup({
 		}
 		get_conf();
 		apply_jcss();
-		//load_series();
+		var source = new EventSource("api/TvShowWatch.php?action=streamGetSeries");
+		source.onmessage = check_update;
 		stop_loading();
 	});
 

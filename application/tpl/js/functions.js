@@ -52,42 +52,6 @@ function load_logs()
 	});
 }
 
-function load_email(id)
-{
-	$.post( "email_list2.php", {"id":id})
-	.done(function( data ) 
-	{
-		$('#s' + id +' .emails').html(data);
-		$('#s' + id +' .emails>li>div>.ui-icon-circle-close').click($.proxy(del_email,null,id,this));
-	});
-}
-
-function load_serie_keywords(id)
-{
-	$.post( "keyword_list2.php", {"id":id})
-	.done(function( data ) 
-	{
-		$('#keywords_list' + id).html(data);
-		$( "#keywords_list" + id ).sortable({
-			placeholder: "ui-state-highlight",
-			distance: 15,
-			items: "li:not(.ui-state-disabled)",
-			axis: "y",
-			stop: save_serie_keywords
-		});
-		$( "#keywords_list" +id ).disableSelection();
-		$("#trash" +id ).droppable({
-			accept: "#keywords_list" + id + " li",
-			hoverClass: "ui-state-hover",
-			drop: function(ev, ui) {
-				ui.draggable.remove();
-			}
-		});
-		$( "#keyword_add"+id ).submit(event, add_serie_keyword);
-		$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
-	});
-}
-
 function load_keywords(keywords)
 {
 	for (key in keywords)
@@ -164,11 +128,8 @@ function testRunning()
 	});
 }
 
-var series_data = new Array();
-
 function get_serielist()
 {
-	start_loading()
 	$.ajax({  
 		type: "GET", 
 		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=0"
@@ -179,6 +140,9 @@ function get_serielist()
 		if (result.ok)
 		{
 			series_data = result.result;
+			header = $("#serielist tr:first-child");
+			$("#serielist").html('');
+			$("#serielist").append(header);
 			for (serie_id in series_data)
 			{
 				serie = series_data[serie_id];
@@ -230,18 +194,81 @@ function get_serielist()
 					.addClass('td_expected')
 					.html(d.toLocaleDateString());
 				$("#serie_line_" + serie.id).append(td);
-
 			}
 		}
-		stop_loading()
+		loading_in_progress = true;
+		$.ajax({  
+			type: "GET", 
+			url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
+		})
+		.done(function( data )  
+		{		
+			result = compute_data(data);
+			if (result.ok)
+			{
+				series_data = result.result; 
+				load_serieData();
+				loading_in_progress = false;
+			}
+		});
 	});
 }
 
+function check_update(event)
+{
+	if (serie_time == "0")
+	{
+		initial_update = true;
+		start_loading();
+	}
+	if (serie_time != event.data)
+	{
+		serie_time = event.data;
+		get_serielist();
+		if (initial_update)
+			stop_loading();
+	}
+}
 
+function load_email(id)
+{
+	$.post( "email_list2.php", {"id":id})
+	.done(function( data ) 
+	{
+		$('#s' + id +' .emails').html(data);
+		$('#s' + id +' .emails>li>div>.ui-icon-circle-close').click($.proxy(del_email,null,id,this));
+	});
+}
+
+function load_serie_keywords(id)
+{
+	$.post( "keyword_list2.php", {"id":id})
+	.done(function( data ) 
+	{
+		$('#keywords_list' + id).html(data);
+		$( "#keywords_list" + id ).sortable({
+			placeholder: "ui-state-highlight",
+			distance: 15,
+			items: "li:not(.ui-state-disabled)",
+			axis: "y",
+			stop: save_serie_keywords
+		});
+		$( "#keywords_list" +id ).disableSelection();
+		$("#trash" +id ).droppable({
+			accept: "#keywords_list" + id + " li",
+			hoverClass: "ui-state-hover",
+			drop: function(ev, ui) {
+				ui.draggable.remove();
+			}
+		});
+		$( "#keyword_add"+id ).submit(event, add_serie_keyword);
+		$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
+	});
+}
 
 function load_serieData()
 {
-	start_loading()
+	/*start_loading()
 	$.ajax({  
 		type: "GET", 
 		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
@@ -251,14 +278,18 @@ function load_serieData()
 		result = compute_data(data);
 		if (result.ok)
 		{
-			result = result.result;
+			result = result.result;*/
+
+			result = series_data;
 			for (sid in opened_tabs)
 			{
 				var tabs = $( "#tabs_serie_" + opened_tabs[sid] ).tabs();
+				serie_found = false;
 				for (serie in result)
 				{
 					if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
 					{
+						serie_found = true;
 						$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
 						if (typeof(result[serie].tvdb.banner) != 'undefined')
 							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
@@ -336,10 +367,14 @@ function load_serieData()
 						
 					}
 				}
-			}
+				if (!serie_found)
+				{
+					closeTab($( "#tabs>nav" ).find( "li[aria-controls='s"+ opened_tabs[sid] +"']" ));
+				}
+			}/*
 		}
 		stop_loading()
-	});	
+	});*/	
 }
 
 /*function get_serielist(sid)
@@ -395,6 +430,8 @@ function serieStatus(status_id)
 	}
 }
 
+
+
 function apply_jcss() 
 {
 	// Tab management
@@ -405,7 +442,7 @@ function apply_jcss()
 	$( 'input[type="submit"]' ).button();
 
 	// Serie List content
-	get_serielist();
+	//get_serielist();
 
 	// Serie detail content
 	load_serieData();
@@ -445,12 +482,29 @@ function conf_ko() {
 	$('#testRunning').text('Not configured');
 }
 
+function check_loading_in_progress()
+{
+	if(loading_in_progress)
+	{
+		setTimeout(function() { check_loading_in_progress(); }, 1000);
+	} else
+		stop_loading();
+}
+
 function addTab(tabTitle,id) 
 {
 	var tabs = $('#tabs');
 	var found = false;
-	var label = tabTitle || "Tab " + tabCounter,
-    li = $( tabTemplate.replace( /#\{href\}/g, "#s" + id ).replace( /#\{label\}/g, label ) );
+	var label = tabTitle || "Tab " + tabCounter;
+	var li = $( tabTemplate.replace( /#\{href\}/g, "#s" + id ).replace( /#\{label\}/g, label ) );
+
+	if(loading_in_progress)
+	{
+		start_loading();
+		setTimeout(function() { check_loading_in_progress(); }, 1000);
+		
+	}
+	
 
 	for (i in opened_tabs)
 	{

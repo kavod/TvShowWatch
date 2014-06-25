@@ -403,6 +403,23 @@ if (isset($_GET['action']))
 			die(json_encode($TSW->getSeries($load_tvdb)));
 			break;
 
+		case "streamGetSeries":
+			$load_tvdb = (isset($_GET['load_tvdb']) && $_GET['load_tvdb']==1) ? true : false;
+			try {
+				if (!isset($TSW))
+					$TSW = new TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,$debug);
+			} catch (Exception $e)
+			{
+				die(json_encode(array('rtn' => $e->getCode(), 'error' => $e->getMessage())));
+			}
+			$TSW->auth();
+			header('Content-Type: text/event-stream');
+			header('Cache-Control: no-cache');
+			//echo "data:".json_encode($TSW->getSeries($load_tvdb))."\n\n";
+			echo "data:".filemtime(SERIES_FILE)."\n\n";
+			flush();
+			break;
+
 		case "getSerie":
 			try {
 				if (!isset($TSW))
