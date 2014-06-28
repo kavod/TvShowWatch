@@ -47,7 +47,14 @@
 	<section id="keywords###">
 
 		<form id="keyword_add###" serie_id="###">
-			<ul id="keywords_list###" class="sortable" serie_id="###"></ul>
+			<ul id="keywords_list###" class="sortable" serie_id="###">
+				<li class="keyword ui-state-default ui-state-disabled" id="keyword_add_li###">
+					<input type="hidden" name="serie_id" value="###" />
+					<input type="text" name="keywords_new" placeholder="Add a new keyword" required />
+					<input type="submit" id="add_keyword{$serie_id}" value="Add" />
+				</li>
+				<li class="keyword ui-state-default ui-state-disabled" id="trash###" title="Drag here to delete">Drag here to delete</span></li>
+			</ul>
 		</form>
 		<button class="resetKeywords" serie_id="###">Reset keywords</button>
 

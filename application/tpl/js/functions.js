@@ -286,7 +286,34 @@ function remove_after_hide(node)
 
 function load_serie_keywords(id)
 {
-	$.post( "keyword_list2.php", {"id":id})
+	for (serie in series_data)
+	{
+		if (parseInt(id) == parseInt(series_data[serie].id))
+		{
+			keywords_selector = '#keywords_list' + id;
+			keywords = series_data[serie].keywords;
+			if (keywords.length < ($(keywords_selector + ">li").length-2))
+			{
+				$( keywords_selector + ">li:gt(" + (keywords.length-1) + "):lt(" + ($(keywords_selector + ">li").length-3) +")").remove();
+			}
+			for (key in keywords)
+			{
+				keyword = keywords[key];
+				if (key < ($(keywords_selector + ' li').length-2))
+				{
+					li = $(keywords_selector+' li:eq('+key+')');
+				} else
+				{
+					li = $('<li></li>')
+						.addClass('keyword ui-state-default');
+					$('#keyword_add_li' + id).before(li);
+				}
+				populate_keyword(li,id,keyword)();
+			}
+		}
+	}
+
+	/*$.post( "keyword_list2.php", {"id":id})
 	.done(function( data ) 
 	{
 		$('#keywords_list' + id).html(data);
@@ -307,7 +334,24 @@ function load_serie_keywords(id)
 		});
 		$( "#keyword_add"+id ).submit(event, add_serie_keyword);
 		$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
-	});
+	});*/
+}
+
+function populate_keyword(li,id,keyword) 
+{
+	return function(data, textStatus,jqXHR ) 
+	{
+		li.attr('title',keyword);
+		li.html(keyword);
+		$( "#keywords_list" + id ).sortable({
+			placeholder: "ui-state-highlight",
+			distance: 15,
+			items: "li:not(.ui-state-disabled)",
+			axis: "y",
+			stop: save_serie_keywords
+		});
+		$( "#keywords_list" +id ).disableSelection();
+	}
 }
 
 function load_serieData()
@@ -358,6 +402,7 @@ function load_serieData()
 						break;
 				}
 				load_email(opened_tabs[sid]);
+				load_serie_keywords(id);
 
 				var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
 				$(season_selector).change(proxy);
@@ -514,7 +559,27 @@ function addTab(tabTitle,id)
 		$('#s' + id).load('tpl/serie.html', function() 
 		{
 			$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
-			load_serie_keywords(id)
+
+			// load_serie_keywords(id)
+			$( "#keywords_list" + id ).sortable({
+				placeholder: "ui-state-highlight",
+				distance: 15,
+				items: "li:not(.ui-state-disabled)",
+				axis: "y",
+				stop: save_serie_keywords
+			});
+			$( "#keywords_list" +id ).disableSelection();
+			$("#trash" +id ).droppable({
+				accept: "#keywords_list" + id + " li",
+				hoverClass: "ui-state-hover",
+				drop: function(ev, ui) {
+					ui.draggable.remove();
+				}
+			});
+			$( "#keyword_add"+id ).submit(event, add_serie_keyword);
+			$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
+			// End load_serie_keywords(id)
+			
 			apply_jcss();
 			$( "#tabs" ).tabs("option", "active", tabCounter);
 			tabCounter++;
