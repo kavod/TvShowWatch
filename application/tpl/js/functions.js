@@ -242,14 +242,45 @@ function load_email(id)
 		{
 			emails_selector = '#emails_' + id;
 			emails = series_data[serie].emails;
-			$(emails_selector).html('');
+			//$(emails_selector).html('');
+			/*alert('emails.length='+emails.length+';$(emails_selector).length='+$(emails_selector).length);
+			if (emails.length > $(emails_selector).length)
+				$( emails_selector + ">li:gt(" + (emails.length+1) + ")" )*/
 			for (key in emails)
 			{
 				email = emails[key];
-				li = $('<li></li>');
-				li.load('tpl/email_line.html', populate_email($(emails_selector),li,(parseInt(key)+1),email));
+				if (key < $(emails_selector + ' li').length)
+				{
+					li = $(emails_selector+' li:eq('+key+')');
+					populate_email(li,(parseInt(key)+1),email)();
+				} else
+				{
+					li = $('<li></li>');
+					$(emails_selector).append(li);
+					li.load('tpl/email_line.html', populate_email(li,(parseInt(key)+1),email));
+				}
 			}
 		}
+	}
+}
+
+function populate_email(li,num,email) 
+{
+	return function(data, textStatus,jqXHR ) 
+	{
+		li.find('label').html('Emails '+num);
+		li.find('.email').html(email);
+		li.find('.ui-icon-circle-close')
+			.attr('email',email)
+			.click($.proxy(del_email,null,opened_tabs[sid],this));
+	}
+}
+
+function remove_after_hide(node) 
+{
+	return function(data, textStatus,jqXHR ) 
+	{
+		node.remove();
 	}
 }
 
@@ -277,19 +308,6 @@ function load_serie_keywords(id)
 		$( "#keyword_add"+id ).submit(event, add_serie_keyword);
 		$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
 	});
-}
-
-function populate_email(ul,li,num,email) 
-{
-	return function(data, textStatus,jqXHR ) 
-	{
-		li.find('label').html('Emails '+num);
-		li.find('.email').html(email);
-		li.find('.ui-icon-circle-close')
-			.attr('email',email)
-			.click($.proxy(del_email,null,opened_tabs[sid],this));
-		ul.append(li);
-	}
 }
 
 function load_serieData()
@@ -606,7 +624,7 @@ function del_email(id,node)
 {
 	event.preventDefault();
 	data = "serie_id="+id+"&email="+event.target.getAttribute('email');
-	$(event.target).parent().parent().hide('drop');
+	$(event.target).parent().parent().hide('drop',remove_after_hide($(event.target).parent().parent()));
 	$.post( "api/TvShowWatch.php?action=delemail", data)
 	.done(function( data )  
 	{
