@@ -130,6 +130,10 @@ function testRunning()
 
 function get_serielist()
 {
+	if(loading_in_progress)
+	{
+		setTimeout(function() { check_loading_in_progress(); }, 1000);
+	}
 	$.ajax({  
 		type: "GET", 
 		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=0"
@@ -232,12 +236,21 @@ function check_update(event)
 
 function load_email(id)
 {
-	$.post( "email_list2.php", {"id":id})
-	.done(function( data ) 
+	for (serie in series_data)
 	{
-		$('#s' + id +' .emails').html(data);
-		$('#s' + id +' .emails>li>div>.ui-icon-circle-close').click($.proxy(del_email,null,id,this));
-	});
+		if (parseInt(id) == parseInt(series_data[serie].id))
+		{
+			emails_selector = '#emails_' + id;
+			emails = series_data[serie].emails;
+			$(emails_selector).html('');
+			for (key in emails)
+			{
+				email = emails[key];
+				li = $('<li></li>');
+				li.load('tpl/email_line.html', populate_email($(emails_selector),li,(parseInt(key)+1),email));
+			}
+		}
+	}
 }
 
 function load_serie_keywords(id)
@@ -266,133 +279,93 @@ function load_serie_keywords(id)
 	});
 }
 
-function load_serieData()
+function populate_email(ul,li,num,email) 
 {
-	/*start_loading()
-	$.ajax({  
-		type: "GET", 
-		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
-	})
-	.done(function( data )  
-	{		
-		result = compute_data(data);
-		if (result.ok)
-		{
-			result = result.result;*/
-
-			result = series_data;
-			for (sid in opened_tabs)
-			{
-				var tabs = $( "#tabs_serie_" + opened_tabs[sid] ).tabs();
-				serie_found = false;
-				for (serie in result)
-				{
-					if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
-					{
-						serie_found = true;
-						$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
-						if (typeof(result[serie].tvdb.banner) != 'undefined')
-							$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
-						$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview);
-						$('#data' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
-						season_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
-						episode_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
-						episode_label = '#current_episode' + opened_tabs[sid];
-						pattern_field = '#data' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
-						emails_selector = '#emails_' + opened_tabs[sid];
-
-						season = (result[serie].season > 9) ? result[serie].season : '0' + result[serie].season;
-						episode = (result[serie].episode > 9) ? result[serie].episode : '0' + result[serie].episode;
-						$(season_selector).val(season);
-						$(episode_selector).val(episode);
-						$(episode_label).text('S' + season + 'E' + episode);
-						format_2digits(season_selector);
-						format_2digits(episode_selector);
-						$(pattern_field).val(result[serie].pattern);
-						emails = result[serie].emails;
-
-						switch(result[serie].status)
-						{
-							case 10:
-							case 15:
-							case 20:
-							case 21:
-								break;
-							case 30:
-							case 90:
-							default:
-								$("#tab_push" + opened_tabs[sid]).attr("title", serieStatus(result[serie].status));
-								$( "#tabs_serie_" + opened_tabs[sid] ).tabs( "disable", 3 );
-								break;
-						}
-
-						for (key in emails)
-						{
-							email = emails[key];
-							li = $('<li></li>')
-								.attr('id','email_' + opened_tabs[sid] + '_' + key);
-							node = $('<label></label>').html('Emails '+(parseInt(key)+1));
-							li.append(node);
-							node = $('<span></span>').addClass('email').html(email);
-							li.append(node);
-
-							span = $('<span></span>')
-								.addClass("ui-icon ui-icon-circle-close")
-								.attr('title',"Remove email")
-								.attr('email',email)
-								.click($.proxy(del_email,null,opened_tabs[sid],this));
-						
-							node = $('<div></div>')
-								.attr("style","display:inline-block");
-							node.append(span);
-							li.append(node);
-							$(emails_selector).append(li);
-						}
-
-						var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
-						$(season_selector).change(proxy);
-						$(episode_selector).change(proxy);
-						$('#data' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
-						$('#push' + opened_tabs[sid] + '>form').submit($.proxy(push_torrent,$('#push' + opened_tabs[sid] + '>form'),opened_tabs[sid]));
-						if (result[serie].nextEpisode === null)
-						{
-							$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
-							$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","label","last episode reached");
-						} else
-						{
-							$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
-						}
-						$('#data' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
-						$('#emails' + opened_tabs[sid] + '>.email_add').submit($.proxy(add_email,null,opened_tabs[sid]));
-						
-					}
-				}
-				if (!serie_found)
-				{
-					closeTab($( "#tabs>nav" ).find( "li[aria-controls='s"+ opened_tabs[sid] +"']" ));
-				}
-			}/*
-		}
-		stop_loading()
-	});*/	
+	return function(data, textStatus,jqXHR ) 
+	{
+		li.find('label').html('Emails '+num);
+		li.find('.email').html(email);
+		li.find('.ui-icon-circle-close')
+			.attr('email',email)
+			.click($.proxy(del_email,null,opened_tabs[sid],this));
+		ul.append(li);
+	}
 }
 
-/*function get_serielist(sid)
+function load_serieData()
 {
-	return true;
-	$("#serielist").load('series_list2.php', sid, function(){
-		$("a[id^='serie_']").click(function() {
-			tabTitle = $(this).text();
-			id = $(this).attr('id').substring(6);
-			addTab(tabTitle,id);
-			return false;
-		});
-		if (typeof sid !== 'undefined')
+	result = series_data;
+	for (sid in opened_tabs)
+	{
+		var tabs = $( "#tabs_serie_" + opened_tabs[sid] ).tabs();
+		serie_found = false;
+		for (serie in result)
 		{
-			$("#serie_"+sid).click();
+			if (parseInt(opened_tabs[sid]) == parseInt(result[serie].id))
+			{
+				serie_found = true;
+				$('#s' + opened_tabs[sid] + '>h1').text(result[serie].name);
+				if (typeof(result[serie].tvdb.banner) != 'undefined')
+					$('#s' + opened_tabs[sid] + '>.banner>img').attr('src',result[serie].tvdb.banner.replace("banners/graphical","banners/_cache/graphical"));
+				$('#s' + opened_tabs[sid] + '>.description').text(result[serie].tvdb.overview);
+				$('#data' + opened_tabs[sid] + '>.serie_status').text(serieStatus(result[serie].status));
+				season_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="season"]';
+				episode_selector = '#data' + opened_tabs[sid] + '>.episode_form>input[name="episode"]';
+				episode_label = '#current_episode' + opened_tabs[sid];
+				pattern_field = '#data' + opened_tabs[sid] + '>.episode_form>input[name="pattern"]';
+				emails_selector = '#emails_' + opened_tabs[sid];
+
+				season = (result[serie].season > 9) ? result[serie].season : '0' + result[serie].season;
+				episode = (result[serie].episode > 9) ? result[serie].episode : '0' + result[serie].episode;
+				$(season_selector).val(season);
+				$(episode_selector).val(episode);
+				$(episode_label).text('S' + season + 'E' + episode);
+				format_2digits(season_selector);
+				format_2digits(episode_selector);
+				$(pattern_field).val(result[serie].pattern);
+				emails = result[serie].emails;
+
+				switch(result[serie].status)
+				{
+					case 10:
+					case 15:
+					case 20:
+					case 21:
+						break;
+					case 30:
+					case 90:
+					default:
+						$("#tab_push" + opened_tabs[sid]).attr("title", serieStatus(result[serie].status));
+						$( "#tabs_serie_" + opened_tabs[sid] ).tabs( "disable", 3 );
+						break;
+				}
+				load_email(opened_tabs[sid]);
+
+				var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
+				$(season_selector).change(proxy);
+				$(episode_selector).change(proxy);
+				$('#data' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
+				$('#push' + opened_tabs[sid] + '>form').submit($.proxy(push_torrent,$('#push' + opened_tabs[sid] + '>form'),opened_tabs[sid]));
+				if (result[serie].nextEpisode === null)
+				{
+					$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","disabled",true);
+					$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').button("option","label","last episode reached");
+				} else
+				{
+					$('#data' + opened_tabs[sid] + '>.episode_form>.retrieve').click($.proxy(retrieve_episode,null,opened_tabs[sid],result[serie].nextEpisode.seasonnumber,result[serie].nextEpisode.episodenumber));
+				}
+				$('#data' + opened_tabs[sid] + '>.unschedule').off("click");
+				$('#data' + opened_tabs[sid] + '>.unschedule').click($.proxy(unschedule,null,opened_tabs[sid]));
+				$('#emails' + opened_tabs[sid] + '>.email_add').submit($.proxy(add_email,null,opened_tabs[sid]));
+				
+			}
 		}
-	});
-}*/
+		if (!serie_found)
+		{
+			closeTab($( "#tabs>nav>li[aria-controls='s"+ opened_tabs[sid] +"']" ));
+		}
+	}
+}
 
 function load_tracker_conf(event,login)
 {
@@ -523,7 +496,6 @@ function addTab(tabTitle,id)
 		$('#s' + id).load('tpl/serie.html', function() 
 		{
 			$('#s' + id).html($('#s' + id).html().replace(/###/g,id));
-			//load_email(id);
 			load_serie_keywords(id)
 			apply_jcss();
 			$( "#tabs" ).tabs("option", "active", tabCounter);
@@ -634,6 +606,7 @@ function del_email(id,node)
 {
 	event.preventDefault();
 	data = "serie_id="+id+"&email="+event.target.getAttribute('email');
+	$(event.target).parent().parent().hide('drop');
 	$.post( "api/TvShowWatch.php?action=delemail", data)
 	.done(function( data )  
 	{
@@ -641,7 +614,7 @@ function del_email(id,node)
 		if (result.ok)
 		{
 			show_info(result.error);
-			load_email(id);
+			//load_email(id);
 		}
 	});
 }
