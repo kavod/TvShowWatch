@@ -242,10 +242,10 @@ function load_email(id)
 		{
 			emails_selector = '#emails_' + id;
 			emails = series_data[serie].emails;
-			//$(emails_selector).html('');
-			/*alert('emails.length='+emails.length+';$(emails_selector).length='+$(emails_selector).length);
-			if (emails.length > $(emails_selector).length)
-				$( emails_selector + ">li:gt(" + (emails.length+1) + ")" )*/
+			if (emails.length < $(emails_selector + ">li").length)
+			{
+				$( emails_selector + ">li:gt(" + (emails.length-1) + ")" ).remove();
+			}
 			for (key in emails)
 			{
 				email = emails[key];
