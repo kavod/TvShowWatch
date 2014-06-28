@@ -49,15 +49,6 @@ function serieStatus($status_id)
 	}
 }
 
-/*function display_error($page='home',$msg='')
-{
-	$tpl = new raintpl(); //include Rain TPL
-	$tpl->assign( "page", $page);
-	$tpl->assign( "msg", $msg);
-	$tpl->draw( "general_conf" );
-	die();
-}*/
-
 function tracker_api_conf($post)
 {
 	$conf_out = '{"id":"' . $post['tracker_id'] . '","user":"'.$post['tracker_username'].'"';

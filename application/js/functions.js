@@ -312,29 +312,6 @@ function load_serie_keywords(id)
 			}
 		}
 	}
-
-	/*$.post( "keyword_list2.php", {"id":id})
-	.done(function( data ) 
-	{
-		$('#keywords_list' + id).html(data);
-		$( "#keywords_list" + id ).sortable({
-			placeholder: "ui-state-highlight",
-			distance: 15,
-			items: "li:not(.ui-state-disabled)",
-			axis: "y",
-			stop: save_serie_keywords
-		});
-		$( "#keywords_list" +id ).disableSelection();
-		$("#trash" +id ).droppable({
-			accept: "#keywords_list" + id + " li",
-			hoverClass: "ui-state-hover",
-			drop: function(ev, ui) {
-				ui.draggable.remove();
-			}
-		});
-		$( "#keyword_add"+id ).submit(event, add_serie_keyword);
-		$( "#keywords"+id +">.resetKeywords").click(reset_serie_keywords);
-	});*/
 }
 
 function populate_keyword(li,id,keyword) 
