@@ -12,6 +12,9 @@ cp /etc/crontab /root/crontab_backup
 # Install depedency modules
 /var/packages/python/target/bin/easy_install tvdb_api transmissionrpc requests
 
+# Create TvShowWatch user group
+synogroup --add TvShowWatch admin
+synogroup --descset TvShowWatch "The TvShowWatch users"
 
 exit 0
 
