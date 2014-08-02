@@ -395,7 +395,7 @@ class TSWmachine:
 		serie = result['result']
 		if (not os.path.isfile(filepath)):
 			return {'rtn':'422','error':messages.returnCode['422'].format(filepath)}
-		if (serie['status'] in [10,15,20]): # Status waiting for broadcast / waiting for run / searching torrent
+		if (serie['status'] in [10,15,20,21]): # Status waiting for broadcast / waiting for run / searching torrent / No tracker configured
 			season = int(serie['season'])
 			episode = int(serie['episode'])
 			result = self.getEpisode(serieID,season,episode)

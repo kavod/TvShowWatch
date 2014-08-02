@@ -865,9 +865,9 @@ function push_torrent(sid)
 				{
 					apply_jcss();
 					$( "#tabs_serie_" + sid ).tabs( "option", "active", 0 );
-					stop_loading();
 					show_info(result.error);
 				}
+				stop_loading();
 			}
 		});
 }
