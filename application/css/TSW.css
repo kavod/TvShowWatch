@@ -62,7 +62,7 @@ p {
 }
 
 #loading {
-	background: #000 url(../../tpl/images/ajax-loader.gif) no-repeat center center;
+	background: #000 url(../tpl/images/ajax-loader.gif) no-repeat center center;
 	height: 80px;
 	width: 80px;
 	position: fixed;
