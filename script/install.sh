@@ -29,8 +29,8 @@ echo "Apache conf directory: $APACHE_DIR"
 APACHE_USER="$(grep APACHE_RUN_USER /etc/apache2/envvars|cut -d'=' -f2)"
 APACHE_GROUP="$(grep APACHE_RUN_GROUP /etc/apache2/envvars|cut -d'=' -f2)"
 
-FILE="${APACHE_DIR}/sites-available/tvshowwatch"
-FILE_ENABLE="${APACHE_DIR}/sites-enabled/tvshowwatch"
+FILE="${APACHE_DIR}/sites-available/tvshowwatch.conf"
+FILE_ENABLE="${APACHE_DIR}/sites-enabled/tvshowwatch.conf"
 
 if [ -f ${FILE_ENABLE} ]
 then

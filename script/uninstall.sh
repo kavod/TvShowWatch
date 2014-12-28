@@ -22,8 +22,8 @@ DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 APACHE_DIR="$( apache2ctl -V|grep HTTPD_ROOT|cut -d'=' -f2|cut -d\" -f2 )"
 echo "Apache conf directory: $APACHE_DIR"
 
-FILE="${APACHE_DIR}/sites-available/tvshowwatch"
-FILE_ENABLE="${APACHE_DIR}/sites-enabled/tvshowwatch"
+FILE="${APACHE_DIR}/sites-available/tvshowwatch.conf"
+FILE_ENABLE="${APACHE_DIR}/sites-enabled/tvshowwatch.conf"
 
 if [ ! -f ${FILE_ENABLE} ]
 then
