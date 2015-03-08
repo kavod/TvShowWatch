@@ -570,7 +570,7 @@ class TSWmachine:
 			else:
 				return {'rtn':'408','error':messages.returnCode['408'].format(pattern)}
 		except Exception,e:
-			return {'rtn':'419','error':messages.returnCode['404'].format('TvDB')}
+			return {'rtn':'404','error':messages.returnCode['404'].format('TvDB')}
 
 	def logs(self,json_c=False):
 		global t
