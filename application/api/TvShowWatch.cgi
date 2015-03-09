@@ -8,21 +8,23 @@ import subprocess
 import cgi, cgitb 
 
 from constants import *
-import functions
+from functions import *
+
+form = cgi.FieldStorage() 
 
 class TvShowWatch():
 	def __init__(self,py_file = API_FILE, conffile = CONF_FILE, serielist = SERIES_FILE, debug = False, run_file = RUN_FILE):
 		self.debug = debug != False
 		self.auth = False
 		if not os.path.isfile(conffile):
-			raise Exception(conffile)
+			raise Exception("Configuration file " + conffile + " does not exist",401)
 		self.conffile = conffile
 		self.serielist = serielist
 		if not os.path.isfile(py_file):
-			raise Exception(py_file)
+			raise Exception("Configuration file " + py_file + " does not exist",401)
 		self.py_file = py_file
 		if not os.path.isfile(run_file):
-			raise Exception(run_file)
+			raise Exception("Configuration file " + run_file + " does not exist",401)
 		self.run_file = run_file
 		self.cmd = [self.py_file ,'-c',self.conffile.replace('"','\"') , '-s',self.serielist.replace('"','\"')]
 		self.run_cmd = [self.run_file,'-c',self.conffile.replace('"','\"'),'-s',self.serielist.replace('"','\"')]
@@ -155,13 +157,99 @@ class TvShowWatch():
 		cmd = PYTHON_EXEC + self.cmd + ["--action" , "logs"]
 		return self.__exec_cmd(cmd,"logs")
 
-TSW = TvShowWatch()
+
+for name, value in {
+    "action" : "get_conf",
+    "keywords" : "niouf"
+}.items():
+    form.list.append(cgi.MiniFieldStorage(name, value))
+form.list.append(cgi.MiniFieldStorage('keywords', "4015"))
+action = form.getvalue('action')
+debug = form.getvalue('debug')
+
+if action is not None:
+	if form.getvalue('debug') is not None:
+		debug = True
+	else:
+		debug = False
+		
+	if action == "run":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			sys.exit()
+		TSW.setAuth()
+		TSW.run()
+		sys.exit()
+		
+	elif action == 'save_conf':
+		result = '{"tracker":' + tracker_api_conf(form)
+		result += ',"transmission":' + transmission_api_conf(form)
+		result += ',"smtp":' + email_api_conf(form)
+		result += '}'
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			sys.exit()
+		TSW.setAuth()
+		if os.path.isfile(CONF_FILE):
+			conf = TSW.setConf(result)
+			if conf['rtn']=='200' or conf['rtn']=='302':
+				msg = "Configuration file saved"
+			else:
+				msg = "Error during configuration save: " + conf['error']
+		else:
+			conf = TSW.createConf(result)
+			if conf['rtn']=='200':
+				msg = 'Configuration file created'
+			else:
+				msg = 'Error during configuration creation: ' + conf['error']
+		
+		print json.dumps({"rtn":conf['rtn'],"error":msg})
+		sys.exit()
+		
+	elif action == 'get_conf':
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			sys.exit()
+		TSW.setAuth()
+		print TSW.getConf()
+		sys.exit()
+		
+	elif action == 'save_keywords':
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			sys.exit()
+		TSW.setAuth()
+		keywords = form.getlist('keywords')
+		if form.getvalue('serie_id') is not None and int(form.getvalue('serie_id'))>0:
+			res = TSW.setSerie(int(form.getvalue('serie_id')),json.dumps({"keywords":keywords}))
+			if res['rtn']!='200':
+				print json.dumps({"rtn":res['rtn'],"error":res['error']})
+				sys.exit()
+			print json.dumps({"rtn":200,"error":"Keywords updated"})
+		else:
+			res = TSW.setConf(json.dumps({"keywords":keywords}))
+			if res['rtn']!='200':
+				print json.dumps({"rtn":res['rtn'],"error":res['error']})
+				sys.exit()
+			print json.dumps({"rtn":200,"error":"Keywords updated"})
+		sys.exit()
+		
+
+'''TSW = TvShowWatch()
 TSW.setAuth()
 TSW.setConf('{"keywords":["niouf"]}')
 TSW.getConf()
 TSW.getSeries()
 TSW.getSerie("264586")
-TSW.getEpisode("264586","1","1")
+#TSW.getEpisode("264586","1","1")
 TSW.setSerie("264586",{"episode":2,"emails":[]})
 TSW.getSerie("264586")
 TSW.setSerie("264586",{"episode":1})
@@ -181,10 +269,10 @@ TSW.getSerie(264586)
 TSW.setSerie("264586",{"keywords":["plouf","niorf"]})
 TSW.resetAllKeywords()
 TSW.getSerie(264586)
-TSW.search("X files")
-TSW.testRunning()
+#TSW.search("X files")
+#TSW.testRunning()
 #TSW.run()
-TSW.logs()
+#TSW.logs()'''
 
 
 
