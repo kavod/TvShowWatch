@@ -2,6 +2,7 @@
 
 # Chown
 chown -R admin.users ${SYNOPKG_PKGDEST}
+chmod 755 "${SYNOPKG_PKGDEST}/application/api/TvShowWatch.cgi"
 
 # Link application/desktop redirection
 ln -s "${SYNOPKG_PKGDEST}/application" "/usr/syno/synoman/webman/3rdparty/TvShowWatch"

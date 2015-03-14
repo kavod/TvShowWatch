@@ -19,5 +19,5 @@ RUN_FILE=directories['scriptpath']+'/tvShowWatch.py'
 TMP_DIR='tmp'
 PYTHON_EXEC=[directories['python_exec']]
 CMD=[PYTHON_EXEC,RUN_FILE,'-c',CONF_FILE]
-os.environ['PATH'] += ':' + directories['python_path']
+os.environ['PATH'] = directories['python_path'] + ':' + os.environ['PATH']
 

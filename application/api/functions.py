@@ -26,7 +26,7 @@ def transmission_api_conf(post):
 	return json.dumps(conf_out)
 
 def email_api_conf(post):
-	if values.getvalue('smtp_enable') == '0':
+	if post.getvalue('smtp_enable') == '0':
 		return json.dumps({"enable":False})
 	else:
 		values = post

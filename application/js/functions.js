@@ -3,7 +3,7 @@ function load_logs()
 {
 	$.ajax({  
 		type: "GET", 
-		url: "api/TvShowWatch.php?action=logs"
+		url: api_url + "?action=logs"
 	})
 	.done(function( data )  
 	{
@@ -66,7 +66,7 @@ function get_conf(event)
 {
 	$.ajax({  
 		type: "GET", 
-		url: "api/TvShowWatch.php?action=get_conf"
+		url: api_url + "?action=get_conf"
 	})
 	.done(function( data )  
 	{
@@ -108,7 +108,7 @@ function get_arch()
 {
 	$.ajax({  
 		type: "GET", 
-		url: "api/TvShowWatch.php?action=get_arch"
+		url: api_url + "?action=get_arch"
 	})
 	.done(function( data )  
 	{
@@ -120,7 +120,7 @@ function testRunning()
 {
 	$.ajax({  
 		type: "GET", 
-		url: "api/TvShowWatch.php?action=testRunning"
+		url: api_url + "?action=testRunning"
 	})
 	.done(function( data )  
 	{
@@ -136,7 +136,7 @@ function get_serielist()
 	}
 	$.ajax({  
 		type: "GET", 
-		url: "api/TvShowWatch.php?action=getSeries&load_tvdb=0"
+		url: api_url + "?action=getSeries&load_tvdb=0"
 	})
 	.done(function( data )  
 	{
@@ -203,7 +203,7 @@ function get_serielist()
 		loading_in_progress = true;
 		$.ajax({  
 			type: "GET", 
-			url: "api/TvShowWatch.php?action=getSeries&load_tvdb=1"
+			url: api_url + "?action=getSeries&load_tvdb=1"
 		})
 		.done(function( data )  
 		{		
@@ -614,7 +614,7 @@ function reset_serie_keywords(event,ui)
 {
 	id = event.target.parentNode.getAttribute('serie_id');
 	data = {"serie_id":id}
-	$.post( "api/TvShowWatch.php?action=reset_serie_keywords", data)
+	$.post( api_url + "?action=reset_serie_keywords", data)
 	.done(function( data ) 
 	{
 		result = compute_data(data);
@@ -630,7 +630,7 @@ function reset_serie_keywords(event,ui)
 function resetAllKeywords()
 {
 	start_loading();
-	$.post( "api/TvShowWatch.php?action=reset_all_keywords")
+	$.post( api_url + "?action=reset_all_keywords")
 	.done(function( data ) 
 	{
 		result = compute_data(data);
@@ -653,7 +653,7 @@ function save_serie_keywords(event,ui)
 		keywords.push($(this).html());
 	});
 	data = {"serie_id":id,"keywords":keywords};
-	$.post( "api/TvShowWatch.php?action=save_keywords", data)
+	$.post( api_url + "?action=save_keywords", data)
 	.done(function( data ) 
 	{
 		result = compute_data(data);
@@ -667,7 +667,7 @@ function del_email(id,node)
 	event.preventDefault();
 	data = "serie_id="+id+"&email="+event.target.getAttribute('email');
 	$(event.target).parent().parent().hide('drop',remove_after_hide($(event.target).parent().parent()));
-	$.post( "api/TvShowWatch.php?action=delemail", data)
+	$.post( api_url + "?action=delemail", data)
 	.done(function( data )  
 	{
 		result = compute_data(data);
@@ -681,7 +681,7 @@ function del_email(id,node)
 
 function run() 
 {
-	var jqxhr = $.get( "api/TvShowWatch.php?action=run", function() {
+	var jqxhr = $.get( api_url + "?action=run", function() {
 	  show_info("Successfully run");
 	});
 }
@@ -699,7 +699,7 @@ function save_conf(event)
 	// Stop form from submitting normally
 	event.preventDefault();
 	var data = $('#param').serialize();
-	$.post( "api/TvShowWatch.php?action=save_conf", data)
+	$.post( api_url + "?action=save_conf", data)
 	.done(function( data ) 
 	{
 		result = compute_data(data);
@@ -719,7 +719,7 @@ function import_conf(event) {
 	formdata.append('configFile', $('#configFile')[0].files[0]);
 	$.ajax({  
 		type: "POST", 
-		url: "api/TvShowWatch.php?action=import_conf",  
+		url: api_url + "?action=import_conf",  
 		data: formdata,
 		contentType: false,
 		processData: false 
@@ -817,7 +817,7 @@ function save_keywords()
 		keywords.push($(this).html());
 	});
 	data = {"keywords":keywords};
-	$.post( "api/TvShowWatch.php?action=save_keywords", data)
+	$.post( api_url + "?action=save_keywords", data)
 	.done(function( data ) 
 	{  
 		result = compute_data(data);
@@ -848,7 +848,7 @@ function push_torrent(sid)
 	event.preventDefault();
 	start_loading();
 	var formObj = event.target;
-	var formURL = "api/TvShowWatch.php?action=pushTorrent";
+	var formURL = api_url + "?action=pushTorrent";
 	var formData = new FormData(formObj);
 	$.ajax({
 		url: formURL,
@@ -876,7 +876,7 @@ function check_episode(sid)
 {
 	event.preventDefault();
 	var data = $('#s' + sid + ' .episode_form').serialize();
-	$.post( "api/TvShowWatch.php?action=getEpisode", data)
+	$.post( api_url + "?action=getEpisode", data)
 	.done(function( data )  
 	{
 		season_selector = '#s' + sid + '>.episode_form>input[name="season"]';
@@ -910,7 +910,7 @@ function set_episode(sid)
 	event.preventDefault();
 	var data = $('#data' + sid + '>.episode_form').serialize();
 	
-	$.post( "api/TvShowWatch.php?action=setSerie", data)
+	$.post( api_url + "?action=setSerie", data)
 	.done(function( data )  
 	{
 		result = compute_data(data);
@@ -923,7 +923,7 @@ function add_email(sid)
 {
 	event.preventDefault();
 	var data = $('#emails' + sid + '>.email_add').serialize();
-	$.post( "api/TvShowWatch.php?action=addemail", data)
+	$.post( api_url + "?action=addemail", data)
 	.done(function( data )  
 	{
 		result = compute_data(data);
@@ -950,7 +950,7 @@ function addSerie(id)
 {
 	event.preventDefault();
 	var data = {'serie_id': id}
-	$.post( "api/TvShowWatch.php?action=addSerie", data)
+	$.post( api_url + "?action=addSerie", data)
 	.done(function( data )  
 	{
 		result = compute_data(data);
@@ -976,7 +976,7 @@ function unschedule(sid)
 	event.preventDefault();
 	var data = {"serie_id": sid};
 	
-	$.post( "api/TvShowWatch.php?action=delSerie", data)
+	$.post( api_url + "?action=delSerie", data)
 	.done(function( data )  
 	{
 		get_serielist();			

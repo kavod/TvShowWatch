@@ -1,6 +1,7 @@
 var serie_time = "0";
 var series_data = new Array();
 var loading_in_progress = false;
+var api_url = "api/TvShowWatch.php"
 $(function() {
 $.ajaxSetup({
     // Disable caching of AJAX responses
@@ -52,7 +53,7 @@ $.ajaxSetup({
 	$( "#tvshow_name" ).change(function() {
 			if ($(this).val().length>2)
 			{
-				$.get("api/TvShowWatch.php?action=search&pattern="+$(this).val())
+				$.get(api_url + "?action=search&pattern="+$(this).val())
 				.done(function(result) {
 					data = JSON.parse(result);
 					tvshow_result = data['result'];
@@ -90,7 +91,7 @@ $.ajaxSetup({
 		}
 		get_conf();
 		apply_jcss();
-		var source = new EventSource("api/TvShowWatch.php?action=streamGetSeries");
+		var source = new EventSource(api_url + "?action=streamGetSeries");
 		source.onmessage = check_update;
 		stop_loading();
 	});

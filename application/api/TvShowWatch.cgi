@@ -4,6 +4,7 @@
 import os
 import sys
 import json
+import time
 import subprocess
 import cgi, cgitb 
 
@@ -62,7 +63,7 @@ class TvShowWatch():
 		return self.__exec_cmd(cmd,"getConf")
 
 	def setConf(self,conf):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "config" , "--arg" , "{\"conf\":" + str(conf) + "}"]
+		cmd = PYTHON_EXEC + self.cmd + ["--action" , "config" , "--arg" , json.dumps({"conf":conf})]
 		return self.__exec_cmd(cmd,"setConf")
 
 	def createConf(self,conf):
@@ -82,21 +83,23 @@ class TvShowWatch():
 		return self.__exec_cmd(cmd,"getEpisode")
 
 	def setSerie(self,id,param):
-		arg = "{\"id\":" + str(id) + ",\"param\":{"
+		arg = {
+				"id":int(id),
+				"param":{},
+				"status":15
+				}
 		for (key,value) in param.items():
 			if key == "emails" and len(value) > 0:
-				arg += '"emails":[\"' + "\",\"".join(value) + '\"],'
+				arg['param']['emails'] = value
 			elif key == "emails" and len(value) < 1:
-				arg += '"emails":[],'
+				arg['param']['emails'] = []
 			elif key == "keywords" and len(value) > 0:
-				arg += '"keywords":[\"' + "\",\"".join(value) + '\"],'
+				arg['param']['keywords'] = value
 			elif key == "keywords" and len(value) < 1:
-				arg += '"keywords":[],'
+				arg['param']['keywords'] = []
 			else:
-				arg += '"' + str(key) + '":"' + str(value) + '",'
-		arg += '"status":15'
-		arg += "}}"
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "update" , "--arg" , arg]
+				arg['param'][str(key)] = str(value)
+		cmd = PYTHON_EXEC + self.cmd + ["--action" , "update" , "--arg" , json.dumps(arg)]
 		return self.__exec_cmd(cmd,"setSerie")
 	
 	def addemail(self,id,email):
@@ -137,7 +140,7 @@ class TvShowWatch():
 	def testRunning(self):
 		cmd = ['/var/packages/TvShowWatch/scripts/start-stop-status','status']
 		try:
-			return self.__exec_cmd(cmd,"testRunning").replace('tvShowWatch is ','')
+			return self.__exec_cmd(cmd,"testRunning",json_rtn=False).replace('tvShowWatch is ','')
 		except subprocess.CalledProcessError as e:
 			return "Not running..."
 
@@ -157,15 +160,10 @@ class TvShowWatch():
 		cmd = PYTHON_EXEC + self.cmd + ["--action" , "logs"]
 		return self.__exec_cmd(cmd,"logs")
 
-
-for name, value in {
-    "action" : "get_conf",
-    "keywords" : "niouf"
-}.items():
-    form.list.append(cgi.MiniFieldStorage(name, value))
-form.list.append(cgi.MiniFieldStorage('keywords', "4015"))
 action = form.getvalue('action')
 debug = form.getvalue('debug')
+if action != "streamGetSeries":
+	print "Content-type:text/html\r\n\r\n"
 
 if action is not None:
 	if form.getvalue('debug') is not None:
@@ -177,21 +175,22 @@ if action is not None:
 		try:
 			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
 		except Exception as e:
-			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]},ensure_ascii=False)
 			sys.exit()
 		TSW.setAuth()
 		TSW.run()
 		sys.exit()
 		
 	elif action == 'save_conf':
-		result = '{"tracker":' + tracker_api_conf(form)
-		result += ',"transmission":' + transmission_api_conf(form)
-		result += ',"smtp":' + email_api_conf(form)
-		result += '}'
+		result = {
+			"tracker": tracker_api_conf(form),
+			"transmission":transmission_api_conf(form),
+			"smtp": email_api_conf(form)
+			}
 		try:
 			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
 		except Exception as e:
-			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
 			sys.exit()
 		TSW.setAuth()
 		if os.path.isfile(CONF_FILE):
@@ -207,41 +206,283 @@ if action is not None:
 			else:
 				msg = 'Error during configuration creation: ' + conf['error']
 		
-		print json.dumps({"rtn":conf['rtn'],"error":msg})
+		print json.dumps({"rtn":conf['rtn'],"error":msg}, ensure_ascii=False)
 		sys.exit()
 		
 	elif action == 'get_conf':
 		try:
 			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
 		except Exception as e:
-			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			print json.dumps({'rtn':e.args[0],'error':e.args[1]}, ensure_ascii=False)
 			sys.exit()
 		TSW.setAuth()
-		print TSW.getConf()
+		print json.dumps(TSW.getConf())
 		sys.exit()
 		
 	elif action == 'save_keywords':
 		try:
 			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
 		except Exception as e:
-			print json.dumps({"rtn":e.args[0],"error":e.args[1]})
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
 			sys.exit()
 		TSW.setAuth()
 		keywords = form.getlist('keywords')
 		if form.getvalue('serie_id') is not None and int(form.getvalue('serie_id'))>0:
-			res = TSW.setSerie(int(form.getvalue('serie_id')),json.dumps({"keywords":keywords}))
+			res = TSW.setSerie(int(form.getvalue('serie_id')),{"keywords":keywords})
 			if res['rtn']!='200':
-				print json.dumps({"rtn":res['rtn'],"error":res['error']})
+				print json.dumps({"rtn":res['rtn'],"error":res['error']}, ensure_ascii=False)
 				sys.exit()
-			print json.dumps({"rtn":200,"error":"Keywords updated"})
+			print json.dumps({"rtn":200,"error":"Keywords updated"}, ensure_ascii=False)
 		else:
-			res = TSW.setConf(json.dumps({"keywords":keywords}))
+			res = TSW.setConf(json.dumps({"keywords":keywords}, ensure_ascii=False))
 			if res['rtn']!='200':
-				print json.dumps({"rtn":res['rtn'],"error":res['error']})
+				print json.dumps({"rtn":res['rtn'],"error":res['error']}, ensure_ascii=False)
 				sys.exit()
-			print json.dumps({"rtn":200,"error":"Keywords updated"})
+			print json.dumps({"rtn":200,"error":"Keywords updated"}, ensure_ascii=False)
 		sys.exit()
 		
+	elif action == "getSeries":
+		load_tvdb = (form.getvalue('load_tvdb')=='1')
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.getSeries(load_tvdb))
+		sys.exit()
+
+	elif action == "streamGetSeries":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print('Content-Type: text/event-stream\r\n'),
+		print('Cache-Control: no-cache\r\n\r\n'),
+		while True:
+			print "Event: server-time"
+			print("data:" + time.ctime(os.path.getmtime(SERIES_FILE)) + "\n\n"),
+			sys.stdout.flush()
+			time.sleep(5)
+		
+	elif action == "getSerie":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.getSerie(int(form.getvalue('id'))))
+		sys.exit()
+		
+	elif action == "delSerie":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.delSerie(int(form.getvalue('serie_id'))))
+		sys.exit()
+
+	elif action == "addSerie":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.addSerie(int(form.getvalue('serie_id'))))
+		sys.exit()
+		
+	elif action == "getEpisode":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.getEpisode(int(form.getvalue('serie_id')),int(form.getvalue('season')),int(form.getvalue('episode'))))
+		sys.exit()
+		
+	elif action == "setSerie":
+		if form.getvalue('season') is not None and form.getvalue('episode') is not None and form.getvalue('serie_id') is not None:
+			serie_id = int(form.getvalue('serie_id'))
+			season = int(form.getvalue('season'))
+			episode = int(form.getvalue('episode'))
+			pattern = form.getvalue('pattern')
+			if season * episode != 0:
+				try:
+					TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+				except Exception as e:
+					print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+					sys.exit()
+				TSW.setAuth()
+				try:
+					val_episode = TSW.getEpisode(serie_id, season, episode, 'en')
+				except Exception as e:
+					json.dumps({'rtn' : 419, 'error' : 'Episode S' + str(season).zfill(2) + 'E' + str(episode).zfill(2) + ' does not exist'})
+					sys.exit()
+			else:
+				json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
+				sys.exit()
+		else:
+			json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
+			sys.exit()
+
+		update = TSW.setSerie(serie_id,{'season':season,'episode':episode,'pattern':pattern,'expected':val_episode['result']['firstaired']})
+		if update['rtn'] != '200':
+			json.dumps({'rtn' : update['rtn'], 'error' : 'Error during TV Show update<br />'+update['error']})
+			sys.exit()
+		else:
+			json.dumps({'rtn' : 200, 'error' : 'TV Show updated'})
+			sys.exit()
+	
+	elif action == "addemail":
+		if form.getvalue('serie_id') == None or int(form.getvalue('serie_id')) == 0:
+			json.dumps({'rtn' : 499, 'error' : 'TV Show unfound'})
+			sys.exit()
+		if form.getvalue('email') == None or form.getvalue('email') == '':
+			json.dumps({'rtn' : 499, 'error' : 'Email blank'})
+			sys.exit()
+
+		id = int(form.getvalue('serie_id'))
+		email = str(form.getvalue('email'))
+
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		update = TSW.addemail(id,email)
+		if update['rtn'] != '200':
+			print json.dumps(update)
+			sys.exit()
+		else:
+			print json.dumps({'rtn':200,'error':'Tv Show updated'})
+		sys.exit()
+
+	elif action == "delemail":
+		if form.getvalue('serie_id') == None or int(form.getvalue('serie_id')) == 0:
+			json.dumps({'rtn' : 499, 'error' : 'TV Show unfound'})
+			sys.exit()
+		if form.getvalue('email') == None or form.getvalue('email') == '':
+			json.dumps({'rtn' : 499, 'error' : 'Email blank'})
+			sys.exit()
+
+		id = int(form.getvalue('serie_id'))
+		email = str(form.getvalue('email'))
+
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		update = TSW.delemail(id,email)
+		if update['rtn'] != '200':
+			print json.dumps(update)
+			sys.exit()
+		else:
+			print json.dumps({'rtn':200,'error':'Tv Show updated'})
+		sys.exit()
+		
+	elif action == "reset_serie_keywords":
+		if form.getvalue('serie_id') == None or int(form.getvalue('serie_id')) == 0:
+			json.dumps({'rtn' : 499, 'error' : 'TV Show unfound'})
+			sys.exit()
+		id = int(form.getvalue('serie_id'))
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		update = TSW.resetSerieKeywords(id)
+		if update['rtn'] != '200':
+			print json.dumps(update)
+			sys.exit()
+		else:
+			print json.dumps({'rtn':200,'error':'Keywords updated'})
+		sys.exit()
+
+	elif action == "reset_all_keywords":
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		update = TSW.resetAllKeywords()
+		if update['rtn'] != '200':
+			print json.dumps(update)
+			sys.exit()
+		else:
+			print json.dumps({'rtn':200,'error':'Keywords updated for all TV Shows'})
+		sys.exit()
+
+	elif action == "search":
+		if form.getValue('pattern') is not None:
+			pattern = form.getValue('pattern')
+		if form.getValue('pattern') is None or pattern=='':
+			print json.dumps({'rtn':499,'error':'TV Show unfound'})
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		result = TSW.search(pattern)
+		print json.dumps(update)
+		sys.exit()
+		
+	elif action == "pushTorrent":
+		if form.getvalue('serie_id') != None:
+			serie_id = form.getvalue('serie_id')
+		else:
+			print json.dumps({"rtn":499,"error":'TV Show unfound'}, ensure_ascii=False)
+			sys.exit()
+		if form['torrent'].filename:
+			fn = os.path.basename(form['torrent'].filename)
+			destination = '../' + TMP_DIR + '/' + fn
+			open(destination, 'wb').write(form['torrent'].file.read())
+			try:
+				TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			except Exception as e:
+				print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+				sys.exit()
+			TSW.setAuth()
+			print json.dumps(TSW.push(serie_id,destination), ensure_ascii=False)
+		else:
+			print json.dumps({"rtn":499,"error":'Enable to upload file'}, ensure_ascii=False)
+		sys.exit()
+		
+	elif action == 'logs':
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print json.dumps(TSW.logs(), ensure_ascii=False)
+		sys.exit()
+	
+	elif action == 'get_arch':
+		print ARCH
+		sys.exit()
+
+	elif action == 'testRunning':
+		try:
+			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+		except Exception as e:
+			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
+			sys.exit()
+		TSW.setAuth()
+		print TSW.testRunning()
+		sys.exit()
 
 '''TSW = TvShowWatch()
 TSW.setAuth()
@@ -273,6 +514,5 @@ TSW.getSerie(264586)
 #TSW.testRunning()
 #TSW.run()
 #TSW.logs()'''
-
 
 
