@@ -63,7 +63,7 @@ class TvShowWatch():
 		return self.__exec_cmd(cmd,"getConf")
 
 	def setConf(self,conf):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "config" , "--arg" , json.dumps({"conf":conf})]
+		cmd = PYTHON_EXEC + self.cmd + ["--action" , "config" , "--arg" , "{\"conf\":" + str(conf) + "}"]
 		return self.__exec_cmd(cmd,"setConf")
 
 	def createConf(self,conf):
@@ -78,7 +78,7 @@ class TvShowWatch():
 		cmd = PYTHON_EXEC + self.cmd + ["--action" , "list" , "--arg" , "{\"ids\":[" + str(id) + "]}"]
 		return self.__exec_cmd(cmd,"getSerie")
 
-	def getEpisode(self,serie_id,season,episode):
+	def getEpisode(self,serie_id,season,episode,lang='en'):
 		cmd = PYTHON_EXEC + self.cmd + ["--action" , "getEpisode" , "--arg" , "{\"id\":" + str(serie_id) + ",\"season\":" + str(season) + ",\"episode\":" + str(episode) + "}"]
 		return self.__exec_cmd(cmd,"getEpisode")
 
@@ -163,10 +163,11 @@ class TvShowWatch():
 action = form.getvalue('action')
 debug = form.getvalue('debug')
 if action != "streamGetSeries":
-	print "Content-type:text/html\r\n\r\n"
+	print("Content-type:text/html\r\n"),
+	print('Cache-Control: no-cache\r\n\r\n'),
 
 if action is not None:
-	if form.getvalue('debug') is not None:
+	if debug is not None:
 		debug = True
 	else:
 		debug = False
@@ -194,7 +195,7 @@ if action is not None:
 			sys.exit()
 		TSW.setAuth()
 		if os.path.isfile(CONF_FILE):
-			conf = TSW.setConf(result)
+			conf = TSW.setConf(json.dumps(result, ensure_ascii=False))
 			if conf['rtn']=='200' or conf['rtn']=='302':
 				msg = "Configuration file saved"
 			else:
@@ -226,7 +227,7 @@ if action is not None:
 			print json.dumps({"rtn":e.args[0],"error":e.args[1]}, ensure_ascii=False)
 			sys.exit()
 		TSW.setAuth()
-		keywords = form.getlist('keywords')
+		keywords = form.getlist('keywords[]')
 		if form.getvalue('serie_id') is not None and int(form.getvalue('serie_id'))>0:
 			res = TSW.setSerie(int(form.getvalue('serie_id')),{"keywords":keywords})
 			if res['rtn']!='200':
@@ -323,29 +324,29 @@ if action is not None:
 				try:
 					val_episode = TSW.getEpisode(serie_id, season, episode, 'en')
 				except Exception as e:
-					json.dumps({'rtn' : 419, 'error' : 'Episode S' + str(season).zfill(2) + 'E' + str(episode).zfill(2) + ' does not exist'})
+					print json.dumps({'rtn' : 419, 'error' : 'Episode S' + str(season).zfill(2) + 'E' + str(episode).zfill(2) + ' does not exist'})
 					sys.exit()
 			else:
-				json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
+				print json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
 				sys.exit()
 		else:
-			json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
+			print json.dumps({'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'})
 			sys.exit()
 
-		update = TSW.setSerie(serie_id,{'season':season,'episode':episode,'pattern':pattern,'expected':val_episode['result']['firstaired']})
+		update = TSW.setSerie(serie_id,{'season':season,'episode':episode,'pattern':pattern,'expected':val_episode['result']['firstaired'],'status':15})
 		if update['rtn'] != '200':
-			json.dumps({'rtn' : update['rtn'], 'error' : 'Error during TV Show update<br />'+update['error']})
+			print json.dumps({'rtn' : update['rtn'], 'error' : 'Error during TV Show update<br />'+update['error']})
 			sys.exit()
 		else:
-			json.dumps({'rtn' : 200, 'error' : 'TV Show updated'})
+			print json.dumps({'rtn' : 200, 'error' : 'TV Show updated'})
 			sys.exit()
 	
 	elif action == "addemail":
 		if form.getvalue('serie_id') == None or int(form.getvalue('serie_id')) == 0:
-			json.dumps({'rtn' : 499, 'error' : 'TV Show unfound'})
+			print json.dumps({'rtn' : 499, 'error' : 'TV Show unfound'})
 			sys.exit()
 		if form.getvalue('email') == None or form.getvalue('email') == '':
-			json.dumps({'rtn' : 499, 'error' : 'Email blank'})
+			print json.dumps({'rtn' : 499, 'error' : 'Email blank'})
 			sys.exit()
 
 		id = int(form.getvalue('serie_id'))
@@ -425,9 +426,9 @@ if action is not None:
 		sys.exit()
 
 	elif action == "search":
-		if form.getValue('pattern') is not None:
-			pattern = form.getValue('pattern')
-		if form.getValue('pattern') is None or pattern=='':
+		if form.getvalue('pattern') is not None:
+			pattern = form.getvalue('pattern')
+		if form.getvalue('pattern') is None or pattern=='':
 			print json.dumps({'rtn':499,'error':'TV Show unfound'})
 		try:
 			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
@@ -436,7 +437,7 @@ if action is not None:
 			sys.exit()
 		TSW.setAuth()
 		result = TSW.search(pattern)
-		print json.dumps(update)
+		print json.dumps(result)
 		sys.exit()
 		
 	elif action == "pushTorrent":

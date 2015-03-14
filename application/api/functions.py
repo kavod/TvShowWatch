@@ -9,21 +9,19 @@ def tracker_api_conf(post):
 	conf_out = {"id":post.getvalue('tracker_id'),"user":post.getvalue('tracker_username')}
 	if post.getvalue('tracker_password') != 'initial':
 		conf_out["password"] = post.getvalue('tracker_password')
-	return json.dumps(conf_out)
+	return conf_out
 
 def transmission_api_conf(post):
 	conf_out = {
 		"server":post.getvalue('trans_server'),
 		"port":post.getvalue('trans_port'),
-		"user":post.getvalue('trans_username')
+		"user":post.getvalue('trans_username'),
+		"slotNumber":post.getvalue('trans_slotNumber'),
+		"folder":post.getvalue('trans_folder')
 		}
 	if post.getvalue('trans_password') != 'initial':
 		conf_out["password"] = post.getvalue('trans_password')
-	conf_out.update({
-		"slotNumber":post.getvalue('trans_slotNumber'),
-		"folder":post.getvalue('trans_folder')
-		})
-	return json.dumps(conf_out)
+	return conf_out
 
 def email_api_conf(post):
 	if post.getvalue('smtp_enable') == '0':
@@ -39,4 +37,4 @@ def email_api_conf(post):
 		}
 	if values.getvalue('smtp_password') != 'initial':
 		conf_out["password"] = values.getvalue('smtp_password')
-	return json.dumps(conf_out)
+	return conf_out

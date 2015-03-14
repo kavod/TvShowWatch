@@ -1,7 +1,7 @@
 var serie_time = "0";
 var series_data = new Array();
 var loading_in_progress = false;
-var api_url = "api/TvShowWatch.php"
+var api_url = "api/TvShowWatch.cgi"
 $(function() {
 $.ajaxSetup({
     // Disable caching of AJAX responses
