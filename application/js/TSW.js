@@ -1,7 +1,7 @@
 var serie_time = "0";
 var series_data = new Array();
 var loading_in_progress = false;
-var api_url = "api/TvShowWatch.cgi"
+var api_url = "api/tvshowwatch"
 $(function() {
 $.ajaxSetup({
     // Disable caching of AJAX responses
@@ -91,7 +91,7 @@ $.ajaxSetup({
 		}
 		get_conf();
 		apply_jcss();
-		var source = new EventSource(api_url + "?action=streamGetSeries");
+		var source = new EventSource("api/streamGetSeries");
 		source.onmessage = check_update;
 		stop_loading();
 	});
