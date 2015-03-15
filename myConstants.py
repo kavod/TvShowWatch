@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 #encoding:utf-8
+import os
 import sys
 import json
 
 class myConstants(object):
-
 	CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
 	LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 	SCRIPT_PATH = sys.path[0] if sys.path[0] != '' else './'
@@ -15,7 +15,7 @@ class myConstants(object):
 def load_directories():
 	# Load directories paths
 	try:
-		dir_file_folder = sys.path[0] + '/directory.json' if sys.path[0] != '' else 'directory.json'
+		dir_file_folder = os.path.dirname(__file__) + '/./application/api/directory.json' if sys.path[0] != '' else '/application/api/directory.json'
 		json_data = open(dir_file_folder)
 		myConstants.PATH = dict(json.load(json_data))
 		myConstants.CONFIG_FILE = myConstants.PATH['configpath'] + '/config.xml'

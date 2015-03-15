@@ -15,7 +15,7 @@ from myDate import *
 import Prompt
 from TSWmachine import *
 from myTvDB import *
-from constants import *
+from myConstants import *
 
 load_directories()
 API_FILE = myConstants.SCRIPT_PATH + '/TSW_api.py'
@@ -480,12 +480,12 @@ def main():
     # Initialize more data
     m = TSWmachine(True,verbose)
     if args.action != 'init':
-	logging.debug('Loading of conffile: %s', args.config)
-	logging.debug('Loading of seriefile: %s', args.seriefile)
-	result = m.openFiles(args.config, args.seriefile)
-	if result['rtn']!='200':
-		print("Please first use tvShowWatch --action init")
-		sys.exit()
+		logging.debug('Loading of conffile: %s', args.config)
+		logging.debug('Loading of seriefile: %s', args.seriefile)
+		result = m.openFiles(args.config, args.seriefile)
+		if result['rtn']!='200':
+			print("Please first use tvShowWatch --action init")
+			sys.exit()
     else:
         result = m.createConf(args.config)
         if result['rtn']!='200':

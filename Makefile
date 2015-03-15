@@ -35,7 +35,7 @@ syno/package.tgz: syno/package.tar
 	gzip -c syno/package.tar > $@
 
 syno_directory: directory.syno.json
-	cp directory.syno.json directory.json
+	cp directory.syno.json application/api/directory.json
 clean:
 	rm -rf application/tmp/*.php
 	for i in `find . -name "*.pyc"`; do rm -rf $$i ; done

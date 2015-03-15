@@ -20,6 +20,7 @@ DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 LOG_DIR="${DIR}/etc"
 LOG_DIR_SED=$(echo $LOG_DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
+PATH_DIR_JSON="$DIR/application/api/directory.json"
 
 SYMLINK="${HOME}/public_html/tvshowwatch"
 
@@ -35,12 +36,12 @@ APACHE_GROUP="$(grep APACHE_RUN_GROUP /etc/apache2/envvars|cut -d'=' -f2)"
 chgrp ${APACHE_GROUP} ${DIR}/application/tmp
 
 # Create files
-cp -v "$DIR/directory.linux.json" "$DIR/directory.json"
+cp -v "$DIR/directory.linux.json" "${PATH_DIR_JSON}"
 
 # Substitute alias with script directory
 ln -s "${DIR}/application" "${SYMLINK}"
-sed -i "s/LOG_DIR/${LOG_DIR_SED}/g" "$DIR/directory.json"
-sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "$DIR/directory.json"
+sed -i "s/LOG_DIR/${LOG_DIR_SED}/g" "${PATH_DIR_JSON}"
+sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "${PATH_DIR_JSON}"
 
 # Python libraries installation
 #/usr/bin/env easy_install tvdb_api transmissionrpc requests

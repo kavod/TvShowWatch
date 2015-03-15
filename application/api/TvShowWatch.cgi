@@ -3,13 +3,18 @@
 
 import os
 import sys
+import imp
 import json
-import time
 import subprocess
 import cgi, cgitb 
 
 from constants import *
+
+sys.path.append(directories['scriptpath'])
+
+from TSWmachine import *
 from functions import *
+import time
 
 form = cgi.FieldStorage() 
 
@@ -29,6 +34,10 @@ class TvShowWatch():
 		self.run_file = run_file
 		self.cmd = [self.py_file ,'-c',self.conffile.replace('"','\"') , '-s',self.serielist.replace('"','\"')]
 		self.run_cmd = [self.run_file,'-c',self.conffile.replace('"','\"'),'-s',self.serielist.replace('"','\"')]
+		self.m = TSWmachine(True,False)
+		result = self.m.openFiles(conffile, serielist)
+		if result['rtn'] != '200':
+			return result
 
 	def setAuth(self,auth=True):
 		if self.auth != auth:
@@ -59,48 +68,37 @@ class TvShowWatch():
 			return result
 		
 	def getConf(self):
-		cmd = PYTHON_EXEC + self.cmd + ['--action','getconf']
-		return self.__exec_cmd(cmd,"getConf")
+		return self.m.getConf()
 
 	def setConf(self,conf):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "config" , "--arg" , "{\"conf\":" + str(conf) + "}"]
-		return self.__exec_cmd(cmd,"setConf")
+		return self.m.setConf(conf)
 
 	def createConf(self,conf):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "init" , "--arg" , "{\"conf\":" + str(conf) + "}"]
-		return self.__exec_cmd(cmd,"createConf")
+		return self.m.createConf(conf)
 
 	def getSeries(self,load_tvdb=False):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "list" , "--arg" , "{\"load_tvdb\":" + str(load_tvdb).lower() + "}"]
-		return self.__exec_cmd(cmd,"getSeries")
+		return self.m.getSeries('all',json_c=True,load_tvdb=load_tvdb)
 
 	def getSerie(self,id):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "list" , "--arg" , "{\"ids\":[" + str(id) + "]}"]
-		return self.__exec_cmd(cmd,"getSerie")
+		return self.m.getSeries(int(id),json_c=True,load_tvdb=False)
 
 	def getEpisode(self,serie_id,season,episode,lang='en'):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "getEpisode" , "--arg" , "{\"id\":" + str(serie_id) + ",\"season\":" + str(season) + ",\"episode\":" + str(episode) + "}"]
-		return self.__exec_cmd(cmd,"getEpisode")
-
+		return self.m.getEpisode(int(serie_id),int(season),int(episode))
+		
 	def setSerie(self,id,param):
-		arg = {
-				"id":int(id),
-				"param":{},
-				"status":15
-				}
+		arg = {"status": 15}
 		for (key,value) in param.items():
 			if key == "emails" and len(value) > 0:
-				arg['param']['emails'] = value
+				arg['emails'] = value
 			elif key == "emails" and len(value) < 1:
-				arg['param']['emails'] = []
+				arg['emails'] = []
 			elif key == "keywords" and len(value) > 0:
-				arg['param']['keywords'] = value
+				arg['keywords'] = value
 			elif key == "keywords" and len(value) < 1:
-				arg['param']['keywords'] = []
+				arg['keywords'] = []
 			else:
-				arg['param'][str(key)] = str(value)
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "update" , "--arg" , json.dumps(arg)]
-		return self.__exec_cmd(cmd,"setSerie")
+				arg[str(key)] = str(value)
+		return self.m.setSerie(int(id),arg,json_c=True)
 	
 	def addemail(self,id,email):
 		serie = self.getSerie(id)
@@ -117,25 +115,22 @@ class TvShowWatch():
 		return self.setSerie(id,{"emails":emails})
 
 	def delSerie(self,id):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "del" , "--arg" , "{\"id\":" + str(id) + "}"]
-		return self.__exec_cmd(cmd,"delSerie")
+		return self.m.delSerie(int(id))
 
 	def addSerie(self,id):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "add" , "--arg" , "{\"id\":" + str(id) + "}"]
-		return self.__exec_cmd(cmd,"addSerie")
+		return self.m.addSeries(int(id),[])
 
 	def resetSerieKeywords(self,id):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "resetKeywords" , "--arg" , "{\"id\":" + str(id) + "}"]
-		return self.__exec_cmd(cmd,"resetSerieKeywords")
+		return self.m.resetKeywords(int(id))
 
 	def resetAllKeywords(self):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "resetAllKeywords"]
-		return self.__exec_cmd(cmd,"resetAllKeywords")
-
+		return self.m.resetAllKeywords()
 
 	def search(self,pattern):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "search" , "--arg" , "{\"pattern\":\"" + str(pattern) + "\"}"]
-		return self.__exec_cmd(cmd,"search")
+		if pattern is None or len(pattern) < 1:
+			return {'rtn':415,'error':'Blank search'}
+			sys.exit()
+		return self.m.search(pattern)
 
 	def testRunning(self):
 		cmd = ['/var/packages/TvShowWatch/scripts/start-stop-status','status']
@@ -145,20 +140,15 @@ class TvShowWatch():
 			return "Not running..."
 
 	def push(self,serie_id,destination):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "push" , "--arg" , "{\"id\":" + str(serie_id) + ",\"filepath\":\"" + destination + "\"}"]
-		return self.__exec_cmd(cmd,"push")
+		return self.m.pushTorrent(int(serie_id),destination)
 
 	def run(self):
-		#myfile = open(LOGFILE, "a"):
 		cmd = ["date"]
 		print self.__exec_cmd(cmd,"date",json_rtn=False)
-		cmd = PYTHON_EXEC + self.run_cmd + ["--action" , "run"]
-		print self.__exec_cmd(self.run_cmd,"run",json_rtn=False)
-		return True
+		self.m.run()
 
 	def logs(self):
-		cmd = PYTHON_EXEC + self.cmd + ["--action" , "logs"]
-		return self.__exec_cmd(cmd,"logs")
+		return self.m.logs(json_c=True)
 
 action = form.getvalue('action')
 debug = form.getvalue('debug')
@@ -195,7 +185,7 @@ if action is not None:
 			sys.exit()
 		TSW.setAuth()
 		if os.path.isfile(CONF_FILE):
-			conf = TSW.setConf(json.dumps(result, ensure_ascii=False))
+			conf = TSW.setConf(result)
 			if conf['rtn']=='200' or conf['rtn']=='302':
 				msg = "Configuration file saved"
 			else:
@@ -235,7 +225,7 @@ if action is not None:
 				sys.exit()
 			print json.dumps({"rtn":200,"error":"Keywords updated"}, ensure_ascii=False)
 		else:
-			res = TSW.setConf(json.dumps({"keywords":keywords}, ensure_ascii=False))
+			res = TSW.setConf({"keywords":keywords})
 			if res['rtn']!='200':
 				print json.dumps({"rtn":res['rtn'],"error":res['error']}, ensure_ascii=False)
 				sys.exit()
@@ -448,7 +438,7 @@ if action is not None:
 			sys.exit()
 		if form['torrent'].filename:
 			fn = os.path.basename(form['torrent'].filename)
-			destination = '../' + TMP_DIR + '/' + fn
+			destination = TMP_DIR + '/' + fn
 			open(destination, 'wb').write(form['torrent'].file.read())
 			try:
 				TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)

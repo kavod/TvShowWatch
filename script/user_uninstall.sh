@@ -17,6 +17,7 @@ done
 DIR="$(dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 echo "Script directory: $DIR"
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
+PATH_DIR_JSON="$DIR/application/api/directory.json"
 
 SYMLINK="${HOME}/public_html/tvshowwatch"
 
@@ -28,5 +29,5 @@ fi
 
 # Remove site
 rm "${SYMLINK}"
-rm "${DIR}/directory.json"
+rm "${PATH_DIR_JSON}"
 

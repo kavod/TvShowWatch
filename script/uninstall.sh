@@ -17,6 +17,7 @@ done
 DIR="$(dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 echo "Script directory: $DIR"
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
+PATH_DIR_JSON="$DIR/application/api/directory.json"
 
 # Get Apache conf directory
 APACHE_DIR="$( apache2ctl -V|grep HTTPD_ROOT|cut -d'=' -f2|cut -d\" -f2 )"
@@ -37,7 +38,7 @@ service apache2 restart
 
 # Remove site
 rm "${FILE}"
-rm "${DIR}/directory.json"
+rm "${PATH_DIR_JSON}"
 
 CRONFILE="/etc/cron.hourly/tvshowwatch"
 if [ -f $CRONFILE ]; then

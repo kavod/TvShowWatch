@@ -7,7 +7,7 @@ import logging
 import argparse
 import json
 from TSWmachine import *
-from constants import *
+from myConstants import *
 
 load_directories()
 #CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'

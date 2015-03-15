@@ -15,7 +15,7 @@ from serieList import SerieList
 from functions import *
 from myTvDB import *
 from logger import *
-from constants import *
+from myConstants import *
 
 load_directories()
 

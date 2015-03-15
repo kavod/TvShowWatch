@@ -384,7 +384,9 @@ function load_serieData()
 				var proxy = $.proxy(check_episode,null,opened_tabs[sid]);
 				$(season_selector).change(proxy);
 				$(episode_selector).change(proxy);
+				$('#data' + opened_tabs[sid] + '>.episode_form').unbind('submit')
 				$('#data' + opened_tabs[sid] + '>.episode_form').submit($.proxy(set_episode,null,opened_tabs[sid]));
+				$('#push' + opened_tabs[sid] + '>form').unbind('submit')
 				$('#push' + opened_tabs[sid] + '>form').submit($.proxy(push_torrent,$('#push' + opened_tabs[sid] + '>form'),opened_tabs[sid]));
 				if (result[serie].nextEpisode === null)
 				{
