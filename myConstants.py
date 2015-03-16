@@ -15,7 +15,7 @@ class myConstants(object):
 def load_directories():
 	# Load directories paths
 	try:
-		dir_file_folder = sys.path[0] + 'directory.json'
+		dir_file_folder = sys.path[0] + '/directory.json'
 		json_data = open(dir_file_folder)
 		myConstants.PATH = dict(json.load(json_data))
 		myConstants.CONFIG_FILE = myConstants.PATH['configpath'] + '/config.xml'
