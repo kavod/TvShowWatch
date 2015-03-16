@@ -5,7 +5,7 @@ import os
 import sys
 import json
 
-filepath = './directory.json'
+filepath = os.path.dirname(os.path.abspath(__file__)) + '/directory.json'
 json_data = open(filepath)
 directories = json.load(json_data)
 
