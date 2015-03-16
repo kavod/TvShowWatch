@@ -1,14 +1,52 @@
 #!/bin/sh
-PATH_PYTHON=/var/packages/python/target/bin
+DNAME="TvShowWatch"
+INSTALL_DIR="/var/packages/TvShowWatch"
+PATH_PYTHON="/usr/bin"
 PATH=$PATH_PYTHON:$PATH
 CRONFILE=/etc/crontab
 TMPFILE=/tmp/crontab
 LogFile=/var/log/TSW.log
+SERVER="${INSTALL_DIR}/target/server.py"
+PID_FILE="${INSTALL_DIR}/target/application/tmp/TSW.pid"
 MINUTE="21"
 CRONLINE="\t*\t*\t*\t*\troot\t$PATH_PYTHON/python /var/packages/TvShowWatch/target/tvShowWatch.py -s\"/var/packages/TvShowWatch/etc/series.xml\" -c\"/var/packages/TvShowWatch/etc/config.xml\""
 CRONLINE="$CRONLINE --action run>>$LogFile"
 CRON_SED_LINE='/^[0-9]\{1,2\}'$(echo $CRONLINE | sed -e 's/[]/()$*.^|[]/\\&/g')'$/'
 #CRON_SED_LINE='/^[0-9][0-9]\t\*\t\*\t\*\t\*\t[a-z]\{1,\}\tpython \/var\/packages\/TvShowWatch\/target\/TSW_api\.py -s\"\/var\/packages\/TvShowWatch\/etc\/series\.xml\" -c\"\/var\/packages\/TvShowWatch\/etc\/config\.xml\">>\/var\/log\/serie\.log$/'
+
+start_daemon ()
+{          
+	echo "PATH=${PATH} ${PATH_PYTHON}/python ${SERVER}"
+    PATH=${PATH} ${PATH_PYTHON}/python ${SERVER}
+}                                   
+                  
+stop_daemon ()
+{                                       
+    kill `cat ${PID_FILE}`
+    wait_for_status 1 20 || kill -9 `cat ${PID_FILE}`
+    rm -f ${PID_FILE}
+}       
+                        
+daemon_status ()
+{     
+    if [ -f ${PID_FILE} ] && kill -0 `cat ${PID_FILE}` > /dev/null 2>&1; then
+        return
+    fi
+    rm -f ${PID_FILE}
+    return 1
+}
+ 
+wait_for_status ()
+{
+    counter=$2
+    while [ ${counter} -gt 0 ]; do
+        daemon_status
+        [ $? -eq $1 ] && return
+        let counter=counter-1
+        sleep 1
+    done
+    return 1
+}
 
 ValidateConfFile() {
         retval=""
@@ -57,6 +95,8 @@ StartPackage () {
         #sleep 1
         #/usr/syno/etc/rc.d/S04crond.sh start
 
+		#${PATH_PYTHON}/python /var/packages/TvShowWatch/target/server.py
+
         # Enable desktop icon & config file editor
 #       if [ ! -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
 #               ln -sf "/var/packages/TvShowWatch/target/application" "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
@@ -80,45 +120,69 @@ StopPackage () {
 
                  
 case $1 in                              
-        validate)                                          
-                retval=$( ValidateConfFile )
-                if [[ "$retval" == "1" ]]; then
-                        echo "Conf File validated"
-                else              
-                        echo "Conf File not validated"
-                fi                     
-                ;;                                   
-        start)                                                   
-                StartPackage
-                ;;
-        stop)
-                StopPackage
-                ;;                                         
-        restart)
-                StopPackage
-                sleep 1               
-                StartPackage                                              
-                ;;                   
-        status)                            
-                if [ "$(ps | grep tvShowWatch | grep -vc grep)" -gt "0" ]; then
-                        echo "tvShowWatch is running..."
-                        exit 0
-                fi                                
-                if [ "$(sed -n "${CRON_SED_LINE}p" $CRONFILE |wc -l)" -gt "0" ]; then
-                        echo "tvShowWatch is planned to run..."                                                      
-                        exit 0
-                fi
-                echo "tvShowWatch is not running..."
-                exit 1
-                ;;                 
-        log)                                                           
-                echo $LogFile                                             
-                exit 0
-                ;;                                  
-        *)                   
-                echo "Usage: $0 {start|stop|restart|status|log}" >&2
-                exit 1                     
-                ;;
+    validate)                                          
+		retval=$( ValidateConfFile )
+		if [[ "$retval" == "1" ]]; then
+		        echo "Conf File validated"
+		else              
+		        echo "Conf File not validated"
+		fi                     
+		;;                                   
+    start) 
+		if daemon_status; then
+		    echo ${DNAME} is already running
+		    exit 0
+		else
+		    echo Starting ${DNAME} ...                                         
+        	StartPackage
+		    start_daemon
+		    exit $?
+		fi
+		;;
+    stop)                     
+		if daemon_status; then                                            
+		    echo Stopping ${DNAME} ...
+        	StopPackage
+		    stop_daemon               
+		    exit $?                        
+		else                               
+		    echo ${DNAME} is not running   
+		    exit 0
+		fi
+		;;                                         
+    restart)
+        StopPackage
+        sleep 1               
+        StartPackage                                              
+        ;;                   
+    status)
+		if daemon_status; then                         
+		    echo ${DNAME} is running
+		    exit 0
+		else  
+		    echo ${DNAME} is not running
+		    exit 1        
+		fi                                           
+		;;                            
+        #if [ "$(ps | grep tvShowWatch | grep -vc grep)" -gt "0" ]; then
+        #        echo "tvShowWatch is running..."
+        #        exit 0
+        #fi                                
+        #if [ "$(sed -n "${CRON_SED_LINE}p" $CRONFILE |wc -l)" -gt "0" ]; then
+        #        echo "tvShowWatch is planned to run..."                                                      
+        #        exit 0
+        #fi
+        #echo "tvShowWatch is not running..."
+        #exit 1
+        #;;                 
+    log)                                                           
+        echo $LogFile                                             
+        exit 0
+        ;;                                  
+    *)                   
+        echo "Usage: $0 {start|stop|restart|status|log}" >&2
+        exit 1                     
+        ;;
 esac                                        
  
 

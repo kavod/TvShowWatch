@@ -13,8 +13,13 @@ import time
 
 from constants import *
 
-local_dir = os.path.abspath(os.getcwd())
-
+#local_dir = os.path.abspath(os.getcwd())
+local_dir = '/var/packages/TvShowWatch/target'
+from cherrypy.process.plugins import Daemonizer
+from cherrypy.process.plugins import PIDFile
+d = Daemonizer(cherrypy.engine)
+d.subscribe()
+PIDFile(cherrypy.engine, local_dir + '/application/tmp/TSW.pid').subscribe()
 
 class TvShowWatch():
 	def __init__(self,py_file = API_FILE, conffile = CONF_FILE, serielist = SERIES_FILE, debug = False, run_file = RUN_FILE):

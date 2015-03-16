@@ -41,8 +41,10 @@ clean:
 	for i in `find . -name "*.pyc"`; do rm -rf $$i ; done
 	for i in `find . -name "*~"`; do rm -rf $$i ; done
 	for i in `find . -name "*.xml"`; do rm -rf $i ; done
+	for i in `find . -name "*.pid"`; do rm -rf $i ; done
 
 mrproper: clean
 	rm -rf $(EXEC)
 	rm -rf syno/package.tar
 	rm -rf syno/package.tgz
+	rm -rf directory.json

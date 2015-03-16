@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # Chown
-chown -R admin.users ${SYNOPKG_PKGDEST}
+#chown -R admin.users ${SYNOPKG_PKGDEST}
 #chmod 755 "${SYNOPKG_PKGDEST}/application/api/TvShowWatch.cgi"
-chown -R root.http "/usr/syno/etc/packages/TvShowWatch"
-chmod 760 "/usr/syno/etc/packages/TvShowWatch"
+#chown -R root.root "/usr/syno/etc/packages/TvShowWatch"
+#chmod 700 "/usr/syno/etc/packages/TvShowWatch"
 #chmod 755 "${SYNOPKG_PKGDEST}/application/api/TvShowWatch.cgi"
 
 # Link application/desktop redirection
@@ -14,12 +14,12 @@ chmod 760 "/usr/syno/etc/packages/TvShowWatch"
 cp /etc/crontab /root/crontab_backup
 
 # Install depedency modules
-/var/packages/python/target/bin/easy_install tvdb_api transmissionrpc requests cherrypy
+#/var/packages/python/target/bin/easy_install tvdb_api transmissionrpc requests cherrypy
 /usr/bin/easy_install tvdb_api transmissionrpc requests cherrypy
 
 # Create TvShowWatch user group
-synogroup --add TvShowWatch admin
-synogroup --descset TvShowWatch "The TvShowWatch users"
+#synogroup --add TvShowWatch admin
+#synogroup --descset TvShowWatch "The TvShowWatch users"
 
 exit 0
 
