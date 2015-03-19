@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import transmissionrpc
 import smtplib
 import logging
+import myConstants
 from transmissionrpc.error import TransmissionError, HTTPHandlerError
 from email.mime.text import MIMEText
 from Prompt import *
@@ -15,7 +16,6 @@ from myExceptions import *
 from tracker import *
 from MyFile import *
 
-CONFIG_FILE = sys.path[0] + 'config.xml' if sys.path[0] != '' else 'config.xml'
 CONFIG_VERSION = '1.8'
 
 TORRENT_STATUS = {
@@ -42,7 +42,7 @@ class ConfFile(MyFile):
 	def __init__(self):
 		MyFile.__init__(self, 'conf', 'configuration')
 
-	def openFile(self,filename = CONFIG_FILE):
+	def openFile(self,filename = myConstants.CONFIG_FILE):
 		return MyFile.openFile(self,filename,False)
 
 	def _version(self):

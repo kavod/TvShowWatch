@@ -10,33 +10,22 @@ import cherrypy
 from TSWmachine import *
 from functions import *
 import time
+import myConstants
 
-from constants import *
-
-#local_dir = os.path.abspath(os.getcwd())
-local_dir = '/var/packages/TvShowWatch/target'
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
 d = Daemonizer(cherrypy.engine)
 d.subscribe()
-PIDFile(cherrypy.engine, local_dir + '/application/tmp/TSW.pid').subscribe()
+PIDFile(cherrypy.engine, myConstants.PID_FILE).subscribe()
 
 class TvShowWatch():
-	def __init__(self,py_file = API_FILE, conffile = CONF_FILE, serielist = SERIES_FILE, debug = False, run_file = RUN_FILE):
+	def __init__(self,conffile = myConstants.CONFIG_FILE, serielist = myConstants.SERIES_FILE, debug = False):
 		self.debug = debug != False
 		self.auth = False
 		if not os.path.isfile(conffile):
 			raise Exception("Configuration file " + conffile + " does not exist",401)
 		self.conffile = conffile
 		self.serielist = serielist
-		if not os.path.isfile(py_file):
-			raise Exception("Configuration file " + py_file + " does not exist",401)
-		self.py_file = py_file
-		if not os.path.isfile(run_file):
-			raise Exception("Configuration file " + run_file + " does not exist",401)
-		self.run_file = run_file
-		self.cmd = [self.py_file ,'-c',self.conffile.replace('"','\"') , '-s',self.serielist.replace('"','\"')]
-		self.run_cmd = [self.run_file,'-c',self.conffile.replace('"','\"'),'-s',self.serielist.replace('"','\"')]
 		self.m = TSWmachine(True,False)
 		result = self.m.openFiles(conffile, serielist)
 		if result['rtn'] != '200':
@@ -45,10 +34,6 @@ class TvShowWatch():
 	def setAuth(self,auth=True):
 		if self.auth != auth:
 			self.auth = auth
-			if self.auth:
-				self.cmd.append('--admin')
-			else:
-				self.cmd.remove('--admin')
 
 	def isAuth(self):
 		return self.auth
@@ -135,7 +120,7 @@ class TvShowWatch():
 		return self.m.search(pattern)
 
 	def testRunning(self):
-		cmd = ['/var/packages/TvShowWatch/scripts/start-stop-status','status']
+		cmd = [myConstants.START_STOP_FILE,'status']
 		try:
 			return self.__exec_cmd(cmd,"testRunning",json_rtn=False).replace('tvShowWatch is ','')
 		except subprocess.CalledProcessError as e:
@@ -166,7 +151,7 @@ class get_conf(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {'rtn':e.args[0],'error':e.args[1]}
 			sys.exit()
@@ -181,7 +166,7 @@ class run(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -199,11 +184,11 @@ class save_conf(Requete):
 			"smtp": email_api_conf(form)
 			}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
-		if os.path.isfile(CONF_FILE):
+		if os.path.isfile(myConstants.CONFIG_FILE):
 			conf = TSW.setConf(result)
 			if conf['rtn']=='200' or conf['rtn']=='302':
 				msg = "Configuration file saved"
@@ -229,7 +214,7 @@ class save_keywords(Requete):
 		else:
 			keywords = []
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -252,7 +237,7 @@ class getSeries(Requete):
 		debug = ('debug' in params.keys())
 		load_tvdb = ('load_tvdb' in params and params['load_tvdb']=='1')
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -266,18 +251,18 @@ class streamGetSeries(Requete):
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
 		cherrypy.response.headers['Connection'] = 'keep-alive'
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,False)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,False)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
 		if _:
-			data = "retry: 5000\r\nEvent: server-time\r\ndata: 3" + time.ctime(os.path.getmtime(SERIES_FILE)) + "\n\n"
+			data = "retry: 5000\r\nEvent: server-time\r\ndata: 3" + time.ctime(os.path.getmtime(myConstants.SERIES_FILE)) + "\n\n"
 			return data
 		else:
 			def content():
 				yield "retry: 5000\r\n"
 				while True:
-					data = "Event: server-time\r\ndata: 4" + time.ctime(os.path.getmtime(SERIES_FILE)) + "\n\n"
+					data = "Event: server-time\r\ndata: 4" + time.ctime(os.path.getmtime(myConstants.SERIES_FILE)) + "\n\n"
 					yield data
 					time.sleep(5)
 					
@@ -295,7 +280,7 @@ class getSerie(Requete):
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -312,7 +297,7 @@ class delSerie(Requete):
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -329,7 +314,7 @@ class addSerie(Requete):
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -354,7 +339,7 @@ class getEpisode(Requete):
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -381,7 +366,7 @@ class setSerie(Requete):
 		pattern = params['pattern'] if 'pattern' in params.keys() else ''
 		if season * episode != 0:
 			try:
-				TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+				TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 			except Exception as e:
 				return {"rtn":e.args[0],"error":e.args[1]}
 			TSW.setAuth()
@@ -413,7 +398,7 @@ class addemail(Requete):
 		else:
 			return {'rtn' : 499, 'error' : 'Email blank'}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -438,7 +423,7 @@ class delemail(Requete):
 		else:
 			return {'rtn' : 499, 'error' : 'Email blank'}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -459,7 +444,7 @@ class reset_serie_keywords(Requete):
 		else:
 			return {'rtn' : 499, 'error' : 'TV Show not found'}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -476,7 +461,7 @@ class reset_all_keywords(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -497,7 +482,7 @@ class search(Requete):
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -515,10 +500,10 @@ class pushTorrent(Requete):
 			return {'rtn' : 499, 'error' : 'TV Show not found'}
 		if params['torrent'].file:
 			fn = os.path.basename(form['torrent'].file.name)
-			destination = TMP_DIR + '/' + fn
+			destination = myConstants.TMP_PATH + '/' + fn
 			open(destination, 'wb').write(params['torrent'].file.read())
 			try:
-				TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+				TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 			except Exception as e:
 				return {"rtn":e.args[0],"error":e.args[1]}
 			TSW.setAuth()
@@ -533,7 +518,7 @@ class logs(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -545,7 +530,7 @@ class get_arch(Requete):
 	@cherrypy.tools.json_out()
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		return ARCH
+		return myConstants.ARCH
 
 class testRunning(Requete):
 	exposed = True
@@ -553,7 +538,7 @@ class testRunning(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		try:
-			TSW = TvShowWatch(API_FILE,CONF_FILE,SERIES_FILE,debug)
+			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
 		except Exception as e:
 			return {"rtn":e.args[0],"error":e.args[1]}
 		TSW.setAuth()
@@ -612,14 +597,14 @@ if __name__ == '__main__':
 					},
 			'/': {
 				        'tools.staticdir.on': True,
-                		'tools.staticdir.root':local_dir,
+                		'tools.staticdir.root':myConstants.TSW_PATH,
 				        'tools.staticdir.dir': './application',
 				        'tools.staticdir.index': 'index.html',
 		            },
 			'/api': {
 				        'request.dispatch': cherrypy.dispatch.MethodDispatcher(), 
 				        'tools.sessions.on': True,
-                		'tools.staticdir.root':local_dir,
+                		'tools.staticdir.root':myConstants.TSW_PATH,
 				        'tools.response_headers.on': True,
 				        'tools.response_headers.headers': [
 				            ('Content-Type', 'text/plain')],

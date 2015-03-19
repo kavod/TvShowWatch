@@ -27,7 +27,7 @@ TvShowWatch.spk: syno/package.tgz syno/INFO syno/scripts syno/PACKAGE_ICON.PNG
 	mv syno/$@ .
 
 syno/package.tar: application LICENSE README.md syno_directory
-	tar cvf package.tar *.py LICENSE README.md tpbTSW directory.json application
+	tar cvf package.tar *.py LICENSE README.md directory.json application
 	mv package.tar syno
 	cd syno && tar rvf package.tar
 

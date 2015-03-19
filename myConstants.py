@@ -4,25 +4,36 @@ import os
 import sys
 import json
 
-class myConstants(object):
-	CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
-	LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-	SCRIPT_PATH = sys.path[0] if sys.path[0] != '' else './'
-	TMP_PATH = "/tmp"
-	LOG_PATH = "/tmp"
-	PATH = {'configpath':CONFIG_FILE,'seriepath':LIST_FILE,'tmppath':TMP_PATH, 'logpath':LOG_PATH}
-
-def load_directories():
-	# Load directories paths
-	try:
-		dir_file_folder = sys.path[0] + '/directory.json'
-		json_data = open(dir_file_folder)
-		myConstants.PATH = dict(json.load(json_data))
-		myConstants.CONFIG_FILE = myConstants.PATH['configpath'] + '/config.xml'
-		myConstants.LIST_FILE = myConstants.PATH['seriepath'] + '/series.xml'
-		myConstants.TMP_PATH = myConstants.PATH['tmppath']
-		myConstants.LOG_PATH = myConstants.PATH['logpath']
-		myConstants.SCRIPT_PATH = myConstants.PATH['scriptpath']
-	except: # If directory file reading failed
-		print("Fail to open directory file:" + dir_file_folder)
-		sys.exit()
+try:
+	dir_file_folder = os.path.dirname(os.path.abspath(__file__)) + '/directory.json'
+	json_data = open(dir_file_folder)
+	PATH = dict(json.load(json_data))
+except: # If directory file reading failed
+	print("Fail to open directory file:" + dir_file_folder)
+	sys.exit()
+try:
+	TMP_PATH = PATH['tmp_path']
+	LOG_PATH = PATH['log_path']
+	TSW_PATH = PATH['tsw_path']
+	ETC_PATH = PATH['etc_path']
+	APP_PATH = PATH['app_path']
+	PYTHON_PATH = PATH['python_path']
+	SCRIPT_PATH = PATH['script_path']
+	
+	CONFIG_FILE = ETC_PATH + '/config.xml'
+	SERIES_FILE = ETC_PATH + '/series.xml'
+	PID_FILE = TMP_PATH + '/TSW.pid'
+	START_STOP_FILE = SCRIPT_PATH + '/start-stop-status'
+	LOG_FILE = LOG_PATH + '/TSW.log.json'
+	
+	ARCH = PATH['arch']
+except Exception as e:
+	print "Cannot read " + e[0]
+	sys.exit()
+	
+def load_path(path, filename):
+	if filename != "":
+		filename = "/" + filename
+	if path not in PATH.keys():
+		raise Exception(path)
+	return PATH[path] + filename

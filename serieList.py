@@ -4,15 +4,15 @@
 from MyFile import *
 from myDate import *
 from myTvDB import *
+import myConstants
 
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
 LIST_VERSION = "1.3"
 
 class SerieList(MyFile):
 	def __init__(self):
 		MyFile.__init__(self, 'series', 'Serie list')
 
-	def openFile(self,filename = LIST_FILE):
+	def openFile(self,filename = myConstants.SERIES_FILE):
 		return MyFile.openFile(self,filename,True)
 
 	def _version(self):

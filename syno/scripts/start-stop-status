@@ -1,23 +1,23 @@
 #!/bin/sh
+PYTHON_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "python_path" < /var/packages/TvShowWatch/target/directory.json )
+TSW_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "tsw_path" < /var/packages/TvShowWatch/target/directory.json )
+PID_FILE=$(/var/packages/TvShowWatch/scripts/bashconstant.py "tmp_path" < /var/packages/TvShowWatch/target/directory.json )/TSW.pid
+ETC_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "etc_path" < /var/packages/TvShowWatch/target/directory.json )
+
 DNAME="TvShowWatch"
-INSTALL_DIR="/var/packages/TvShowWatch"
-PATH_PYTHON="/usr/bin"
-PATH=$PATH_PYTHON:$PATH
+PATH=$PYTHON_PATH:$PATH
 CRONFILE=/etc/crontab
 TMPFILE=/tmp/crontab
 LogFile=/var/log/TSW.log
-SERVER="${INSTALL_DIR}/target/server.py"
-PID_FILE="${INSTALL_DIR}/target/application/tmp/TSW.pid"
+SERVER="${TSW_PATH}/server.py"
 MINUTE="21"
-CRONLINE="\t*\t*\t*\t*\troot\t$PATH_PYTHON/python /var/packages/TvShowWatch/target/tvShowWatch.py -s\"/var/packages/TvShowWatch/etc/series.xml\" -c\"/var/packages/TvShowWatch/etc/config.xml\""
-CRONLINE="$CRONLINE --action run>>$LogFile"
+CRONLINE="\t*\t*\t*\t*\troot\t$PYTHON_PATH/python ${TSW_PATH}/tvShowWatch.py -s\"${ETC_PATH}/series.xml\" -c\"${ETC_PATH}/config.xml\""
+CRONLINE="${CRONLINE} --action run>>$LogFile"
 CRON_SED_LINE='/^[0-9]\{1,2\}'$(echo $CRONLINE | sed -e 's/[]/()$*.^|[]/\\&/g')'$/'
-#CRON_SED_LINE='/^[0-9][0-9]\t\*\t\*\t\*\t\*\t[a-z]\{1,\}\tpython \/var\/packages\/TvShowWatch\/target\/TSW_api\.py -s\"\/var\/packages\/TvShowWatch\/etc\/series\.xml\" -c\"\/var\/packages\/TvShowWatch\/etc\/config\.xml\">>\/var\/log\/serie\.log$/'
 
 start_daemon ()
-{          
-	echo "PATH=${PATH} ${PATH_PYTHON}/python ${SERVER}"
-    PATH=${PATH} ${PATH_PYTHON}/python ${SERVER}
+{
+    PATH=${PATH} ${PYTHON_PATH}/python ${SERVER}
 }                                   
                   
 stop_daemon ()
@@ -50,7 +50,7 @@ wait_for_status ()
 
 ValidateConfFile() {
         retval=""
-        if [ -e "/var/packages/TvShowWatch/etc/config.xml" ]; then
+        if [ -e "${ETC_PATH}/config.xml" ]; then
                 retval="1"                
         else          
                 retval="0"
@@ -88,33 +88,14 @@ StartPackage () {
 
         # Start Package
         echo "Starting TvShowWatch..."
-#       python /var/packages/TvShowWatch/target/tvShowWatch.py >> $LogFile
         echo -e ${MINUTE}$CRONLINE >>$CRONFILE
         RestartCron
-		#/usr/syno/etc/rc.d/S04crond.sh stop
-        #sleep 1
-        #/usr/syno/etc/rc.d/S04crond.sh start
-
-		#${PATH_PYTHON}/python /var/packages/TvShowWatch/target/server.py
-
-        # Enable desktop icon & config file editor
-#       if [ ! -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
-#               ln -sf "/var/packages/TvShowWatch/target/application" "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
-#       fi
 }
 
 StopPackage () {
-        # Unink desktop redirection
-        #if [ -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
-        #                rm "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
-        #fi
         sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
         mv $TMPFILE $CRONFILE
         RestartCron
-		#sleep 1
-        #/usr/syno/etc/rc.d/S04crond.sh stop
-        #sleep 1
-        #/usr/syno/etc/rc.d/S04crond.sh start
 }
                                                                                                                                                                              
 
@@ -163,18 +144,7 @@ case $1 in
 		    echo ${DNAME} is not running
 		    exit 1        
 		fi                                           
-		;;                            
-        #if [ "$(ps | grep tvShowWatch | grep -vc grep)" -gt "0" ]; then
-        #        echo "tvShowWatch is running..."
-        #        exit 0
-        #fi                                
-        #if [ "$(sed -n "${CRON_SED_LINE}p" $CRONFILE |wc -l)" -gt "0" ]; then
-        #        echo "tvShowWatch is planned to run..."                                                      
-        #        exit 0
-        #fi
-        #echo "tvShowWatch is not running..."
-        #exit 1
-        #;;                 
+		;;            
     log)                                                           
         echo $LogFile                                             
         exit 0

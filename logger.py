@@ -6,10 +6,8 @@ import json
 import copy
 from myDate import *
 from datetime import datetime, date, time
+import myConstants
 
-LOGPATH = "/tmp"
-FILENAME = "TSW"
-EXTENSION = "log.json"
 node = {}
 
 class Logger:
@@ -21,12 +19,11 @@ class Logger:
 		If file exists, file content is loaded.
 		Else, empty file is created
 
-		:param directory: directory of log file (/tmp by default)
+		:param log_file: filepath of log file
 
 	'''
-	def __init__(self,directory = LOGPATH):
-		self.directory = directory
-		self.filename = directory + '/' + FILENAME + '.' + EXTENSION
+	def __init__(self,log_file = myConstants.LOG_FILE):
+		self.filename = log_file
 		if os.path.isfile(self.filename):
 			self.load()
 		else:

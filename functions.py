@@ -14,30 +14,6 @@ from myTvDB import *
 from ConfFile import ConfFile
 from ftplib import FTP
 
-
-"""CONFIG_FILE = sys.path[0] + '/config.xml' if sys.path[0] != '' else 'config.xml'
-LIST_FILE = sys.path[0] + '/series.xml' if sys.path[0] != '' else 'series.xml'
-TMP_PATH = "/tmp"
-LOG_PATH = "/tmp"
-PATH = {'configpath':CONFIG_FILE,'seriepath':LIST_FILE,'tmppath':TMP_PATH, 'logpath':LOG_PATH}
-
-def load_directories():
-	# Load directories paths
-	global PATH, CONFIG_FILE, LIST_FILE, TMP_PATH, LOG_PATH
-	#print("Start of load_directories : " + CONFIG_FILE)
-	try:
-		dir_file_folder = sys.path[0] + '/directory.json' if sys.path[0] != '' else 'directory.json'
-		json_data = open(dir_file_folder)
-		PATH = dict(json.load(json_data))
-		CONFIG_FILE = PATH['configpath'] + '/config.xml'
-		LIST_FILE = PATH['seriepath'] + '/series.xml'
-		TMP_PATH = PATH['tmppath']
-		LOG_PATH = PATH['logpath']
-	except: # If directory file reading failed
-		print("Fail to open directory file:" + dir_file_folder)
-		sys.exit()
-	print("End of load_directories : " + CONFIG_FILE)"""
-
 def convert_conf(conf,root=''):
 	if root != '':
 		root += '_'

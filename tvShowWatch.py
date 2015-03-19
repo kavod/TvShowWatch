@@ -17,9 +17,6 @@ from TSWmachine import *
 from myTvDB import *
 from myConstants import *
 
-load_directories()
-API_FILE = myConstants.SCRIPT_PATH + '/TSW_api.py'
-
 def input_serie():
 	global t
 	if 't' not in globals():
@@ -134,7 +131,8 @@ def action_run(m):
 
 	liste = result['result']
 	cmdline = [
-			sys.executable,	API_FILE,
+			sys.executable,	
+			myConstants.TSW_PATH + '/TSW_api.py',
 			'-c',m.conffile.filename,
 			'-s',m.seriefile.filename,
 			'--action','run'
@@ -449,8 +447,8 @@ def main():
     parser.add_argument(
             "-s",
             "--seriefile",
-            default=myConstants.LIST_FILE,
-            help='indicates the series list file location. By default:'+myConstants.LIST_FILE
+            default=myConstants.SERIES_FILE,
+            help='indicates the series list file location. By default:'+myConstants.SERIES_FILE
         )
     parser.add_argument(
             "-v",

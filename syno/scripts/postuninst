@@ -1,9 +1,5 @@
 #!/bin/sh
-
-# Unink desktop redirection
-if [ -d "/usr/syno/synoman/webman/3rdparty/TvShowWatch" ]; then
-		rm "/usr/syno/synoman/webman/3rdparty/TvShowWatch"
-fi
+./start-stop-status stop
+sleep 1
 
 exit 0
-

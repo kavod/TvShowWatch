@@ -16,24 +16,10 @@ from myExceptions import *
 
 TMPPATH = "/tmp"
 
-"""cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"tpb")))
-if cmd_subfolder not in sys.path:
-	sys.path.insert(0, cmd_subfolder)"""
-"""PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(PROJECT_DIR, 'tpb'))"""
-
-
 TRACKER_CONF = [
 	{'id':'t411','name':'T411','url':'https://api.t411.me','param':['username','password']},
 	{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]
-
-try:
-	imp.find_module('tpbTSW')
-	TRACKER_CONF.append({'id':'tpb','name':'ThePirateBay','url':"https://thepiratebay.se",'param':[]})
-except ImportError:
-	print("ThePirateBay cannot be loaded")
-
 
 def check_provider(trackerID):
 	# Selecting requested provider
