@@ -17,37 +17,24 @@ DIR="$(dirname $( cd -P "$( dirname "$SOURCE" )" && pwd ))"
 echo "Script directory: $DIR"
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 
-LOG_DIR="${DIR}/etc"
+LOG_DIR="${DIR}/tmp"
 LOG_DIR_SED=$(echo $LOG_DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
 DIR_SED=$(echo $DIR | sed -e 's/[]/()$*.^|[]/\\&/g')
-PATH_DIR_JSON="$DIR/application/api/directory.json"
+PYTHON_PATH=$(which python)
+PYTHON_SED=$(echo ${PYTHON_PATH} | sed -e 's/[]/()$*.^|[]/\\&/g')
+PATH_DIR_JSON="$DIR/directory.json"
 
-SYMLINK="${HOME}/public_html/tvshowwatch"
-
-if [ -h ${SYMLINK} ]
-then
-    echo "TvShowWatch is already installed on this box"
-    exit 1
-fi
-
-touch ${LOG_DIR}/TSW.log.json
-chmod 775 ${DIR}/application/tmp
-APACHE_GROUP="$(grep APACHE_RUN_GROUP /etc/apache2/envvars|cut -d'=' -f2)"
-chgrp ${APACHE_GROUP} ${DIR}/application/tmp
+mkdir -p "${DIR}/tmp" 2>&1
 
 # Create files
-cp -v "$DIR/directory.linux.json" "${PATH_DIR_JSON}"
+cp "$DIR/directory.linux.json" "${PATH_DIR_JSON}"
 
 # Substitute alias with script directory
-ln -s "${DIR}/application" "${SYMLINK}"
+#ln -s "${DIR}/application" "${SYMLINK}"
 sed -i "s/LOG_DIR/${LOG_DIR_SED}/g" "${PATH_DIR_JSON}"
 sed -i "s/SCRIPT_DIR/${DIR_SED}/g" "${PATH_DIR_JSON}"
+sed -i "s/PYTHON_PATH/${PYTHON_SED}/g" "${PATH_DIR_JSON}"
 
 # Python libraries installation
-#/usr/bin/env easy_install tvdb_api transmissionrpc requests
-echo "User libraries cannot be install without root access. Please check following libraries are installed:"
-echo "- tvdb_api"
-echo "- transmissionrpc"
-echo "- requests"
-echo "Installation completed. Use http://localhost/~yourUser/tvshowwatch/ to manage TvShowWatch"
-echo "Please note logfile is located in ${LOG_DIR}"
+pip install --user -q tvdb_api transmissionrpc 2>&1
+echo "Install completed"

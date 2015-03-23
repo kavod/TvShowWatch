@@ -3,6 +3,7 @@ PYTHON_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "python_path" < 
 TSW_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "tsw_path" < /var/packages/TvShowWatch/target/directory.json )
 PID_FILE=$(/var/packages/TvShowWatch/scripts/bashconstant.py "tmp_path" < /var/packages/TvShowWatch/target/directory.json )/TSW.pid
 ETC_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "etc_path" < /var/packages/TvShowWatch/target/directory.json )
+ARCH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "arch" < /var/packages/TvShowWatch/target/directory.json )
 
 DNAME="TvShowWatch"
 PATH=$PYTHON_PATH:$PATH
@@ -59,43 +60,55 @@ ValidateConfFile() {
 } 
 
 RestartCron() {                            
-        if [[ `grep majorversion /etc.defaults/VERSION` = 'majorversion="5"' ]] ; then
-                /usr/syno/sbin/synoservicectl --restart crond
-        else
-                sleep 1
-                /usr/syno/etc/rc.d/S04crond.sh stop
-                sleep 1                                           
-                /usr/syno/etc/rc.d/S04crond.sh start
-        fi  
+		if [[ $EUID -ne 0 ]]; then
+				echo "Only root can manage crontab"
+		else
+			if [[ $ARCH -e "syno" ]]; then
+				if [[ `grep majorversion /etc.defaults/VERSION` = 'majorversion="5"' ]] ; then
+				        /usr/syno/sbin/synoservicectl --restart crond
+				else
+				        sleep 1
+				        /usr/syno/etc/rc.d/S04crond.sh stop
+				        sleep 1                                           
+				        /usr/syno/etc/rc.d/S04crond.sh start
+				fi  
+			else
+				echo "Root linux user not managed for crontab action"
+			fi
+		fi
 }     
 
 StartPackage () {
         # Don't start if already started
-        if [ -e "/var/packages/tvShowWatch/enabled" ]; then
-                exit 0
-        fi
+        if [[ $ARCH -e "syno" ]]; then
+		    if [ -e "/var/packages/tvShowWatch/enabled" ]; then
+		            exit 0
+		    fi
 
-        # Check configuration file
-        retval=$( ValidateConfFile )
-        if [[ "$retval" == "0" ]]; then
-                echo "Configuration file unfoundable"
-                echo "Configuration file unfoundable" >> $LogFile
-                exit 1
-        fi
+		    # Check configuration file
+		    retval=$( ValidateConfFile )
+		    if [[ "$retval" == "0" ]]; then
+		            echo "Configuration file unfoundable"
+		            echo "Configuration file unfoundable" >> $LogFile
+		            exit 1
+		    fi
 
-        # Log
-        echo `date`" : Starting TvShowWatch..." >> $LogFile
+		    # Log
+		    echo `date`" : Starting TvShowWatch..." >> $LogFile
 
-        # Start Package
-        echo "Starting TvShowWatch..."
-        echo -e ${MINUTE}$CRONLINE >>$CRONFILE
-        RestartCron
+		    # Start Package
+		    echo "Starting TvShowWatch..."
+		    echo -e ${MINUTE}$CRONLINE >>$CRONFILE
+		    RestartCron
+		fi
 }
 
 StopPackage () {
-        sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
-        mv $TMPFILE $CRONFILE
-        RestartCron
+        if [[ $ARCH -e "syno" ]]; then
+		    sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
+		    mv $TMPFILE $CRONFILE
+		    RestartCron
+		fi
 }
                                                                                                                                                                              
 

@@ -1,1 +1,11 @@
-{"arch":"linux","logpath":"LOG_DIR","configpath":"SCRIPT_DIR/etc","seriepath":"SCRIPT_DIR/etc","tmppath":"/tmp","scriptpath":"SCRIPT_DIR","python_exec":"/usr/bin/env python"}
+{
+	"arch":"linux",
+	"log_path":"LOG_DIR",
+	"etc_path":"SCRIPT_DIR/etc",
+	"tmp_path":"SCRIPT_DIR/tmp",
+	"tsw_path":"SCRIPT_DIR",
+	"python_path" : "PYTHON_PATH",
+	"script_path":"SCRIPT_DIR/syno/scripts",
+	"app_path":"SCRIPT_DIR/application",
+	"python_exec":"python"
+}

@@ -5,7 +5,7 @@ PYTHON_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "python_path" < 
 cp /etc/crontab /root/crontab_backup
 
 # Install depedency modules
-${PYTHON_PATH}/easy_install tvdb_api transmissionrpc requests cherrypy
+${PYTHON_PATH}/pip install tvdb_api transmissionrpc requests cherrypy
 
 exit 0
 
