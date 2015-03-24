@@ -592,7 +592,7 @@ if __name__ == '__main__':
 	conf = {
 				'/favicon.ico': {
 					'tools.staticfile.on': True,
-					'tools.staticfile.filename': + myConstants.TSW_PATH + '/application/images/favicon.ico'
+					'tools.staticfile.filename': myConstants.TSW_PATH + '/application/images/favicon.ico'
 				},
 				'global' : {
 					'server.socket_host' : '0.0.0.0',
