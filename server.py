@@ -590,25 +590,29 @@ if __name__ == '__main__':
 	root.api.testRunning = testRunning()
 	
 	conf = {
-		  'global' : {
-						'server.socket_host' : '0.0.0.0',
-						'server.socket_port' : 1204,
-						'server.thread_pool' : 8
-					},
-			'/': {
-				        'tools.staticdir.on': True,
-                		'tools.staticdir.root':myConstants.TSW_PATH,
-				        'tools.staticdir.dir': './application',
-				        'tools.staticdir.index': 'index.html',
-		            },
-			'/api': {
-				        'request.dispatch': cherrypy.dispatch.MethodDispatcher(), 
-				        'tools.sessions.on': True,
-                		'tools.staticdir.root':myConstants.TSW_PATH,
-				        'tools.response_headers.on': True,
-				        'tools.response_headers.headers': [
-				            ('Content-Type', 'text/plain')],
-		            },
+				'/favicon.ico': {
+					'tools.staticfile.on': True,
+					'tools.staticfile.filename': + myConstants.TSW_PATH + '/application/images/favicon.ico'
+				},
+				'global' : {
+					'server.socket_host' : '0.0.0.0',
+					'server.socket_port' : 1204,
+					'server.thread_pool' : 8
+				},
+				'/': {
+					'tools.staticdir.on': True,
+					'tools.staticdir.root':myConstants.TSW_PATH,
+					'tools.staticdir.dir': './application',
+					'tools.staticdir.index': 'index.html',
+				},
+				'/api': {
+					'request.dispatch': cherrypy.dispatch.MethodDispatcher(), 
+					'tools.sessions.on': True,
+					'tools.staticdir.root':myConstants.TSW_PATH,
+					'tools.response_headers.on': True,
+					'tools.response_headers.headers': [
+					('Content-Type', 'text/plain')],
+				},
 		}
 	
 	cherrypy.quickstart(root, '/', conf)
