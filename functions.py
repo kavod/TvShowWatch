@@ -217,35 +217,35 @@ def ignore_stopped(tor):
 	return tor.status != 'stopped'
 
 def tracker_api_conf(post):
-	conf_out = {"id":post.getvalue('tracker_id'),"user":post.getvalue('tracker_username')}
-	if post.getvalue('tracker_password') != 'initial':
-		conf_out["password"] = post.getvalue('tracker_password')
+	conf_out = {"id":post['tracker_id'],"user":post['tracker_username']}
+	if post['tracker_password'] != 'initial':
+		conf_out["password"] = post['tracker_password']
 	return conf_out
 
 def transmission_api_conf(post):
 	conf_out = {
-		"server":post.getvalue('trans_server'),
-		"port":post.getvalue('trans_port'),
-		"user":post.getvalue('trans_username'),
-		"slotNumber":post.getvalue('trans_slotNumber'),
-		"folder":post.getvalue('trans_folder')
+		"server":post['trans_server'],
+		"port":post['trans_port'],
+		"user":post['trans_username'],
+		"slotNumber":post['trans_slotNumber'],
+		"folder":post['trans_folder']
 		}
-	if post.getvalue('trans_password') != 'initial':
-		conf_out["password"] = post.getvalue('trans_password')
+	if post['trans_password'] != 'initial':
+		conf_out["password"] = post['trans_password']
 	return conf_out
 
 def email_api_conf(post):
-	if post.getvalue('smtp_enable') == '0':
+	if post['smtp_enable'] == '0':
 		return json.dumps({"enable":False})
 	else:
 		values = post
 	conf_out = {
-		"server":values.getvalue('smtp_server'),
-		"port":values.getvalue('smtp_port'),
-		"user":values.getvalue('smtp_username'),
-		"emailSender":values.getvalue('smtp_emailSender'),
-		"ssltls":values.getvalue('smtp_ssltls') == '1'
+		"server":values['smtp_server'],
+		"port":values['smtp_port'],
+		"user":values['smtp_username'],
+		"emailSender":values['smtp_emailSender'],
+		"ssltls":values['smtp_ssltls'] == '1'
 		}
-	if values.getvalue('smtp_password') != 'initial':
-		conf_out["password"] = values.getvalue('smtp_password')
+	if values['smtp_password'] != 'initial':
+		conf_out["password"] = values['smtp_password']
 	return conf_out

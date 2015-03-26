@@ -67,8 +67,8 @@ class Tracker:
 				self.token = ''
 				return self.connect_t411()
 
-	def connect_t411(self):
-		return test_kickass()
+	def connect_kickass(self):
+		return self.test_kickass()
 			
 	def connect_none(self):
 		self.token = 'ok'
@@ -170,7 +170,7 @@ class Tracker:
 			     		f.flush()
 		return 'file://' + TMPPATH + '/file.torrent'
 		
-	def download_kickass(self,torrent_id): # A faire
+	def download_kickass(self,torrent_id):
 		logging.debug(str(torrent_id))
 		stream = requests.post(str(torrent_id), stream=True, verify=False)
 		with open(TMPPATH + '/file.torrent', 'wb') as f:
@@ -222,7 +222,7 @@ class Tracker:
 	def select_kickass(self,result):
 		logging.debug(result)
 		#filter(self.filter_torrent,result)
-		return sorted(result, key=lambda tor: int(tor[u'votes']), reverse=True)[0]['torrentLink']
+		return {'id':sorted(result, key=lambda tor: int(tor[u'votes']), reverse=True)[0]['torrentLink']}
 		
 	def select_none(self,result):
 		logging.debug(result)

@@ -14,6 +14,7 @@ import myConstants
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
+
 d = Daemonizer(cherrypy.engine)
 d.subscribe()
 PIDFile(cherrypy.engine, myConstants.PID_FILE).subscribe()
@@ -179,9 +180,9 @@ class save_conf(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		result = {
-			"tracker": tracker_api_conf(form),
-			"transmission":transmission_api_conf(form),
-			"smtp": email_api_conf(form)
+			"tracker": tracker_api_conf(params),
+			"transmission":transmission_api_conf(params),
+			"smtp": email_api_conf(params)
 			}
 		try:
 			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
