@@ -60,10 +60,10 @@ ValidateConfFile() {
 } 
 
 RestartCron() {                            
-		if [[ $EUID -ne 0 ]]; then
+		if [ $(id -u) -ne 0 ]; then
 				echo "Only root can manage crontab"
 		else
-			if [[ $ARCH -e "syno" ]]; then
+			if [ $ARCH = "syno" ]; then
 				if [[ `grep majorversion /etc.defaults/VERSION` = 'majorversion="5"' ]] ; then
 				        /usr/syno/sbin/synoservicectl --restart crond
 				else
@@ -80,7 +80,7 @@ RestartCron() {
 
 StartPackage () {
         # Don't start if already started
-        if [[ $ARCH -e "syno" ]]; then
+        if [ $ARCH = "syno" ]; then
 		    if [ -e "/var/packages/tvShowWatch/enabled" ]; then
 		            exit 0
 		    fi
@@ -104,7 +104,7 @@ StartPackage () {
 }
 
 StopPackage () {
-        if [[ $ARCH -e "syno" ]]; then
+        if [ $ARCH = "syno" ]; then
 		    sed "${CRON_SED_LINE}d" $CRONFILE > $TMPFILE
 		    mv $TMPFILE $CRONFILE
 		    RestartCron
