@@ -18,6 +18,7 @@ TMPPATH = "/tmp"
 
 TRACKER_CONF = [
 	{'id':'t411','name':'T411','url':'https://api.t411.me','param':['username','password']},
+	{'id':'kickass','name':'KickAss','url':"https://kickass.to",'param':[]},
 	{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]
 
@@ -66,6 +67,9 @@ class Tracker:
 				self.token = ''
 				return self.connect_t411()
 
+	def connect_t411(self):
+		return test_kickass()
+			
 	def connect_none(self):
 		self.token = 'ok'
 		return True
@@ -86,6 +90,13 @@ class Tracker:
 				return True
 			else:
 				return False
+
+	def test_kickass(self):
+		req = requests.post(self.provider['url']+"/json.php", verify=False)
+		if 'title' not in req.json().keys():
+			return True
+		else:
+			return False
 
 	def test_none(self):
 		return True
@@ -108,6 +119,20 @@ class Tracker:
                         result = result['torrents']
                         logging.debug('%s torrents found', int(len(result)))
                         result = filter(self.filter_t411,result)
+                        return result
+                else:
+                        return []
+						
+	def search_kickass(self, search):
+		if not self.test():
+			self.connect()
+		params = {'q':search}
+		result = requests.post(self.provider['url']+"/json.php",params=params, verify=False).json()
+		logging.debug('%s', result)
+                if 'list' in result.keys():
+                        result = result['list']
+                        logging.debug('%s torrents found', int(len(result)))
+                        result = filter(self.filter_kickass,result)
                         return result
                 else:
                         return []
@@ -144,6 +169,16 @@ class Tracker:
 					f.write(chunk)
 			     		f.flush()
 		return 'file://' + TMPPATH + '/file.torrent'
+		
+	def download_kickass(self,torrent_id): # A faire
+		logging.debug(str(torrent_id))
+		stream = requests.post(str(torrent_id), stream=True, verify=False)
+		with open(TMPPATH + '/file.torrent', 'wb') as f:
+			for chunk in stream.iter_content(chunk_size=1024): 
+				if chunk: # filter out keep-alive new chunks
+					f.write(chunk)
+			     		f.flush()
+		return 'file://' + TMPPATH + '/file.torrent'
 
 	def download_none(self,torrent_id):
 		return False
@@ -164,6 +199,9 @@ class Tracker:
 	def filter_tpb(self,tor):
 		return int(tor['seeders']) > 0 and tor['isVerified'] == '1' > 0
 
+	def filter_kickass(self,tor):
+		return int(tor['seeds']) > 0 and tor['verified'] == 1 and int(tor['votes']) > 0
+		
 	def filter_none(self,tor):
 		return True
 
@@ -181,6 +219,11 @@ class Tracker:
 		#filter(self.filter_torrent,result)
 		return {'id':sorted(result, key=lambda tor: int(tor['seeders']), reverse=True)[0]['magnet_link']}
 
+	def select_kickass(self,result):
+		logging.debug(result)
+		#filter(self.filter_torrent,result)
+		return sorted(result, key=lambda tor: int(tor[u'votes']), reverse=True)[0]['torrentLink']
+		
 	def select_none(self,result):
 		logging.debug(result)
 		return result[0]

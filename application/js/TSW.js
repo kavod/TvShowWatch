@@ -15,6 +15,7 @@ $.ajaxSetup({
 
 	var trackers = [
 		{'value':'t411', 'text':'T411','login':true},
+		{'value':'kickass', 'text':'KickAss', 'login':false},
 		{'value':'tpb', 'text':'The Pirate Bay', 'login':false},
 		{'value':'none', 'text':'No tracker, only manual push', 'login':false}
 		];
