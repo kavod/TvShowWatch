@@ -9,12 +9,12 @@ You regulary miss your favorite TV show broadcast? TvShowWatch take care of ever
 Like [SickBeard][4], TSW use [TheTvDb][5] database to know when your favorite TV shows are broadcasted. Once available on your torrent tracker, TSW pushes it to Transmission server and, potentially, transfer files to a local directory.
 
 ## Compatibility
-+TV Show planning: [TheTvDb][5] (no plan to use another one for moment).
-+Torrent tracker: [T411][6] (facultative, Kickass torrent is planed for next release)
-+Torrent manager: [Transmission][7] (no plan to use another one for moment).
-+Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
-+Javascript Libraries: Jquery [11] and JQGrid [12]
-+Web UI Framework: JqueryUI [13]
++ TV Show planning: [TheTvDb][5] (no plan to use another one for moment).
++ Torrent tracker: [T411][6] (facultative, Kickass torrent is planed for next release)
++ Torrent manager: [Transmission][7] (no plan to use another one for moment).
++ Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
++ Javascript Libraries: Jquery [11] and JQGrid [12]
++ Web UI Framework: JqueryUI [13]
 
 ## Install notice
 
