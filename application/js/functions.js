@@ -76,6 +76,7 @@ function get_conf(event)
 		{
 			conf_ok();
 			result = result.result;
+			populate_tracker_list(result.tracker_conf);
 			formdata = {};
 			formdata.tracker_id = result.tracker.id;
 			formdata.tracker_username = result.tracker.user;
@@ -987,4 +988,15 @@ function unschedule(sid)
 		result = JSON.parse(data);
 		show_info(result.error);
 	});
+}
+
+function populate_tracker_list(trackers)
+{
+	$("#tracker_id option").remove();
+	for (tracker in trackers)
+	{
+		myOption = new Option(trackers[tracker]["name"], trackers[tracker]["id"]);
+		$("#tracker_id").append(myOption);
+		$("#tracker_id option:last-child").attr('login',(trackers[tracker]['param'].length>0) ? '1' : '0');
+	}
 }

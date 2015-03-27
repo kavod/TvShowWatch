@@ -13,12 +13,12 @@ $.ajaxSetup({
 		});
 	var tvshow_result = [];
 
-	var trackers = [
+	/*var trackers = [
 		{'value':'t411', 'text':'T411','login':true},
 		{'value':'kickass', 'text':'KickAss', 'login':false},
 		{'value':'tpb', 'text':'The Pirate Bay', 'login':false},
 		{'value':'none', 'text':'No tracker, only manual push', 'login':false}
-		];
+		];*/
 	
 	$("#smtp_enable").blur(email_activation);
 	$('input').attr("autocomplete", "off");
@@ -84,12 +84,12 @@ $.ajaxSetup({
 		});
 
 	$(document).ready(function(){
-		for (tracker in trackers)
+		/*for (tracker in trackers)
 		{
 			myOption = new Option(trackers[tracker]["text"], trackers[tracker]["value"]);
 			$("#tracker_id").append(myOption);
 			$("#tracker_id option:last-child").attr('login',(trackers[tracker]["login"]) ? '1' : '0');
-		}
+		}*/
 		get_conf();
 		apply_jcss();
 		var source = new EventSource("api/streamGetSeries");

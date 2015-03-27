@@ -8,7 +8,7 @@ import logging
 import json
 from datetime import date
 import transmissionrpc
-from tracker import *
+import tracker
 from myDate import *
 from ConfFile import ConfFile
 from serieList import SerieList
@@ -67,11 +67,14 @@ class TSWmachine:
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
 			return self.openedFiles(['conf'])
 		tracker = self.conffile.getTracker()
-		tracker['password'] = '****'
+		if 'password' in tracker.keys():
+			tracker['password'] = '****'
 		transmission = self.conffile.getTransmission()
-		transmission['password'] = '****'
+		if 'password' in transmission.keys():
+			transmission['password'] = '****'
 		email = self.conffile.getEmail()
-		email['password'] = '****'
+		if 'password' in email.keys():
+			email['password'] = '****'
 		keywords = self.conffile.getKeywords()
 		result = {}
 		if conf=='all':
@@ -95,8 +98,12 @@ class TSWmachine:
 						result['smtp'][parameter.split('_')[1]] = ''
 				if parameter == 'keywords':
 					result['keywords'] = keywords
-					
+			
+		result['tracker_conf'] = self.get_tracker_conf()		
 		return {'rtn':'200','result':result}
+		
+	def get_tracker_conf(self):
+		return tracker.TRACKER_CONF
 
 	def setConf(self,conf={},save=True):
 		if (not self.getAuth()):
@@ -426,7 +433,7 @@ class TSWmachine:
 			return
 		conf = self.conffile.getTracker()
 		try:
-			tracker = Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
+			tracker = tracker.Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
 		except InputError as e:
 			print(e.msg)
 			return
