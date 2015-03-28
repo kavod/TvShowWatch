@@ -4,21 +4,13 @@ all:
 	@echo "Usage:"
 	@echo "'sudo make install' for root installation. Allow schedule job"
 	@echo "'sudo make uninstall' for remove root installation"
-	@echo "'make user_install' for user installation (using public_html). No scheduled tracking"
-	@echo "'make user_uninstall' for remove user installation"
 	@echo "'make syno' for Synology package TvShowWatch.spk build"
 
-user_install: script/user_install.sh
-	@./script/user_install.sh
+install: script/install.py
+	@python $<
 
-user_uninstall: script/user_uninstall.sh
-	@./script/user_uninstall.sh
-
-install: script/install.sh
-	@./script/install.sh
-
-uninstall: script/uninstall.sh
-	@./script/uninstall.sh
+uninstall: script/uninstall.py
+	@python $<
 
 syno: TvShowWatch.spk
 
@@ -32,10 +24,10 @@ syno/package.tar: application LICENSE README.md syno_directory
 	cd syno && tar rvf package.tar
 
 syno/package.tgz: syno/package.tar
-	gzip -c syno/package.tar > $@
+	gzip -c $< > $@
 
 syno_directory: directory.syno.json
-	cp directory.syno.json directory.json
+	cp $< directory.json
 clean:
 	rm -rf application/tmp/*.php
 	for i in `find . -name "*.pyc"`; do rm -rf $$i ; done
@@ -43,7 +35,7 @@ clean:
 	for i in `find . -name "*.xml"`; do rm -rf $i ; done
 	for i in `find . -name "*.pid"`; do rm -rf $i ; done
 
-mrproper: clean
+mrproper: uninstall clean
 	rm -rf $(EXEC)
 	rm -rf syno/package.tar
 	rm -rf syno/package.tgz
