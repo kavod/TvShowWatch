@@ -8,13 +8,21 @@ Another TV Show download scheduler via Torrent.
 You regulary miss your favorite TV show broadcast? TvShowWatch take care of everything for you!
 Like [SickBeard][4], TSW use [TheTvDb][5] database to know when your favorite TV shows are broadcasted. Once available on your torrent tracker, TSW pushes it to Transmission server and, potentially, transfer files to a local directory.
 
-## Compatibility
+## What is needed?
++ ```Transmission client```[8]. You can use [SynoCommunity][16] synology package. In this case default configuration of TSW will be:
+ + server: localhost
+ + port: 9091
+ + user and password chosen during transmission installation
++ (facultative) ```T411 account```[6]
++ (facultative) ```A seedbox``` with transmission client & FTP access (user/password must be identical)
+
+## What service are used
 + TV Show planning: [TheTvDb][5] (no plan to use another one for moment).
-+ Torrent tracker: [T411][6] or [KickAss][14]
++ Torrent search providers: [T411][6] or [KickAss][14] (other providers are welcome, all I need is an easy JSON API).
 + Torrent manager: [Transmission][7] (no plan to use another one for moment).
 + Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
 + Javascript Libraries: Jquery [11] and JQGrid [12]
-+ Web UI Framework: JqueryUI [13]
++ Web UI Framework: JqueryUI [13] (thinking about [Webix][17])
 
 ## Install notice
 
@@ -26,14 +34,20 @@ Here are the dependencies:
 + ```requests``` (see [this repo][2])
 + ```transmissionrpc``` (see [this repo][3])
 + ```cherrypy``` (see [website] [10])
-+ ```cpython-crontab``` (see [website] [15])
++ ```python-crontab``` (see [website] [15])
 
 #### Linux setup
 Installation will schedule hourly torrent tracking and launch web interface.
-Just launch ```make install``` in the installation directory.
-Then use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/tvshowwatch/```
-Use ```./tvShowWatch -h``` for command line usage
+
+Execute ```make install``` in the installation directory.
+
+Then execute ```script/start-stop-status start```
+
 Go to ```http://127.0.0.1:1204``` for web interface
+
+For CLI usage (facultative):
++ use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/tvshowwatch/```
++ Use ```./tvShowWatch -h``` for command line usage
 
 ### Synology Package
 
@@ -61,3 +75,5 @@ Please note the "run" status significates web server is run and automatic seek i
 [13]: http://jqueryui.com/
 [14]: http://kickass.to
 [15]: https://pypi.python.org/pypi/python-crontab
+[16]: https://synocommunity.com/
+[17]: http://webix.com/
