@@ -24,9 +24,9 @@ else:
 	isRoot = False
 
 # Unschedule task
-c=crontab.CronTab(user=True)
-c.remove_all(comment='TvShowWatch')
-c.write() if isRoot else c.write_to_user(user=True)
+#c=crontab.CronTab(user=True)
+#c.remove_all(comment='TvShowWatch')
+#c.write() if isRoot else c.write_to_user(user=True)
 
 os.remove(directories_file)
 

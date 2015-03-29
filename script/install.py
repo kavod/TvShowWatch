@@ -81,12 +81,12 @@ install_module('transmissionrpc',installed_packages)
 install_module('cherrypy',installed_packages)
 
 # Schedule task starting from next 2 minutes 
-now = datetime.datetime.now()
-minute = (now.minute +2) % 60
-c=crontab.CronTab(user=(not isRoot))
-c.remove_all(comment='TvShowWatch')
-job = c.new(command=cron_command,comment='TvShowWatch')
-job.minute.on(minute)
-c.write() if isRoot else c.write_to_user(user=True)
+#now = datetime.datetime.now()
+#minute = (now.minute +2) % 60
+#c=crontab.CronTab(user=(not isRoot))
+#c.remove_all(comment='TvShowWatch')
+#job = c.new(command=cron_command,comment='TvShowWatch')
+#job.minute.on(minute)
+#c.write() if isRoot else c.write_to_user(user=True)
 
 print "Installation successed. First run will be launched at " + str(now.hour) + ':' + str(minute)

@@ -35,7 +35,7 @@ clean:
 	for i in `find . -name "*.xml"`; do rm -rf $i ; done
 	for i in `find . -name "*.pid"`; do rm -rf $i ; done
 
-mrproper: uninstall clean
+mrproper: clean
 	rm -rf $(EXEC)
 	rm -rf syno/package.tar
 	rm -rf syno/package.tgz
