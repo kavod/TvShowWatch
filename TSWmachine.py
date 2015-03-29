@@ -16,6 +16,7 @@ from functions import *
 from myTvDB import *
 from logger import *
 import myConstants
+import myExceptions
 
 
 class TSWmachine:
@@ -66,9 +67,9 @@ class TSWmachine:
 	def getConf(self,conf='all'):
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
 			return self.openedFiles(['conf'])
-		tracker = self.conffile.getTracker()
-		if 'password' in tracker.keys():
-			tracker['password'] = '****'
+		mytracker = self.conffile.getTracker()
+		if 'password' in mytracker.keys():
+			mytracker['password'] = '****'
 		transmission = self.conffile.getTransmission()
 		if 'password' in transmission.keys():
 			transmission['password'] = '****'
@@ -78,13 +79,13 @@ class TSWmachine:
 		keywords = self.conffile.getKeywords()
 		result = {}
 		if conf=='all':
-			result = {'tracker':tracker,'transmission':transmission,'smtp':email,'keywords':keywords}
+			result = {'tracker':mytracker,'transmission':transmission,'smtp':email,'keywords':keywords}
 		else:
 			for parameter in conf:
 				if parameter.split('_')[0] == 'tracker':
 					if ('tracker' not in result.keys()):
 						result['tracker']={}
-					result['tracker'][parameter.split('_')[1]] = tracker[parameter.split('_')[1]]
+					result['tracker'][parameter.split('_')[1]] = mytracker[parameter.split('_')[1]]
 				if parameter.split('_')[0] == 'transmission':
 					if ('transmission' not in result.keys()):
 						result['transmission']={}
@@ -151,9 +152,9 @@ class TSWmachine:
 		if (opened['rtn'] != '200'):
 			return opened
 
-		tracker = self.conffile.testTracker()
-		if (tracker['rtn'] != '200'):
-			return tracker
+		mytracker = self.conffile.testTracker()
+		if (mytracker['rtn'] != '200'):
+			return mytracker
 
 		transmission = self.conffile.testTransmission()
 		if (transmission['rtn'] != '200'):
@@ -433,7 +434,7 @@ class TSWmachine:
 			return
 		conf = self.conffile.getTracker()
 		try:
-			tracker = tracker.Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
+			mytracker = tracker.Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
 		except InputError as e:
 			print(e.msg)
 			return
@@ -532,7 +533,7 @@ class TSWmachine:
 					self.seriefile.updateSerie(serie['id'],{'status':20})
 					for search in str_search_list:
 						try:
-							result = tracker.search(search)
+							result = mytracker.search(search)
 						except requests.exceptions.ConnectionError as e:
 							print(e)
 							sys.exit()
@@ -540,10 +541,10 @@ class TSWmachine:
 						logging.debug(search + ":" + str(nb_result) + ' result(s)')
 
 						if nb_result > 0: # If at least 1 relevant torrent is found
-							result = tracker.select_torrent(result)
+							result = mytracker.select_torrent(result)
 							logging.debug("selected torrent:")
 							logging.debug(result)
-							torrent = tracker.download(result['id'])
+							torrent = mytracker.download(result['id'])
 							new_torrent = add_torrent(torrent, tc, confTransmission['slotNumber'],confTransmission['folder'] is not None)
 							self.seriefile.updateSerie(serie['id'],{'status':30, 'slot_id':new_torrent.id})
 							break
