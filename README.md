@@ -10,7 +10,7 @@ Like [SickBeard][4], TSW use [TheTvDb][5] database to know when your favorite TV
 
 ## Compatibility
 + TV Show planning: [TheTvDb][5] (no plan to use another one for moment).
-+ Torrent tracker: [T411][6] (facultative, Kickass torrent is planed for next release)
++ Torrent tracker: [T411][6] or [KickAss][14]
 + Torrent manager: [Transmission][7] (no plan to use another one for moment).
 + Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
 + Javascript Libraries: Jquery [11] and JQGrid [12]
@@ -63,3 +63,4 @@ Please note the "run" status significates web server is run and automatic seek i
 [11]: https://jquery.com/
 [12]: http://www.trirand.com/blog/
 [13]: http://jqueryui.com/
+[14]: http://kickass.to
