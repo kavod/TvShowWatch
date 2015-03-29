@@ -10,7 +10,7 @@ Like [SickBeard][4], TSW use [TheTvDb][5] database to know when your favorite TV
 
 ## Compatibility
 + TV Show planning: [TheTvDb][5] (no plan to use another one for moment).
-+ Torrent tracker: [T411][6] (facultative, Kickass torrent is planed for next release)
++ Torrent tracker: [T411][6] or [KickAss][14]
 + Torrent manager: [Transmission][7] (no plan to use another one for moment).
 + Transfer protocol: FTP (plan to propose Rsync transfer [#6][9])
 + Javascript Libraries: Jquery [11] and JQGrid [12]
@@ -22,22 +22,18 @@ Like [SickBeard][4], TSW use [TheTvDb][5] database to know when your favorite TV
 
 Here are the dependencies:
 + ***python*** - The following libraries will be automatically installed
-+ ```tvdb_api``` - download and install from [here][1].
-+ ```requests``` - run ```sudo pip install request```, see [this repo][2].
-+ ```transmissionrpc``` - run ```sudo pip transmissionrpc```, see [this repo][3]
-+ ```cherrypy``` - run ```sudo pip cherrypy```, [10]
++ ```tvdb_api``` ([here][1])
++ ```requests``` (see [this repo][2])
++ ```transmissionrpc``` (see [this repo][3])
++ ```cherrypy``` (see [website] [10])
++ ```cpython-crontab``` (see [website] [15])
 
-#### Root setup
-Install with root user allow job schedule for torrent tracking. Without it, you will have to manually push TvShowWatch every time.
+#### Linux setup
+Installation will schedule hourly torrent tracking and launch web interface.
 Just launch ```make install``` in the installation directory.
 Then use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/tvshowwatch/```
 Use ```./tvShowWatch -h``` for command line usage
-
-#### User setup
-Note that user setup does not allow job schedule via crontab.
-Just launch ```make user_install``` in the installation directory.
-Then use ```./tvShowWatch --init``` to create configuration file -or- go to web interface ```http://localhost/~yourUser/tvshowwatch/```
-Use ```./tvShowWatch -h``` for command line usage
+Go to ```http://127.0.0.1:1204``` for web interface
 
 ### Synology Package
 
@@ -63,3 +59,5 @@ Please note the "run" status significates web server is run and automatic seek i
 [11]: https://jquery.com/
 [12]: http://www.trirand.com/blog/
 [13]: http://jqueryui.com/
+[14]: http://kickass.to
+[15]: https://pypi.python.org/pypi/python-crontab
