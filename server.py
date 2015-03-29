@@ -20,18 +20,16 @@ d.subscribe()
 PIDFile(cherrypy.engine, myConstants.PID_FILE).subscribe()
 
 class TvShowWatch():
-	def __init__(self,conffile = myConstants.CONFIG_FILE, serielist = myConstants.SERIES_FILE, debug = False):
+	def __init__(self, debug = False):
 		self.debug = debug != False
 		self.auth = False
-		if not os.path.isfile(conffile):
-			raise Exception("Configuration file " + conffile + " does not exist",401)
+		self.m = TSWmachine(True,False)
+			
+	def openFiles(self,conffile = myConstants.CONFIG_FILE, serielist = myConstants.SERIES_FILE):
 		self.conffile = conffile
 		self.serielist = serielist
-		self.m = TSWmachine(True,False)
-		result = self.m.openFiles(conffile, serielist)
-		if result['rtn'] != '200':
-			return result
-
+		return self.m.openFiles(conffile, serielist)
+			
 	def setAuth(self,auth=True):
 		if self.auth != auth:
 			self.auth = auth
@@ -62,8 +60,8 @@ class TvShowWatch():
 	def setConf(self,conf):
 		return self.m.setConf(conf)
 
-	def createConf(self,conf):
-		return self.m.createConf(conf)
+	def createConf(self,filename,conf):
+		return self.m.createConf(filename,conf)
 
 	def getSeries(self,load_tvdb=False):
 		return self.m.getSeries('all',json_c=True,load_tvdb=load_tvdb)
@@ -151,11 +149,10 @@ class get_conf(Requete):
 	@cherrypy.tools.json_out()
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {'rtn':e.args[0],'error':e.args[1]}
-			sys.exit()
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.getConf()
 		sys.exit()
@@ -166,10 +163,10 @@ class run(Requete):
 	@cherrypy.tools.json_out()
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.run()
 
@@ -184,19 +181,17 @@ class save_conf(Requete):
 			"transmission":transmission_api_conf(params),
 			"smtp": email_api_conf(params)
 			}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
 		TSW.setAuth()
 		if os.path.isfile(myConstants.CONFIG_FILE):
+			TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
 			conf = TSW.setConf(result)
 			if conf['rtn']=='200' or conf['rtn']=='302':
 				msg = "Configuration file saved"
 			else:
 				msg = "Error during configuration save: " + conf['error']
 		else:
-			conf = TSW.createConf(result)
+			conf = TSW.createConf(myConstants.CONFIG_FILE,result)
 			if conf['rtn']=='200':
 				msg = 'Configuration file created'
 			else:
@@ -214,10 +209,10 @@ class save_keywords(Requete):
 			keywords = params['keywords[]']
 		else:
 			keywords = []
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		if 'serie_id' in params.keys() and int(params['serie_id'])>0:
 			res = TSW.setSerie(int(params['serie_id']),{"keywords":keywords})
@@ -237,10 +232,10 @@ class getSeries(Requete):
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
 		load_tvdb = ('load_tvdb' in params and params['load_tvdb']=='1')
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.getSeries(load_tvdb)
 
@@ -251,10 +246,10 @@ class streamGetSeries(Requete):
 		cherrypy.response.headers["Content-Type"] = "text/event-stream"
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
 		cherrypy.response.headers['Connection'] = 'keep-alive'
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,False)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch()
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		if _:
 			data = "retry: 5000\r\nEvent: server-time\r\ndata: 3" + time.ctime(os.path.getmtime(myConstants.SERIES_FILE)) + "\n\n"
@@ -280,10 +275,10 @@ class getSerie(Requete):
 			serie_id = int(params['id'])
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.getSerie(serie_id)
 		
@@ -297,10 +292,10 @@ class delSerie(Requete):
 			serie_id = int(params['serie_id'])
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.delSerie(serie_id)
 		
@@ -314,10 +309,10 @@ class addSerie(Requete):
 			serie_id = int(params['serie_id'])
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.addSerie(serie_id)
 		
@@ -339,10 +334,10 @@ class getEpisode(Requete):
 			episode = int(params['episode'])
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.getEpisode(serie_id,season,episode)
 
@@ -366,10 +361,10 @@ class setSerie(Requete):
 			return {'rtn' : 499, 'error' : 'You must indicate both of Season and Episode numbers'}
 		pattern = params['pattern'] if 'pattern' in params.keys() else ''
 		if season * episode != 0:
-			try:
-				TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-			except Exception as e:
-				return {"rtn":e.args[0],"error":e.args[1]}
+			TSW = TvShowWatch(debug)
+			result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+			if result['rtn'] != '200':
+				return result
 			TSW.setAuth()
 			try:
 				val_episode = TSW.getEpisode(serie_id, season, episode, 'en')
@@ -398,10 +393,10 @@ class addemail(Requete):
 			email = params['email']
 		else:
 			return {'rtn' : 499, 'error' : 'Email blank'}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		update = TSW.addemail(serie_id,email)
 		if update['rtn'] != '200':
@@ -423,10 +418,10 @@ class delemail(Requete):
 			email = params['email']
 		else:
 			return {'rtn' : 499, 'error' : 'Email blank'}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		update = TSW.delemail(serie_id,email)
 		if update['rtn'] != '200':
@@ -444,10 +439,10 @@ class reset_serie_keywords(Requete):
 			serie_id = int(params['serie_id'])
 		else:
 			return {'rtn' : 499, 'error' : 'TV Show not found'}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		update = TSW.resetSerieKeywords(serie_id)
 		if update['rtn'] != '200':
@@ -461,10 +456,10 @@ class reset_all_keywords(Requete):
 	@cherrypy.tools.json_out()
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		update = TSW.resetAllKeywords()
 		if update['rtn'] != '200':
@@ -482,10 +477,10 @@ class search(Requete):
 			pattern = params['pattern']
 		else:
 			return {'rtn':'415','error':messages.returnCode['415']}
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.search(pattern)
 		
@@ -503,10 +498,10 @@ class pushTorrent(Requete):
 			fn = os.path.basename(form['torrent'].file.name)
 			destination = myConstants.TMP_PATH + '/' + fn
 			open(destination, 'wb').write(params['torrent'].file.read())
-			try:
-				TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-			except Exception as e:
-				return {"rtn":e.args[0],"error":e.args[1]}
+			TSW = TvShowWatch(debug)
+			result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+			if result['rtn'] != '200':
+				return result
 			TSW.setAuth()
 			return TSW.push(serie_id,destination)
 		else:
@@ -518,10 +513,10 @@ class logs(Requete):
 	@cherrypy.tools.json_out()
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.logs()
 
@@ -538,10 +533,10 @@ class testRunning(Requete):
 	@cherrypy.tools.accept(media='text/plain')
 	def GET(self, **params):
 		debug = ('debug' in params.keys())
-		try:
-			TSW = TvShowWatch(myConstants.CONFIG_FILE,myConstants.SERIES_FILE,debug)
-		except Exception as e:
-			return {"rtn":e.args[0],"error":e.args[1]}
+		TSW = TvShowWatch(debug)
+		result = TSW.openFiles(myConstants.CONFIG_FILE,myConstants.SERIES_FILE)
+		if result['rtn'] != '200':
+			return result
 		TSW.setAuth()
 		return TSW.testRunning()
 

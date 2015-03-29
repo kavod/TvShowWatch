@@ -40,6 +40,7 @@ class TSWmachine:
 		result = self.conffile.openFile(str(conffile))
 		if (result['rtn']!='200'):
 			logging.info('Fail to open file:'+ str(conffile))
+			result['tracker_conf'] = self.get_tracker_conf()
 			return result
 		logging.info('Conf file OK, opening Serie List')
 		return self.seriefile.openFile(seriefile)
@@ -66,7 +67,9 @@ class TSWmachine:
 
 	def getConf(self,conf='all'):
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
-			return self.openedFiles(['conf'])
+			result = self.openedFiles(['conf'])
+			result['tracker_conf'] = self.get_tracker_conf()
+			return result
 		mytracker = self.conffile.getTracker()
 		if 'password' in mytracker.keys():
 			mytracker['password'] = '****'
@@ -99,9 +102,8 @@ class TSWmachine:
 						result['smtp'][parameter.split('_')[1]] = ''
 				if parameter == 'keywords':
 					result['keywords'] = keywords
-			
-		result['tracker_conf'] = self.get_tracker_conf()		
-		return {'rtn':'200','result':result}
+				
+		return {'rtn':'200','result':result,'tracker_conf':self.get_tracker_conf()}
 		
 	def get_tracker_conf(self):
 		return tracker.TRACKER_CONF

@@ -72,11 +72,11 @@ function get_conf(event)
 	{
 		get_arch();
 		result = compute_data(data);
+		populate_tracker_list(result.tracker_conf);
 		if (result.ok)
 		{
 			conf_ok();
 			result = result.result;
-			populate_tracker_list(result.tracker_conf);
 			formdata = {};
 			formdata.tracker_id = result.tracker.id;
 			formdata.tracker_username = result.tracker.user;
@@ -709,6 +709,7 @@ function save_conf(event)
 		if (result.ok)
 		{
 			show_info(result.error);
+			get_conf();
 		}
 		stop_loading();
 	});
@@ -793,11 +794,15 @@ function compute_data(data)
 	try
 	{
 		result = JSON.parse(data);
-		if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230)
+		if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230 && result.rtn != 401)
 		{
 			show_error(result.error);
 			result.ok = false;
-			
+		}
+		else if (result.rtn == 401)
+		{
+			show_error("Configuration missing. Please manage in \"Configuration\" tab");
+			result.ok = false;
 		} else
 		{
 			result.ok = true;
