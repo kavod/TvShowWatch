@@ -89,4 +89,4 @@ install_module('cherrypy',installed_packages)
 #job.minute.on(minute)
 #c.write() if isRoot else c.write_to_user(user=True)
 
-print "Installation successed. First run will be launched at " + str(now.hour) + ':' + str(minute)
+print "Installation successed."
