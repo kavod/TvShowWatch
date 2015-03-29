@@ -1,0 +1,14 @@
+{
+	".url": {
+		"SYNO.SDS.TvShowWatch" : {
+			"type": "url",
+			"title": "TvShowWatch",
+			"desc": "The TvShowWatch tracker",
+			"icon": "images/app_monspk_{0}.png",
+			"protocol": "http",
+			"url":"/",
+			"port":"1204"
+								}
+			}
+}
+

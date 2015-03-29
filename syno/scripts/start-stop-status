@@ -87,7 +87,8 @@ def startPackage():
 		else:
 			print "Starting %s..." %(DNAME)
 			open('/etc/crontab', 'a').write(str(minute)+CRONLINE+"\n")
-			subprocess.call(['/usr/syno/sbin/synoservicectl','--restart','crond'])
+			# Cron restart already managed by INFO (startstop_restart_services)
+			#subprocess.call(['/usr/syno/sbin/synoservicectl','--restart','crond'])
 	else:
 		# Schedule task starting from next 2 minutes
 		c=crontab.CronTab(user=(not isRoot))
@@ -105,7 +106,8 @@ def stopPackage():
 		new_cron_file_content = re.sub('\n[0-9]{1,2}'+SED_CRONLINE,'',cron_file_content)
 		with open('/etc/crontab','w') as data_file:
 			data_file.write(new_cron_file_content)
-		subprocess.call(['/usr/syno/sbin/synoservicectl','--restart','crond'])
+		# Cron restart already managed by INFO (startstop_restart_services)
+		#subprocess.call(['/usr/syno/sbin/synoservicectl','--restart','crond'])
 	else:
 		# Unschedule task
 		c=crontab.CronTab(user=(not isRoot))
