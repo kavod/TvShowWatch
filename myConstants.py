@@ -9,8 +9,7 @@ try:
 	json_data = open(dir_file_folder)
 	PATH = dict(json.load(json_data))
 except: # If directory file reading failed
-	print("Fail to open directory file:" + dir_file_folder)
-	sys.exit()
+	sys.exit("Fail to open directory file:" + dir_file_folder)
 try:
 	TMP_PATH = PATH['tmp_path']
 	LOG_PATH = PATH['log_path']
