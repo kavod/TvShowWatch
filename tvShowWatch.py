@@ -16,6 +16,7 @@ import Prompt
 from TSWmachine import *
 from myTvDB import *
 from myConstants import *
+import migrateFiles
 
 def input_serie():
 	global t
@@ -474,6 +475,7 @@ def main():
     global arg;
     if args.arg != '':
         Prompt.arg = args.arg.split(',')
+	migrateFiles.migrate()
 
     # Initialize more data
     m = TSWmachine(True,verbose)

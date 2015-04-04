@@ -11,7 +11,6 @@ from email.mime.text import MIMEText
 from datetime import date
 from myDate import *
 from myTvDB import *
-from ConfFile import ConfFile
 from ftplib import FTP
 
 def convert_conf(conf,root=''):

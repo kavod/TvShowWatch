@@ -10,8 +10,8 @@ from datetime import date
 import transmissionrpc
 import tracker
 from myDate import *
-from ConfFile import ConfFile
-from serieList import SerieList
+from ConfFileJSON import ConfFile
+from serieListJSON import SerieList
 from functions import *
 from myTvDB import *
 from logger import *

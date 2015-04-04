@@ -11,6 +11,7 @@ from TSWmachine import *
 from functions import *
 import time
 import myConstants
+import migrateFiles
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
@@ -561,6 +562,7 @@ class Api(object):
 		return self.GET(**params)
 
 if __name__ == '__main__':
+	migrateFiles.migrate()
 	root = Root()
 	root.api = Root()
 	root.api.tvshowwatch = Api()

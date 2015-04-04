@@ -19,8 +19,8 @@ try:
 	PYTHON_PATH = PATH['python_path']
 	SCRIPT_PATH = PATH['script_path']
 	
-	CONFIG_FILE = ETC_PATH + '/config.xml'
-	SERIES_FILE = ETC_PATH + '/series.xml'
+	CONFIG_FILE = ETC_PATH + '/config.json'
+	SERIES_FILE = ETC_PATH + '/series.json'
 	PID_FILE = TMP_PATH + '/TSW.pid'
 	START_STOP_FILE = SCRIPT_PATH + '/start-stop-status'
 	LOG_FILE = LOG_PATH + '/TSW.log.json'

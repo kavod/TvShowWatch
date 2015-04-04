@@ -8,6 +8,7 @@ import argparse
 import json
 from TSWmachine import *
 import myConstants
+import migrateFiles
 
 def main():
 	# Get input parameters
@@ -65,6 +66,7 @@ def main():
 		arg = {}
 
 	# Initialize more data
+	migrateFiles.migrate()
 	m = TSWmachine(args.admin,args.verbosity)
 	if args.admin:
 		logging.info('TSW loaded in admin mode')

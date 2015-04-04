@@ -12,8 +12,8 @@ class SerieList(MyFile):
 	def __init__(self):
 		MyFile.__init__(self, 'series', 'Serie list')
 
-	def openFile(self,filename = myConstants.SERIES_FILE):
-		return MyFile.openFile(self,filename,True)
+	def openFile(self,filename = myConstants.SERIES_FILE,createIfNotExist=True):
+		return MyFile.openFile(self,filename,createIfNotExist)
 
 	def _version(self):
 		return LIST_VERSION
