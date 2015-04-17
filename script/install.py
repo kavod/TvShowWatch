@@ -14,8 +14,8 @@ import pip
 def install_module(module,modules_list,isRoot=False):
 	if module not in modules_list:
 		cmd = ['install',module]
-		if isRoot:
-			cmd.insert(1,'user') 
+		if not isRoot:
+			cmd.insert(1,'--user') 
 		pip.main(cmd)
 
 # Set script folder
@@ -79,6 +79,7 @@ install_module('requests',installed_packages)
 install_module('tvdb-api',installed_packages)
 install_module('transmissionrpc',installed_packages)
 install_module('cherrypy',installed_packages)
+install_module('python-crontab',installed_packages)
 
 # Schedule task starting from next 2 minutes 
 #now = datetime.datetime.now()
