@@ -6,11 +6,17 @@ all:
 	@echo "'sudo make uninstall' for remove root installation"
 	@echo "'make syno' for Synology package TvShowWatch.spk build"
 
-install: script/install.py
+install: script/install.py paramPy
 	@python $<
 
 uninstall: script/uninstall.py
 	@python $<
+	@rm -rf paramPy
+
+paramPy:
+	@wget "https://github.com/kavod/paramPy/releases/download/v1.0/paramPy.tar.gz" -q -O paramPy.tar.gz
+	@tar zxf paramPy.tar.gz
+	@rm paramPy.tar.gz
 
 syno: TvShowWatch.spk
 
@@ -40,3 +46,4 @@ mrproper: clean
 	rm -rf syno/package.tar
 	rm -rf syno/package.tgz
 	rm -rf directory.json
+	rm -rf paramPy
