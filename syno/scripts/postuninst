@@ -1,5 +1,10 @@
 #!/bin/sh
+
+TSW_PATH=$(/var/packages/TvShowWatch/scripts/bashconstant.py "tsw_path" < /var/packages/TvShowWatch/target/directory.json )
+
 ./start-stop-status stop
 sleep 1
+
+rm -rf ${TSW_PATH}/paramPy
 
 exit 0
