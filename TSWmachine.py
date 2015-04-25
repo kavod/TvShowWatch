@@ -9,6 +9,7 @@ import json
 from datetime import date
 import transmissionrpc
 import tracker
+import jsonConfigParser
 from myDate import *
 from ConfFileJSON import ConfFile
 from serieListJSON import SerieList

@@ -14,9 +14,9 @@ uninstall: script/uninstall.py
 	@rm -rf paramPy
 
 paramPy:
-	@wget "https://github.com/kavod/paramPy/releases/download/v1.0/paramPy.tar.gz" -q -O paramPy.tar.gz
-	@tar zxf paramPy.tar.gz
-	@rm paramPy.tar.gz
+	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.0/jsonConfigParser.tar.gz" -q -O jsonConfigParser.tar.gz
+	@tar zxf jsonConfigParser.tar.gz
+	@rm jsonConfigParser.tar.gz
 
 syno: TvShowWatch.spk
 

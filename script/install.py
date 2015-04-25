@@ -80,6 +80,7 @@ install_module('tvdb-api',installed_packages)
 install_module('transmissionrpc',installed_packages)
 install_module('cherrypy',installed_packages)
 install_module('python-crontab',installed_packages)
+install_module('jsonschema',installed_packages)
 
 # Schedule task starting from next 2 minutes 
 #now = datetime.datetime.now()

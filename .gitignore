@@ -1,2 +1,6 @@
 serie.py
 etc/config.xml
+etc/config.json
+etc/series.json
+tmp/*
+jsonConfigParser
