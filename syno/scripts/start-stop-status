@@ -36,8 +36,8 @@ tmp_path = directories['tmp_path']
 pid_file = tmp_path + os.sep + 'TSW.pid'
 python_cmd = directories['python_path']+os.sep+directories['python_exec']
 etc_path = directories['etc_path']
-etc_file = etc_path + os.sep + 'config.xml'
-series_file = etc_path + os.sep + 'series.xml'
+etc_file = etc_path + os.sep + 'config.json'
+series_file = etc_path + os.sep + 'series.json'
 log_file = tmp_path + os.sep + 'TSW.log'
 tsw_exe = tsw_path + os.sep + 'tvShowWatch.py'
 
