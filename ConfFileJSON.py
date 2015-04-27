@@ -14,6 +14,7 @@ from myDate import *
 from myExceptions import *
 from tracker import *
 import MyFileJSON
+import messages
 
 CONFIG_VERSION = '2.0'
 

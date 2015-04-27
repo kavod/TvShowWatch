@@ -10,6 +10,7 @@ from datetime import date
 import transmissionrpc
 import tracker
 import jsonConfigParser
+import requests
 from myDate import *
 from ConfFileJSON import ConfFile
 from serieListJSON import SerieList
@@ -517,7 +518,7 @@ class TSWmachine:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
-			if int(serie['status']) in [10,15,20,21] and serie['expected'] < date.today(): # If episode broadcast is in the past
+			if int(serie['status']) in [10,15,20,21] and convert_date(serie['expected']) < date.today(): # If episode broadcast is in the past
 				if conf['id'] == 'none':
 					self.seriefile.updateSerie(serie['id'],{'status':21})
 					logger.append(serie['id'],'221',{"season":serie['season'],"episode":serie['episode']})
