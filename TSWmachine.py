@@ -501,7 +501,7 @@ class TSWmachine:
 					if torrent.status == 'seeding':
 						if(confTransmission['folder'] is not None):
 							if (transferFile(torrent.files(),serie,confTransmission)):
-								content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
+								content = str_search_list[0] + ' broadcasted on ' + print_date(convert_date(serie['expected'])) + ' download completed'
 								sendEmail(content,serie,self.conffile)
 							else:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))

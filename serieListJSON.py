@@ -176,7 +176,8 @@ t
 	def updateSerie(self,s_id,values):
 		if self.testSerieExists(s_id):
 			serie = [serie for serie in self.tree['series'] if serie['id'] == s_id][0]
-			#for val in values.keys():
+			for val in values.keys():
+				serie[val] = values[val]
 			#	serie[val] = int(values[val]) if values[val].isdigit() else str(values[val])
 			self._save()
 			return self.getSerie(s_id)
