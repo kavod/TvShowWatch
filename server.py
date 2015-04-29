@@ -496,7 +496,7 @@ class pushTorrent(Requete):
 		else:
 			return {'rtn' : 499, 'error' : 'TV Show not found'}
 		if params['torrent'].file:
-			fn = os.path.basename(form['torrent'].file.name)
+			fn = os.path.basename(params['torrent'].file.name)
 			destination = myConstants.TMP_PATH + '/' + fn
 			open(destination, 'wb').write(params['torrent'].file.read())
 			TSW = TvShowWatch(debug)
