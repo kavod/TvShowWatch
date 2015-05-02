@@ -45,6 +45,8 @@ directories_file = tsw_path + os.sep + 'directory.json'
 python_exec = os.path.basename(sys.executable)
 python_path = os.path.dirname(sys.executable)
 python_full = sys.executable
+
+conf_version = "2.0"
 	
 # Install python-crontab module is missing
 installed_packages = sorted([i.key for i in pip.get_installed_distributions()])
@@ -62,7 +64,8 @@ directories = {
 	"python_path" : python_path,
 	"script_path":script_path,
 	"app_path":app_path,
-	"python_exec":python_exec
+	"python_exec":python_exec,
+	"conf_version":conf_version,
 }
 #Write directory.json
 with open(directories_file, 'w') as outfile:

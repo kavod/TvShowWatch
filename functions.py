@@ -142,8 +142,7 @@ def last_aired(serie_id,s_season=0,s_episode=0):
 			'next': t[int(serie_id)].nextAired()
 		}
 
-def sendEmail(content,serie,conffile):
-	confEmail = conffile.getEmail()
+def sendEmail(content,serie,confEmail):
 	if len(confEmail)>0:
 		msg = MIMEText(content)
 		msg['Subject'] = 'File download is completed!'
@@ -240,7 +239,7 @@ def email_api_conf(post):
 		values = post
 	conf_out = {
 		"server":values['smtp_server'],
-		"port":values['smtp_port'],
+		"port":int(values['smtp_port']),
 		"user":values['smtp_username'],
 		"emailSender":values['smtp_emailSender'],
 		"ssltls":values['smtp_ssltls'] == '1'

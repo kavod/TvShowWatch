@@ -6,10 +6,12 @@ import sys
 import messages
 import logging
 import json
+import copy
 from datetime import date
 import transmissionrpc
 import tracker
 import jsonConfigParser
+import requests
 from myDate import *
 from ConfFileJSON import ConfFile
 from serieListJSON import SerieList
@@ -25,9 +27,15 @@ class TSWmachine:
 		if log:
 			logging.basicConfig(level=logging.DEBUG)
 		self.admin = admin
-		self.conffile = ConfFile()
+		self.confFilename = None
+		self.confData = None
+		
 		self.seriefile = SerieList()
 		self.verbosity = log
+		try:
+			self.confschema = jsonConfigParser.loadParserFromFile(myConstants.CONFIG_SCHEMA)
+		except:
+			raise Exception(messages.returnCode['423'].format(myConstants.CONFIG_SCHEMA))
 	
 	def getVerbosity(self):
 		return self.verbosity
@@ -37,20 +45,30 @@ class TSWmachine:
 		return self.admin
 
 	def openFiles(self,conffile=myConstants.CONFIG_FILE,seriefile=myConstants.SERIES_FILE):
+		# conf file opening
 		logging.info('OpenFile ' + str(conffile) + ' and '+ str(seriefile))
-		result = self.conffile.openFile(str(conffile))
-		if (result['rtn']!='200'):
+		try:
+			self.confData = jsonConfigParser.jsonConfigValue(self.confschema,value=None,filename=conffile)
+		except:
 			logging.info('Fail to open file:'+ str(conffile))
-			result['tracker_conf'] = self.get_tracker_conf()
-			return result
+			return {'rtn':'401','result':self.get_tracker_conf(),'error':messages.returnCode['401'].format(conffile)}
+		self.confFilename = conffile
+		
+		# conf file parsing
+		try:
+			self.confData.load()
+		except:
+			logging.info('Fail to parse file:'+ str(conffile))
+			return {'rtn':'423','result':self.get_tracker_conf(),'error':messages.returnCode['423'].format(conffile)}
+		
 		logging.info('Conf file OK, opening Serie List')
 		return self.seriefile.openFile(seriefile)
 
 	def openedFiles(self,files=['conf','serie']):
 		logging.info('OpenedFile')
-		if 'conf' in files and self.conffile.openedFile()['rtn']!='200':
+		if 'conf' in files and self.confData is None:
 			logging.info('Conf file not opened')
-			return self.conffile.openedFile()
+			return {'rtn':'403','error':messages.returnCode['403'].format("Configuration file")}
 		if 'serie' in files and self.seriefile.openedFile()['rtn']!='200':
 			logging.info('Serie file not opened')
 			return self.seriefile.openedFile()
@@ -60,27 +78,29 @@ class TSWmachine:
 		logging.info('CreateConf ' + str(filename) + ' with '+ str(conf))
 		if (not self.getAuth()):
 			return {'rtn':'406','error':messages.returnCode['406']}
-		self.conffile.createBlankFile(filename)
-		if len(conf.keys())>0:
-			return self.setConf(conf)
-		else:
-			return {'rtn':'200','error':messages.returnCode['200']}
+		confData = {"version":CONFIG_VERSION}
+		confData.update(conf)
+		self.confData.update(confData)
+		try:
+			self.confData.save(filename=filename)
+		except:
+			return {'rtn':'424','error':messages.returnCode['424'].format(filename)}
 
 	def getConf(self,conf='all'):
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
 			result = self.openedFiles(['conf'])
 			result['tracker_conf'] = self.get_tracker_conf()
 			return result
-		mytracker = self.conffile.getTracker()
+		mytracker = self.confData['tracker']
 		if 'password' in mytracker.keys():
 			mytracker['password'] = '****'
-		transmission = self.conffile.getTransmission()
+		transmission = self.confData['transmission']
 		if 'password' in transmission.keys():
 			transmission['password'] = '****'
-		email = self.conffile.getEmail()
+		email = self.confData['smtp']
 		if 'password' in email.keys():
 			email['password'] = '****'
-		keywords = self.conffile.getKeywords()
+		keywords = self.confData['keywords']
 		result = {}
 		if conf=='all':
 			result = {'tracker':mytracker,'transmission':transmission,'smtp':email,'keywords':keywords}
@@ -115,30 +135,16 @@ class TSWmachine:
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
 			return {'rtn':'403','error':messages.returnCode['403'].format('Configuration')}
 
-		send = False
-		conf = convert_conf(conf)
-		original_len = 0
-		final_len = 0
-		for key, value in conf.iteritems():
-			if key.split('_')[0] in ['tracker','transmission','smtp']:
-				if key == 'smtp_enable' and value == 'False':
-					self.conffile.confEmail(True)
-				if (self.conffile.change(key,value)==False):
-					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
-				if key.split('_')[0] == 'smtp':
-					send = True
-			elif key == 'keywords':
-				original_len = len(value)
-				value = [x for x in value if x != '']
-				final_len = len(value)
-				if final_len < 1:
-					value = 'None';
-				if (self.conffile.changeKeywords(value)==False):
-					return {'rtn':'400','error':messages.returnCode['400'].format(key)}
-			else:
-				return {'rtn':'400','error':messages.returnCode['400'].format(key)}
+		self.confData.update(conf)
+		send = ('smtp' in conf.keys())
+		if 'keywords' in conf.keys():
+			original_len = len(conf['keywords'])
+			final_len = len([x for x in conf['keywords'] if x != ''])
+		else:
+			original_len = 0
+			final_len = 0
 		if save:
-			self.conffile._save()
+			self.confData.save()
 			result = self.testConf(send)
 			if result['rtn'] == '200':
 				if original_len == final_len:
@@ -149,21 +155,69 @@ class TSWmachine:
 		else:	
 			return {'rtn':'200','error':messages.returnCode['200']}
 
+	def testTracker(self):
+		logging.info('testTracker')
+		trackerConf = self.confData['tracker']
+		try:
+			provider = tracker.check_provider(trackerConf['id'])
+			if 'username' in provider['param'] and trackerConf['user'] == '':
+				return {'rtn':'422','error':messages.returnCode['422'].format(provider['name'])}
+			mytracker = tracker.Tracker(trackerConf['id'],{'username':trackerConf['user'],'password':trackerConf['password']})
+		except myExceptions.InputError as e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e.expr)}
+		except Exception,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Tracker',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
+
+	def testTransmission(self):
+		tc = self.confData['transmission']
+		if tc['server'] == '' or tc['port'] == '':
+			 return {'rtn':'405','error':messages.returnCode['405'].format('Transmission')}
+		try:
+			transmissionrpc.Client(tc['server'], tc['port'], tc['user'], tc['password'])
+		except TransmissionError,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Transmission',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
+
+	def testEmail(self,send=False):
+		email = self.confData['smtp']
+		if len(email) < 1:
+			 return {'rtn':'405','error':messages.returnCode['405'].format('Email')}
+		try:
+			msg = MIMEText('This is a test email')
+			msg['Subject'] = 'This is a test email'
+			msg['From'] = 'TvShowWatch script'
+			msg['To'] = email['emailSender']
+			s = smtplib.SMTP(email['server'],int(email['port']))
+			if email['ssltls']:
+				s.starttls() 
+			if email['user'] != '':
+				s.login(email['user'],email['password']) 
+			if send:
+				s.sendmail(email['emailSender'],email['emailSender'],msg.as_string())
+			s.quit()
+		except Exception,e:
+			return {'rtn':'404','error':messages.returnCode['404'].format('SMTP server',e)}
+		else:
+			return {'rtn':'200','error':messages.returnCode['200']}
+
 	def testConf(self,send=False):
 		logging.info('testConf ')
 		opened = self.openedFiles(['conf'])
 		if (opened['rtn'] != '200'):
 			return opened
 
-		mytracker = self.conffile.testTracker()
+		mytracker = self.testTracker()
 		if (mytracker['rtn'] != '200'):
 			return mytracker
 
-		transmission = self.conffile.testTransmission()
+		transmission = self.testTransmission()
 		if (transmission['rtn'] != '200'):
 			return transmission
 
-		email = self.conffile.testEmail(send)
+		email = self.testEmail(send)
 		if (email['rtn'] != '200' and email['rtn'] != '405'):
 			return email
 
@@ -240,13 +294,12 @@ class TSWmachine:
 		episode = serie['next']
 		if episode is None:
 			# If TV show is achieved, just add it without episode scheduled
-			#return {'rtn':'410','error':messages.returnCode['410']}
 			episode = None
 			infolog = {}
 		else:
 			infolog = {'season':episode['seasonnumber'],'episode':episode['episodenumber']}
 			episode = {'season':episode['seasonnumber'],'episode':episode['episodenumber'],'aired':convert_date(episode['firstaired'])}
-		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.conffile.getKeywords()):
+		if self.seriefile.addSerie(serie['id'],serie['seriesname'],episode,emails,self.confData['keywords']):
 			logger.append(serie['id'],'101',infolog)
 			return {'rtn':'200','error':messages.returnCode['200']}
 		else:
@@ -329,7 +382,7 @@ class TSWmachine:
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		keywords = self.conffile.getKeywords()
+		keywords = self.confData['keywords']
 		logger.append(s_id,'102',{})
 		return self.setSerie(s_id,{'keywords':keywords},False)
 
@@ -338,7 +391,7 @@ class TSWmachine:
 		opened = self.openedFiles()
 		if opened['rtn'] != '200':
 			return opened
-		keywords = self.conffile.getKeywords()
+		keywords = self.confData['keywords']
 		series = self.getSeries('all',False,False)
 		if len(series)<1:
 			return {'rtn':'300','error':messages.returnCode['300']}
@@ -410,7 +463,7 @@ class TSWmachine:
 			episode = int(serie['episode'])
 			result = self.getEpisode(serieID,season,episode)
 			if (season * episode > 0 and result['rtn']=='200'):
-				confTransmission = self.conffile.getTransmission()
+				confTransmission = self.confData['transmission']
 				tc = transmissionrpc.Client(
 						confTransmission['server'],
 						confTransmission['port'],
@@ -435,7 +488,7 @@ class TSWmachine:
 		if testconf['rtn'] != '200' and testconf['rtn'] != '302':
 			print("{0}|{1}".format(testconf['rtn'],testconf['error']))
 			return
-		conf = self.conffile.getTracker()
+		conf = self.confData['tracker']
 		try:
 			mytracker = tracker.Tracker(conf['id'],{'username':conf['user'],'password':conf['password']},myConstants.TMP_PATH)
 		except InputError as e:
@@ -475,7 +528,7 @@ class TSWmachine:
                                                 int(serie['episode']),
                                                 ''
                                                         ))
-			confTransmission = self.conffile.getTransmission()
+			confTransmission = self.confData['transmission']
 			if int(serie['status']) == 30: # Torrent already active
 				if 'tc' not in locals():
 					tc = transmissionrpc.Client(
@@ -500,8 +553,8 @@ class TSWmachine:
 					if torrent.status == 'seeding':
 						if(confTransmission['folder'] is not None):
 							if (transferFile(torrent.files(),serie,confTransmission)):
-								content = str_search_list[0] + ' broadcasted on ' + print_date(serie['expected']) + ' download completed'
-								sendEmail(content,serie,self.conffile)
+								content = str_search_list[0] + ' broadcasted on ' + print_date(convert_date(serie['expected'])) + ' download completed'
+								sendEmail(content,serie,self.confData['smtp'])
 							else:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
@@ -517,7 +570,7 @@ class TSWmachine:
 						print(str_result.format('240',str(serie['id']),messages.returnCode['240']))
 					continue
 
-			if int(serie['status']) in [10,15,20,21] and serie['expected'] < date.today(): # If episode broadcast is in the past
+			if int(serie['status']) in [10,15,20,21] and convert_date(serie['expected']) < date.today(): # If episode broadcast is in the past
 				if conf['id'] == 'none':
 					self.seriefile.updateSerie(serie['id'],{'status':21})
 					logger.append(serie['id'],'221',{"season":serie['season'],"episode":serie['episode']})

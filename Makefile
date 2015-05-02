@@ -14,7 +14,7 @@ uninstall: script/uninstall.py
 	@rm -rf paramPy
 
 paramPy:
-	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.0/jsonConfigParser.tar.gz" -q -O jsonConfigParser.tar.gz
+	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.1/jsonConfigParser_v1.1.tar.gz" -q -O jsonConfigParser.tar.gz
 	@tar zxf jsonConfigParser.tar.gz
 	@rm jsonConfigParser.tar.gz
 
@@ -25,7 +25,7 @@ TvShowWatch.spk: syno/package.tgz syno/INFO syno/scripts syno/PACKAGE_ICON.PNG
 	mv syno/$@ .
 
 syno/package.tar: application LICENSE README.md syno_directory
-	tar cvf package.tar *.py LICENSE README.md directory.json application
+	tar cvf package.tar *.py LICENSE README.md directory.json application config-*.jschem
 	mv package.tar syno
 	cd syno && tar rvf package.tar
 

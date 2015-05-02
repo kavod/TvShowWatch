@@ -134,7 +134,7 @@ def action_run(m):
 	cmdline = [
 			sys.executable,	
 			myConstants.TSW_PATH + '/TSW_api.py',
-			'-c',m.conffile.filename,
+			'-c',m.confFilename,
 			'-s',m.seriefile.filename,
 			'--action','run'
 			]
@@ -161,7 +161,6 @@ def action_run(m):
 				print(str(next(x['name'] for x in liste if str(x['id'])==str(fresult[1])))+' : ' + str(fresult[2]), end='')
 			else:
 				print(result,end='')
-        	        #print(f.readline(),end='')
 	sys.exit()
 
 def action_edit(m):
@@ -256,8 +255,7 @@ def action_add(m):
 		sys.exit()
 	last = result.lastAired()
 	next = result.nextAired()
-	next = last_or_next(result)	
-	#next = last_or_next(last,next)
+	next = last_or_next(result)
 	if m.testConf(False)['rtn']=='200' and Prompt.promptYN('Voulez-vous rajouter des emails de notification ?'):
 		emails = input_emails()
 	else:
@@ -341,66 +339,11 @@ def action_del(m):
 def action_config(m):
     '''Change configuration'''
     logging.debug('Call function action_config()')
-    conf = m.getConf()
-    if (conf['rtn']!='200'):
-        print("Error during configuration reading")
-	sys.exit()
-    conf = conf['result']
-    if (conf['keywords'] is not None):
-        keywords_default = ' / '.join(conf['keywords'])
-    else:
-        keywords_default = ''
-    email_activated = 'Enabled' if len(conf['smtp'])>0 else 'Disabled'
-    if ('folder' in conf['transmission'].keys()):
-        folder = conf['transmission']['folder']
-    else:
-        folder = 'No transfer'
-    if 'user' not in conf['tracker'] or conf['tracker']['user'] is None:
-        conf['tracker']['user'] = ''
-
-    configData = Prompt.promptChoice(
-            "Selection value you want modify:",
-            [
-                ['tracker_id','Tracker : '+conf['tracker']['id']],
-                ['tracker_user','Tracker Username : '+conf['tracker']['user']],
-                ['tracker_password','Tracker Password : ******'],
-                ['keywords','Torrent search keywords : '+keywords_default],
-                ['transmission_server','Transmission Server : ' + str(conf['transmission']['server'])],
-                ['transmission_port','Transmission Port : ' + str(conf['transmission']['port'])],
-                ['transmission_user','Transmission User : ' + str(conf['transmission']['user'])],
-                ['transmission_password','Transmission Password : ******'],
-                ['transmission_slotNumber','Transmission maximum slots : ' + str(conf['transmission']['slotNumber'])],
-                ['transmission_folder','Local folder : ' + str(conf['transmission']['folder'])],
-                ['smtp','Email Notification: ' + email_activated]
-            ])
-    if configData == 'smtp':
-        configData = Prompt.promptChoice(
-            "Selection value you want modify:",
-            [
-                ['smtp_enable','Enable : ' + email_activated],
-                ['smtp_server','SMTP Server : ' + str(conf['smtp']['server'])],
-                ['smtp_port','SMTP Port : ' + str(conf['smtp']['port'])],
-                ['smtp_ssltls','Secure connection : ' + str(conf['smtp']['ssltls'])],
-                ['smtp_user','SMTP User : ' + str(conf['smtp']['user'])],
-                ['smtp_password','SMTP Password : ******'],
-                ['smtp_emailSender','Sender Email : ' + str(conf['smtp']['emailSender'])]
-            ])
-        if configData == 'smtp_enable':
-            configData = Prompt.promptChoice(
-				"Disable SMTP notification?",
-				[
-					[False,'Disable'],
-					[True,'Enable']
-				])
-            m.conffile.confEmail(not configData)
-            result = {'rtn':'200','result':'OK'}
-        else:
-            result = m.setConf({configData:'None'})
-    else:
-        result = m.setConf({configData:'None'})
-    if result['rtn'] == '200':
+    try:
+        m.confData.cliChange()
+        m.confData.save()
         print('Configuration change completed !')
-    else:
+    except:
         print('Error during configuration change: '+result['error'])
 
 def action_getconf(m):

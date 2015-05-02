@@ -17,7 +17,7 @@ from myExceptions import *
 TMPPATH = "/tmp"
 
 TRACKER_CONF = [
-	{'id':'t411','name':'T411','url':'https://api.t411.me','param':['username','password']},
+	{'id':'t411','name':'T411','url':'https://api.t411.io','param':['username','password']},
 	{'id':'kickass','name':'KickAss','url':"https://kickass.to",'param':[]},
 	{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]

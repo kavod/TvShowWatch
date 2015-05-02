@@ -48,5 +48,6 @@ returnCode = {
 	'422': 'File {0} does not exists',
 	'422': 'Tracker {0} requires username/password',
 	'423': 'Unable to parse file {0}',
+	'424': 'Unable to write file {0}',
 	'499': 'General Error'
 	}
