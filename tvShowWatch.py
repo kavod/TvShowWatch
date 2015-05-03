@@ -272,45 +272,19 @@ def action_add(m):
 def action_reset(m):
     '''Reset the configuration and/or the series list'''
     logging.debug('Call function action_reset()')
-    result = {'rtn': '999'}
-    while result['rtn'] != '200' and result['rtn'] != '302':
-        conf = [
-		'tracker_id', 
-		'tracker_user',
-		'tracker_password',
-		'transmission_server',
-		'transmission_port',
-		'transmission_user',
-		'transmission_password',
-		'transmission_slotNumber',
-		'transmission_folder'
-		]
-        for param in conf:
-            result = m.setConf({param:'None'},False)
-        if result['rtn'] == '200':
-            result = m.testConf(False)
-        if result['rtn'] != '200' and result['rtn'] != '302':
-            print('Error during configuration: '+result['error'])
+    
+    try:
+        m.confData.cliCreate()
+        m.confData.save()
+        print('Configuration change completed !')
+    except:
+        print('Error during configuration change: '+result['error'])
 
-    if (Prompt.promptYN("Do you want to activate Email notification?",'N')):
-        while result['rtn'] != '200':
-            conf = [
-		'smtp_server',
-		'smtp_port',
-		'smtp_ssltls',
-		'smtp_user',
-		'smtp_password',
-		'smtp_emailSender',
-		]
-            for param in conf:
-                result = m.setConf({param:'None'},False)
-            if result['rtn'] == '200':
-                result = m.testConf(True)
-            if result['rtn'] != '200':
-                print('Error during SMTP configuration: '+result['error'])
-
-    result = m.setConf({},True)
-    print('Configuration completed')
+    result = m.testConf(True)
+    if result['rtn'] != '200':
+        print('Error during config verification: '+result['error'])
+    else:
+        print('Configuration completed')
 
 def action_del(m):
 	'''Delete TV show from configuration file'''

@@ -78,13 +78,14 @@ class TSWmachine:
 		logging.info('CreateConf ' + str(filename) + ' with '+ str(conf))
 		if (not self.getAuth()):
 			return {'rtn':'406','error':messages.returnCode['406']}
-		confData = {"version":CONFIG_VERSION}
+		confData = {"version":myConstants.CONFIG_VERSION}
 		confData.update(conf)
-		self.confData.update(confData)
+		self.confFilename = filename
 		try:
-			self.confData.save(filename=filename)
+			self.confData = jsonConfigParser.jsonConfigValue(self.confschema,value=None,filename=filename)
 		except:
 			return {'rtn':'424','error':messages.returnCode['424'].format(filename)}
+		return {'rtn':'200','error':messages.returnCode['200']}
 
 	def getConf(self,conf='all'):
 		if (not self.openedFiles(['conf'])['rtn']=='200'):
