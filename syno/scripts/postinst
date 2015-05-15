@@ -10,7 +10,7 @@ cp /etc/crontab /root/crontab_backup
 ${PYTHON_PATH}/easy_install tvdb_api transmissionrpc requests cherrypy jsonschema
 
 # Install paramPy module
-wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.1/jsonConfigParser_v1.1.tar.gz" -q -O "${TSW_PATH}/jsonConfigParser.tar.gz"
+wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.3/jsonConfigParser_v1.3.tar.gz" -q -O "${TSW_PATH}/jsonConfigParser.tar.gz"
 tar zxf "${TSW_PATH}/jsonConfigParser.tar.gz" -C "${TSW_PATH}"
 rm ${TSW_PATH}/jsonConfigParser.tar.gz
 

@@ -6,15 +6,15 @@ all:
 	@echo "'sudo make uninstall' for remove root installation"
 	@echo "'make syno' for Synology package TvShowWatch.spk build"
 
-install: script/install.py paramPy
+install: script/install.py jsonConfigParser
 	@python $<
 
 uninstall: script/uninstall.py
 	@python $<
-	@rm -rf paramPy
+	@rm -rf jsonConfigParser
 
-paramPy:
-	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.1/jsonConfigParser_v1.1.tar.gz" -q -O jsonConfigParser.tar.gz
+jsonConfigParser:
+	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.3/jsonConfigParser_v1.3.tar.gz" -q -O jsonConfigParser.tar.gz
 	@tar zxf jsonConfigParser.tar.gz
 	@rm jsonConfigParser.tar.gz
 
