@@ -49,16 +49,18 @@ class TSWmachine:
 		logging.info('OpenFile ' + str(conffile) + ' and '+ str(seriefile))
 		try:
 			self.confData = jsonConfigParser.jsonConfigValue(self.confschema,value=None,filename=conffile)
-		except:
+		except Exception as e:
 			logging.info('Fail to open file:'+ str(conffile))
+			logging.debug(str(e))
 			return {'rtn':'401','result':self.get_tracker_conf(),'error':messages.returnCode['401'].format(conffile)}
 		self.confFilename = conffile
 		
 		# conf file parsing
 		try:
 			self.confData.load()
-		except:
+		except Exception as e:
 			logging.info('Fail to parse file:'+ str(conffile))
+			logging.debug(str(e))
 			return {'rtn':'423','result':self.get_tracker_conf(),'error':messages.returnCode['423'].format(conffile)}
 		
 		logging.info('Conf file OK, opening Serie List')
@@ -92,38 +94,10 @@ class TSWmachine:
 			result = self.openedFiles(['conf'])
 			result['tracker_conf'] = self.get_tracker_conf()
 			return result
-		mytracker = self.confData['tracker']
-		if 'password' in mytracker.keys():
-			mytracker['password'] = '****'
-		transmission = self.confData['transmission']
-		if 'password' in transmission.keys():
-			transmission['password'] = '****'
-		email = self.confData['smtp']
-		if 'password' in email.keys():
-			email['password'] = '****'
-		keywords = self.confData['keywords']
-		result = {}
 		if conf=='all':
-			result = {'tracker':mytracker,'transmission':transmission,'smtp':email,'keywords':keywords}
+			result = self.confData.getValue()
 		else:
-			for parameter in conf:
-				if parameter.split('_')[0] == 'tracker':
-					if ('tracker' not in result.keys()):
-						result['tracker']={}
-					result['tracker'][parameter.split('_')[1]] = mytracker[parameter.split('_')[1]]
-				if parameter.split('_')[0] == 'transmission':
-					if ('transmission' not in result.keys()):
-						result['transmission']={}
-					result['transmission'][parameter.split('_')[1]] = transmission[parameter.split('_')[1]]
-				if parameter.split('_')[0] == 'smtp':
-					if ('smtp' not in result.keys()):
-						result['email']={}
-					if parameter.split('_')[1] in email.keys():
-						result['smtp'][parameter.split('_')[1]] = email[parameter.split('_')[1]]
-					else:
-						result['smtp'][parameter.split('_')[1]] = ''
-				if parameter == 'keywords':
-					result['keywords'] = keywords
+			result = self.confData.getValue(path=conf.split("_"))
 				
 		return {'rtn':'200','result':result,'tracker_conf':self.get_tracker_conf()}
 		
@@ -138,17 +112,11 @@ class TSWmachine:
 
 		self.confData.update(conf)
 		send = ('smtp' in conf.keys())
-		if 'keywords' in conf.keys():
-			original_len = len(conf['keywords'])
-			final_len = len([x for x in conf['keywords'] if x != ''])
-		else:
-			original_len = 0
-			final_len = 0
 		if save:
 			self.confData.save()
 			result = self.testConf(send)
 			if result['rtn'] == '200':
-				if original_len == final_len:
+				if 'keywords' in conf.keys() and len([x for x in conf['keywords'] if x == ''])<1:
 					return result
 				else:
 					return {'rtn':'304','error':messages.returnCode['304'].format(key)}

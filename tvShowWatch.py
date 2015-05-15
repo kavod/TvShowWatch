@@ -314,37 +314,16 @@ def action_config(m):
     '''Change configuration'''
     logging.debug('Call function action_config()')
     try:
-        m.confData.cliChange()
+        m.confData.choose()
         m.confData.save()
         print('Configuration change completed !')
-    except:
-        print('Error during configuration change: '+result['error'])
+    except Exception as e:
+        print('Error during configuration change: '+str(e))
 
 def action_getconf(m):
     '''Return configuration'''
     logging.debug('Call function action_getconf()')
-    conf = m.getConf()
-    if (conf['rtn']!='200'):
-        print("Error during configuration reading")
-	sys.exit()
-    conf = conf['result']
-    result = "'tracker_id':"+conf['tracker']['id']
-    result += "\n'tracker_user':"+conf['tracker']['user']
-    result += "\n'transmission_server':" + str(conf['transmission']['server'])
-    result += "\n'transmission_port':" + str(conf['transmission']['port'])
-    result += "\n'transmission_user':" + str(conf['transmission']['user'])
-    result += "\n'transmission_slotNumber':" + str(conf['transmission']['slotNumber'])
-    if 'folder' in conf['transmission'].keys():
-        result += "\n'transmission_folder':" + str(conf['transmission']['folder'])
-    if len(conf['smtp'])>0:
-        result += "\n'smtp_server':" + str(conf['smtp']['server'])
-        result += "\n'smtp_port':" + str(conf['smtp']['port'])
-        result += "\n'smtp_ssltls':" + str(conf['smtp']['ssltls'])
-        result += "\n'smtp_user':" + str(conf['smtp']['user'])
-        result += "\n'smtp_emailSender':" + str(conf['smtp']['emailSender'])
-    for keyword in conf['keywords']:
-        result += "\n'keywords':" + keyword
-    print(result)
+    m.confData.display()
 
 def main():
     # Get input parameters
@@ -401,6 +380,7 @@ def main():
 		logging.debug('Loading of seriefile: %s', args.seriefile)
 		result = m.openFiles(args.config, args.seriefile)
 		if result['rtn']!='200':
+			logging.debug('Fail loading config file: %s', result['error'])
 			print("Please first use tvShowWatch --action init")
 			sys.exit()
     else:
