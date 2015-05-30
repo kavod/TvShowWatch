@@ -523,7 +523,7 @@ class TSWmachine:
 						if(confTransmission['folder'] is not None):
 							if (transferFile(torrent.files(),serie,confTransmission)):
 								content = str_search_list[0] + ' broadcasted on ' + print_date(convert_date(serie['expected'])) + ' download completed'
-								sendEmail(content,serie,self.conffile)
+								sendEmail(content,serie,self.confData['smtp'])
 							else:
 								print(str_result.format('418',str(serie['id']),messages.returnCode['418']))
 								continue
