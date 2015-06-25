@@ -60,7 +60,9 @@ def next_aired(serie_id,s_season=0,s_episode=0):
 		return {}
 
 	# If season & episode specified
-	if int(s_season)*int(s_episode)>0: 
+	s_season = int(s_season)
+	s_episode = int(s_episode)
+	if s_season * s_episode>0: 
 
 		# Check if next episode exists in season
 		if s_episode+1 in serie[s_season].keys():
