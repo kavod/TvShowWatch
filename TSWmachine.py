@@ -52,7 +52,7 @@ class TSWmachine:
 		except Exception as e:
 			logging.info('Fail to open file:'+ str(conffile))
 			logging.debug(str(e))
-			return {'rtn':'401','result':self.get_tracker_conf(),'error':messages.returnCode['401'].format(conffile)}
+			return {'rtn':'401','tracker_conf':self.get_tracker_conf(),'error':messages.returnCode['401'].format(conffile)}
 		self.confFilename = conffile
 		
 		# conf file parsing
@@ -61,7 +61,7 @@ class TSWmachine:
 		except Exception as e:
 			logging.info('Fail to parse file:'+ str(conffile))
 			logging.debug(str(e))
-			return {'rtn':'423','result':self.get_tracker_conf(),'error':messages.returnCode['423'].format(conffile)}
+			return {'rtn':'423','tracker_conf':self.get_tracker_conf(),'error':messages.returnCode['423'].format(conffile)}
 		
 		logging.info('Conf file OK, opening Serie List')
 		return self.seriefile.openFile(seriefile)
