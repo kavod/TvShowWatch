@@ -208,6 +208,8 @@ class save_keywords(Requete):
 		debug = ('debug' in params.keys())
 		if 'keywords[]' in params.keys():
 			keywords = params['keywords[]']
+			if not isinstance(keywords,list):
+				keywords = [keywords]
 		else:
 			keywords = []
 		TSW = TvShowWatch(debug)
