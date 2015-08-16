@@ -14,7 +14,7 @@ uninstall: script/uninstall.py
 	@rm -rf jsonConfigParser
 
 jsonConfigParser:
-	@wget "https://github.com/kavod/jsonConfigParser/releases/download/v1.3/jsonConfigParser_v1.3.tar.gz" -q -O jsonConfigParser.tar.gz
+	@wget "https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.4/jsonConfigParser.tgz" -q -O jsonConfigParser.tar.gz
 	@tar zxf jsonConfigParser.tar.gz
 	@rm jsonConfigParser.tar.gz
 
