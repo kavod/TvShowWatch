@@ -218,7 +218,7 @@ def ignore_stopped(tor):
 
 def tracker_api_conf(post):
 	conf_out = {"id":post['tracker_id'],"user":post['tracker_username']}
-	if post['tracker_password'] != 'initial':
+	if post['tracker_password'] != '****':
 		conf_out["password"] = post['tracker_password']
 	return conf_out
 
@@ -230,7 +230,7 @@ def transmission_api_conf(post):
 		"slotNumber":post['trans_slotNumber'],
 		"folder":post['trans_folder']
 		}
-	if post['trans_password'] != 'initial':
+	if post['trans_password'] != '****':
 		conf_out["password"] = post['trans_password']
 	return conf_out
 
@@ -246,6 +246,6 @@ def email_api_conf(post):
 		"emailSender":values['smtp_emailSender'],
 		"ssltls":values['smtp_ssltls'] == '1'
 		}
-	if values['smtp_password'] != 'initial':
+	if values['smtp_password'] != '****':
 		conf_out["password"] = values['smtp_password']
 	return conf_out

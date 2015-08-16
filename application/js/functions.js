@@ -80,11 +80,11 @@ function get_conf(event)
 			formdata = {};
 			formdata.tracker_id = result.tracker.id;
 			formdata.tracker_username = result.tracker.user;
-			formdata.tracker_password = (result.tracker.password == "****") ? 'initial' : '';
+			formdata.tracker_password = (result.tracker.password == "****") ? '****' : '';
 			formdata.trans_server = result.transmission.server;
 			formdata.trans_port = result.transmission.port;
 			formdata.trans_username = result.transmission.user;
-			formdata.trans_password = (result.transmission.password == "****") ? 'initial' : '';
+			formdata.trans_password = (result.transmission.password == "****") ? '****' : '';
 			formdata.trans_slotNumber = result.transmission.slotNumber;
 			formdata.trans_folder = result.transmission.folder;
 			formdata.smtp_enable = (typeof result.smtp.server === 'undefined' || result.smtp.server=='') ? 0 : 1;
@@ -92,7 +92,7 @@ function get_conf(event)
 			formdata.smtp_port = result.smtp.port;
 			formdata.smtp_ssltls = (result.smtp.ssltls!=true) ? 0 : 1;
 			formdata.smtp_username = result.smtp.user;
-			formdata.smtp_password = (result.smtp.password == "****") ? 'initial' : '';
+			formdata.smtp_password = (result.smtp.password == "****") ? '****' : '';
 			formdata.smtp_emailSender = result.smtp.emailSender;
 			populate('#param',formdata);
 			load_tracker_conf(event,$('#tracker_id option[value='+result.tracker.id+']').attr('login'));
@@ -794,7 +794,7 @@ function compute_data(data)
 	try
 	{
 		result = JSON.parse(data);
-		if (result.rtn != 200 && result.rtn != 302 && result.rtn != 230 && result.rtn != 401)
+		if (result.rtn != 200 && result.rtn != 302 && result.rtn != 304 && result.rtn != 230 && result.rtn != 401)
 		{
 			show_error(result.error);
 			result.ok = false;

@@ -56,6 +56,7 @@ class TSWmachine:
 		self.confFilename = conffile
 		
 		# conf file parsing
+		self.confData.load()
 		try:
 			self.confData.load()
 		except Exception as e:
@@ -119,7 +120,7 @@ class TSWmachine:
 				if 'keywords' in conf.keys() and len([x for x in conf['keywords'] if x == ''])<1:
 					return result
 				else:
-					return {'rtn':'304','error':messages.returnCode['304'].format(key)}
+					return {'rtn':'304','error':messages.returnCode['304']}
 			return result
 		else:	
 			return {'rtn':'200','error':messages.returnCode['200']}
@@ -145,8 +146,8 @@ class TSWmachine:
 			 return {'rtn':'405','error':messages.returnCode['405'].format('Transmission')}
 		try:
 			transmissionrpc.Client(tc['server'], tc['port'], tc['user'], tc['password'])
-		except TransmissionError,e:
-			return {'rtn':'404','error':messages.returnCode['404'].format('Transmission',e)}
+		except:
+			return {'rtn':'404','error':messages.returnCode['404'].format('Transmission','')}
 		else:
 			return {'rtn':'200','error':messages.returnCode['200']}
 
