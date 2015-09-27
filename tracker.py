@@ -17,7 +17,7 @@ from myExceptions import *
 TMPPATH = "/tmp"
 
 TRACKER_CONF = [
-	{'id':'t411','name':'T411','url':'https://api.t411.io','param':['username','password']},
+	{'id':'t411','name':'T411','url':'https://api.t411.in','param':['username','password']},
 	{'id':'kickass','name':'KickAss','url':"https://kickass.to",'param':[]},
 	{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]
@@ -162,7 +162,7 @@ class Tracker:
 
 	def download_t411(self,torrent_id):
 		logging.debug("/torrents/download/"+str(torrent_id))
-		stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False)
+		stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False})
 		with open(TMPPATH + '/file.torrent', 'wb') as f:
 			for chunk in stream.iter_content(chunk_size=1024): 
 				if chunk: # filter out keep-alive new chunks
@@ -172,7 +172,7 @@ class Tracker:
 		
 	def download_kickass(self,torrent_id):
 		logging.debug(str(torrent_id))
-		stream = requests.post(str(torrent_id), stream=True, verify=False)
+		stream = requests.get(str(torrent_id), stream=True, verify=False, headers={'User-Agent': 'Wget/1.15 (linux-gnu)'})
 		with open(TMPPATH + '/file.torrent', 'wb') as f:
 			for chunk in stream.iter_content(chunk_size=1024): 
 				if chunk: # filter out keep-alive new chunks

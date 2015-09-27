@@ -5,3 +5,4 @@ etc/series.json
 etc/*
 tmp/*
 jsonConfigParser
+*.pyc
